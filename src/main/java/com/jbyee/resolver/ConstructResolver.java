@@ -4,10 +4,20 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public interface ConstructResolver {
-    String resolve(Class<?> clazz);
+
+    String toString(Map<String, Map<String, List<String>>> classMap);
+    default String resolve(Class<?> clazz){
+        Map<String, Map<String, List<String>>> classMap = new HashMap<>();
+        genClassMap(clazz, classMap);
+        return toString(classMap);
+    };
+    default String resolve(List<Class<?>> clazzArr){
+        Map<String, Map<String, List<String>>> classMap = new HashMap<>();
+        genClassMap(clazzArr, classMap);
+        return toString(classMap);
+    };
 
     default void genClassMap(Class<?> clazz, Map<String, Map<String, List<String>>> classMap) {
         Map<String, List<String>> fieldsMap = new HashMap<>();
@@ -18,13 +28,12 @@ public interface ConstructResolver {
             List<String> fieldInfo = new ArrayList<>();
             List<Class<?>> temp = new ArrayList<>();
 
-            if (genericType instanceof ParameterizedType) {
-                ParameterizedType parameterizedType = (ParameterizedType) genericType;
+            if (genericType instanceof ParameterizedType parameterizedType) {
                 Type[] typeArguments = parameterizedType.getActualTypeArguments();
 
                 //Not Allowed Overlapping Generic yet
                 String[] collect = Arrays.stream(typeArguments).map(typeArgument -> {
-                    temp.add(((Class) typeArgument).getNestHost());
+                    temp.add(((Class<?>) typeArgument).getNestHost());
                     String[] split = typeArgument.getTypeName().split("\\.");
                     return split[split.length - 1];
                 }).toList().toArray(new String[0]);
@@ -48,6 +57,12 @@ public interface ConstructResolver {
         }
 
         classMap.put(clazz.getSimpleName(), fieldsMap);
+    }
+
+    default void genClassMap(List<Class<?>> clazzArr, Map<String, Map<String, List<String>>> classMap) {
+        for (int i = 0 ; i < clazzArr.size(); i++){
+            genClassMap(clazzArr.get(i), classMap);
+        }
     }
 
 }

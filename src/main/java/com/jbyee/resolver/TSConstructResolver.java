@@ -1,20 +1,13 @@
 package com.jbyee.resolver;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class TSConstructResolver implements ConstructResolver {
     @Override
-    public String resolve(Class<?> clazz) {
-        Map<String, Map<String, List<String>>> classMap = new HashMap<>();
-        genClassMap(clazz, classMap);
-        return toString(classMap);
-    }
-
-    private String toString(Map<String, Map<String, List<String>>> classMap) {
+    public String toString(Map<String, Map<String, List<String>>> classMap) {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, Map<String, List<String>>> classEntry : classMap.entrySet()) {
             sb.append("type ").append(classEntry.getKey()).append(" = {\n");
