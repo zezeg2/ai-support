@@ -1,8 +1,10 @@
 package com.jbyee.resolver;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class TSConstructResolver implements ConstructResolver {
     @Override
@@ -33,6 +35,14 @@ public class TSConstructResolver implements ConstructResolver {
         if (typeName.equals("boolean")) return "boolean";
         if (typeName.equals("char")) return "string"; // TypeScript doesn't have a char, so we use string
         if (typeName.endsWith("[]")) return convert(typeName.substring(0, typeName.length() - 2)) + "[]"; // array types
+        if (typeName.startsWith("List"))
+            return Arrays.stream(typeName.substring(0, typeName.length() - 1).split("<")[1].split(", "))
+                    .map(type -> convert(type) + "[]")
+                    .collect(Collectors.joining(", "));
+        if (typeName.contains("<")) {
+            String[] split = typeName.substring(0, typeName.length() - 1).split("<");
+            return split[0] + "<" + Arrays.stream(split[1].split(", ")).map(this::convert).collect(Collectors.joining(", ")) + ">";
+        }
         // you may need to add more conditions here to handle other types
         return typeName + " | undefined"; // for complex types, we keep the original name
     }

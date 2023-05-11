@@ -1,12 +1,12 @@
-package com.jbyee.common;
+package com.jbyee.common.enums;
 
-public enum Role {
+public enum MODEL {
     SYSTEM("system"),
     USER("user");
 
     private String value;
 
-    Role(String value) {
+    MODEL(String value) {
         this.value = value;
     }
 
