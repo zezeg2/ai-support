@@ -38,12 +38,13 @@ public class AISupporter {
                 public class Main {
                     public static void main(String[] args) {
                         FC fc = (%s) -> {
-                            
+                            ...
+                            return //TODO: fill your result here
                         };
                     }
                 }
                 
-                """.formatted(functionName, returnType.getSimpleName(), filedTypesString, filedsString);
+                """.formatted(returnType.getSimpleName(), functionName, filedTypesString,  filedsString);
         List<? extends Class<?>> classList = args.stream().map(ArgumentRecord::type).toList();
         String refTypes = resolver.resolve((List<Class<?>>) classList);
         List<ChatMessage> messages = List.of(

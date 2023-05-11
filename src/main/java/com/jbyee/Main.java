@@ -11,31 +11,17 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        String function = "function exampleFunction(a: number, b: number): number {\n  return a + b;\n}";
+        String functionName = "generateDocument";
         List<ArgumentRecord> records = ArgumentsFactory.generate(
-                "a", 1, Integer.class
-                , "b", 3, Integer.class
-                , "c", 7, Integer.class
+                "pros", 4, Integer.class
+                , "const", 4, Integer.class
         );
-        String description = "Adds two numbers together";
+        String description = "generate Document about Python, list pros and cons in given number";
         String model = "gpt-3.5-turbo";
         AISupporter aiSupporter = new AISupporter(new OpenAiService("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"), new JAVAConstructResolver());
-        Integer result = aiSupporter.<Integer>aiFunction(function, Integer.class, records, description, model);
+        String result = aiSupporter.<String>aiFunction(functionName, String.class, records, description, model);
         System.out.println(result);
 
-        String formatted = """
-                @FunctionalInterface
-                public interface %s {
-                    %s functionName(%s);
-                }
-                """.formatted();
-
-        FC fc = (a) -> {
-            return a;
-        };
     }
 
-    FC fc = (a) -> {
-        return a;
-    };
 }
