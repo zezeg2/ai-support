@@ -1,6 +1,6 @@
 package com.jbyee.ai;
 
-public record ArgumentRecord(String field, Object value, Class<?> type) {
+public record Argument(String field, Object value, Class<?> type) {
     public String getType() {
         return type.getSimpleName();
     }
