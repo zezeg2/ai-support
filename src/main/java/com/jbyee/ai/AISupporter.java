@@ -2,74 +2,81 @@ package com.jbyee.ai;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jbyee.ai.function.Argument;
+import com.jbyee.ai.function.Constraint;
+import com.jbyee.ai.model.gpt.GPTModel;
 import com.jbyee.common.enums.ROLE;
 import com.jbyee.resolver.ConstructResolver;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
-
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
-@AllArgsConstructor
 public class AISupporter {
+    private static final String FUNCTION_TEMPLATE = """
+            @FunctionalInterface
+            public interface FC {
+                %s %s(%s);
+            }
+            public class Main {
+                public static void main(String[] args) {
+                    FC fc = (%s) -> {
+                        //TODO: implement or just return result
+                        return //TODO: fill your result here. your return will be converted by ObjectMapper.
+                    };
+                }
+            }
+            """;
+    private static final Class<LinkedHashMap> DEFAULT_RETURN_TYPE = LinkedHashMap.class;
 
     private final OpenAiService service;
-
+    private final ObjectMapper mapper;
     private ConstructResolver resolver;
 
-
-    public Map<String, Object> aiFunction(String functionName, Optional<List<Argument>> args, Optional<List<Constraint>> constraintList, String description, String model) throws JsonProcessingException {
-        List<Argument> unwrappedArgs = args.orElse(List.of());
-        String function = createFunction(null, functionName, unwrappedArgs);
-        String refTypes = resolveRefTypes(unwrappedArgs, null);
-        String constraints = constraintList.orElse(List.of()).stream().map(constraint -> !constraint.topic().isBlank() ? constraint.topic() + ": " + constraint.description() : constraint.description()).collect(Collectors.joining("\n- ", "- ", "\n"));
-        List<ChatMessage> messages = createChatMessages(description, refTypes, functionName, function, unwrappedArgs, constraints);
-        ChatCompletionResult response = executeChatCompletion(model, messages);
-        return parseResponse(response, LinkedHashMap.class);
+    public AISupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver) {
+        this.service = service;
+        this.mapper = mapper;
+        this.resolver = resolver;
     }
 
-    public <T> T aiFunction(String functionName, Class<T> returnType, Optional<List<Argument>> args,Optional< List<Constraint>> constraintList, String description, String model) throws JsonProcessingException {
-        List<Argument> unwrappedArgs = args.orElse(List.of());
-        String function = createFunction(returnType, functionName, unwrappedArgs);
-        String refTypes = resolveRefTypes(unwrappedArgs, returnType);
-        String constraints = constraintList.orElse(List.of()).stream().map(constraint -> !constraint.topic().isBlank() ? constraint.topic() + ": " + constraint.description() : constraint.description()).collect(Collectors.joining("\n- ", "- ", "\n"));
-        List<ChatMessage> messages = createChatMessages(description, refTypes, functionName, function, unwrappedArgs, constraints);
-        ChatCompletionResult response = executeChatCompletion(model, messages);
+    public Map<String, Object> aiFunction(String functionName, List<Argument> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
+        return aiFunction(functionName, DEFAULT_RETURN_TYPE, args, constraintList, description, model);
+    }
+
+    public <T> T aiFunction(String functionName, Class<T> returnType, List<Argument> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
+        String function = createFunction(returnType, functionName, args);
+        String refTypes = resolveRefTypes(args, returnType);
+        String constraints = createConstraints(constraintList);
+        List<ChatMessage> messages = createChatMessages(description, refTypes, functionName, function, args, constraints);
+        ChatCompletionResult response = executeChatCompletion(model.getValue(), messages);
         return parseResponse(response, returnType);
     }
 
-    private <T> String createFunction(Class<T> returnType, String functionName,List<Argument> args) {
+    private <T> String createFunction(Class<T> returnType, String functionName, List<Argument> args) {
         String fieldsString = args.stream().map(Argument::getField).collect(Collectors.joining(", "));
         String fieldTypesString = args.stream()
                 .map(argument -> argument.getType() + " " + argument.getField())
                 .collect(Collectors.joining(", "));
 
-        return """
-                @FunctionalInterface
-                public interface FC {
-                    %s %s(%s);
-                }
-                public class Main {
-                    public static void main(String[] args) {
-                        FC fc = (%s) -> {
-                            //TODO: implement or just return result
-                            return //TODO: fill your result here. your return will be converted by ObjectMapper.
-                        };
-                    }
-                }
-                """.formatted(returnType != null ? returnType.getSimpleName() : "Map<String, Object>", functionName, fieldTypesString, fieldsString);
+        return FUNCTION_TEMPLATE.formatted(returnType.getSimpleName(), functionName, fieldTypesString, fieldsString);
     }
 
     private String resolveRefTypes(List<Argument> args, Class<?> returnType) {
         Set<Class<?>> classList = args.stream().map(Argument::type).collect(Collectors.toSet());
         if (returnType != null) classList.add(returnType);
         return resolver.resolve(classList);
+    }
+
+    private String createConstraints(List<Constraint> constraintList) {
+        return constraintList.stream()
+                .map(constraint -> !constraint.topic().isBlank() ? constraint.topic() + ": " + constraint.description() : constraint.description())
+                .collect(Collectors.joining("\n- ", "- ", "\n"));
     }
 
     private List<ChatMessage> createChatMessages(String description, String refTypes, String functionName, String function, List<Argument> args, String constraints) {
@@ -99,7 +106,10 @@ public class AISupporter {
 
     private <T> T parseResponse(ChatCompletionResult response, Class<T> returnType) throws JsonProcessingException {
         String content = response.getChoices().get(0).getMessage().getContent();
-        ObjectMapper mapper = new ObjectMapper();
-        return !returnType.getSimpleName().equals("LinkedHashMap") ? mapper.convertValue(content, returnType) : mapper.readValue(content, returnType);
+        if (DEFAULT_RETURN_TYPE.getSimpleName().equals(returnType.getSimpleName())) {
+            return mapper.readValue(content, returnType);
+        } else {
+            return mapper.convertValue(content, returnType);
+        }
     }
 }

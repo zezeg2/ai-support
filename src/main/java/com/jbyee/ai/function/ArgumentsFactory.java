@@ -1,8 +1,7 @@
-package com.jbyee.ai;
+package com.jbyee.ai.function;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class ArgumentsFactory {
 
@@ -16,12 +15,12 @@ public class ArgumentsFactory {
         return new ArgumentsFactory();
     }
 
-    public ArgumentsFactory addArgument(String fieldName, Object value, Class<?> type) {
-        arguments.add(new Argument(fieldName, value, type));
+    public ArgumentsFactory addArgument(String field, Object value, Class<?> type) {
+        arguments.add(new Argument(field, value, type));
         return this;
     }
 
-    public Optional<List<Argument>> build() {
-        return Optional.ofNullable(arguments.isEmpty() ? null : new ArrayList<>(arguments));
+    public List<Argument> build() {
+        return new ArrayList<>(arguments);
     }
 }

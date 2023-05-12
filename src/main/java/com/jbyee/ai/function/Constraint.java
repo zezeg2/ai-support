@@ -1,4 +1,4 @@
-package com.jbyee.ai;
+package com.jbyee.ai.function;
 
 public record Constraint(String topic, String description) {
 }

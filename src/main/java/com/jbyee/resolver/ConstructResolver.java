@@ -23,9 +23,15 @@ public interface ConstructResolver {
         for (Class<?> clazz : classSet) {
             if (clazz.equals(Object.class) ||
                     clazz.equals(String.class) ||
-                    clazz.getSuperclass().equals(Number.class)) {
-                continue;
-            }
+                    clazz.getSuperclass().equals(Number.class) ||
+                    clazz.getSuperclass().equals(Collection.class) ||
+                    clazz.getSuperclass().equals(Map.class) ||
+                    clazz.getSuperclass().equals(HashMap.class) ||
+                    clazz.getSuperclass().equals(Set.class) ||
+                    clazz.getSuperclass().equals(HashSet.class) ||
+                    clazz.getSuperclass().equals(List.class)
+            ) continue;
+
             Map<String, List<String>> fieldsMap = new HashMap<>();
             for (Field field : clazz.getDeclaredFields()) {
                 addFieldToMap(classMap, fieldsMap, field);
@@ -58,14 +64,21 @@ public interface ConstructResolver {
         Type[] typeArguments = parameterizedType.getActualTypeArguments();
         String[] collect = Arrays.stream(typeArguments)
                 .map(typeArgument -> {
-                    temp.add(((Class<?>) typeArgument).getNestHost());
-                    String[] split = typeArgument.getTypeName().split("\\.");
-                    return split[split.length - 1];
+                    if (typeArgument instanceof Class) {
+                        temp.add(((Class<?>) typeArgument).getNestHost());
+                        String[] split = typeArgument.getTypeName().split("\\.");
+                        return split[split.length - 1];
+                    } else {
+                        // Handle the case where typeArgument is not a Class (could be a type variable, wildcard, etc.)
+                        // You'll need to decide what to do in this case.
+                        return typeArgument.getTypeName();
+                    }
                 })
                 .toArray(String[]::new);
 
         fieldInfo.add(String.format("%s<%s>", type.getSimpleName(), String.join(", ", collect)));
     }
+
 
     default void analyzeNonPrimitiveClasses(Map<String, Map<String, List<String>>> classMap, List<Class<?>> classes) {
         classes.stream()

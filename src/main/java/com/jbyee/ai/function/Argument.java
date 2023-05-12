@@ -1,4 +1,4 @@
-package com.jbyee.ai;
+package com.jbyee.ai.function;
 
 public record Argument(String field, Object value, Class<?> type) {
     public String getType() {

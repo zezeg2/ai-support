@@ -1,8 +1,7 @@
-package com.jbyee.ai;
+package com.jbyee.ai.function;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class ConstraintsFactory {
 
@@ -21,7 +20,7 @@ public class ConstraintsFactory {
         return this;
     }
 
-    public Optional<List<Constraint>> build() {
-        return Optional.ofNullable(constraintList.isEmpty() ? null : new ArrayList<>(constraintList));
+    public List<Constraint> build() {
+        return new ArrayList<>(constraintList);
     }
 }
