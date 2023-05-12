@@ -10,17 +10,22 @@ public interface ConstructResolver {
     String toString(Map<String, Map<String, List<String>>> classMap);
 
     default String resolve(Class<?> clazz) {
-        return toString(generateClassMap(Collections.singletonList(clazz)));
+        return toString(generateClassMap(Collections.singleton(clazz)));
     }
 
-    default String resolve(List<Class<?>> classList) {
-        return toString(generateClassMap(classList));
+    default String resolve(Set<Class<?>> classSet) {
+        return toString(generateClassMap(classSet));
     }
 
-    default Map<String, Map<String, List<String>>> generateClassMap(List<Class<?>> classList) {
+    default Map<String, Map<String, List<String>>> generateClassMap(Set<Class<?>> classSet) {
         Map<String, Map<String, List<String>>> classMap = new HashMap<>();
 
-        for (Class<?> clazz : classList) {
+        for (Class<?> clazz : classSet) {
+            if (clazz.equals(Object.class) ||
+                    clazz.equals(String.class) ||
+                    clazz.getSuperclass().equals(Number.class)) {
+                continue;
+            }
             Map<String, List<String>> fieldsMap = new HashMap<>();
             for (Field field : clazz.getDeclaredFields()) {
                 addFieldToMap(classMap, fieldsMap, field);
@@ -65,6 +70,6 @@ public interface ConstructResolver {
     default void analyzeNonPrimitiveClasses(Map<String, Map<String, List<String>>> classMap, List<Class<?>> classes) {
         classes.stream()
                 .filter(t -> !t.isPrimitive() && !String.class.equals(t) && !Number.class.isAssignableFrom(t) && !Object.class.equals(t))
-                .forEach(t -> generateClassMap(Collections.singletonList(t)));
+                .forEach(t -> generateClassMap(Collections.singleton(t)));
     }
 }

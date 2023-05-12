@@ -11,8 +11,8 @@ import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -27,9 +27,9 @@ public class AISupporter {
     public <T> T aiFunction(String functionName, Class<T> returnType, List<ArgumentRecord> args, String description, String model) {
         // parse args to comma separated string
 
-        String filedsString = args.stream().map(ArgumentRecord::getFiled).collect(Collectors.joining(", "));
-        String filedTypesString = args.stream().map(ArgumentRecord::getTypeField).collect(Collectors.joining(", "));
+        String filedsString = args.stream().map(ArgumentRecord::getField).collect(Collectors.joining(", "));
         String valuesString = args.stream().map(ArgumentRecord::getValue).collect(Collectors.joining(", "));
+        String filedTypesString = args.stream().map(argumentRecord -> argumentRecord.getType() + " " + argumentRecord.getField()).collect(Collectors.joining(", "));
         String function = """
                 @FunctionalInterface
                 public interface FC {
@@ -38,18 +38,18 @@ public class AISupporter {
                 public class Main {
                     public static void main(String[] args) {
                         FC fc = (%s) -> {
-                            ...
+                            //TODO: implement or just return result
                             return //TODO: fill your result here
                         };
                     }
                 }
                 
                 """.formatted(returnType.getSimpleName(), functionName, filedTypesString,  filedsString);
-        List<? extends Class<?>> classList = args.stream().map(ArgumentRecord::type).toList();
-        String refTypes = resolver.resolve((List<Class<?>>) classList);
+        Set<? extends Class<?>> classList = args.stream().map(ArgumentRecord::type).collect(Collectors.toSet());
+        String refTypes = resolver.resolve((Set<Class<?>>) classList);
         List<ChatMessage> messages = List.of(
                 new ChatMessage(ROLE.SYSTEM.getValue(), "You are now the following Java Lambda function: "
-                        + "```# "
+                        + "```java \n"
                         + description + "\n"
                         + refTypes + "\n"
                         + functionName + "\n"

@@ -14,11 +14,11 @@ public class Main {
         List<ArgumentRecord> records = ArgumentsFactory
                 .builder()
                 .addArgument("pros", 4, Integer.class)
-                .addArgument("cosn", 4, Integer.class)
+                .addArgument("cons", 4, Integer.class)
                 .build();
         String description = "generate Document about Python, list pros and cons in given number";
         String model = "gpt-3.5-turbo";
-        AISupporter aiSupporter = new AISupporter(new OpenAiService("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"), new JAVAConstructResolver());
+        AISupporter aiSupporter = new AISupporter(new OpenAiService("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"), new JAVAConstructResolver());
         String result = aiSupporter.<String>aiFunction(functionName, String.class, records, description, model);
         System.out.println(result);
 
