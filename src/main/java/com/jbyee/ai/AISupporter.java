@@ -37,7 +37,7 @@ public class AISupporter {
 
     private final OpenAiService service;
     private final ObjectMapper mapper;
-    private ConstructResolver resolver;
+    private final ConstructResolver resolver;
 
     public AISupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver) {
         this.service = service;
@@ -83,7 +83,7 @@ public class AISupporter {
         String valuesString = args.stream().map(argument -> {
             String value = argument.getType().equals("String") ? "\"" + argument.getValue() + "\"" : argument.getValue();
             return argument.getField() + ": " + value;
-        } ).collect(Collectors.joining("\n"));
+        }).collect(Collectors.joining("\n"));
 
         return List.of(
                 new ChatMessage(ROLE.SYSTEM.getValue(), "You are now the following Java Lambda function: \n"
