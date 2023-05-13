@@ -10,15 +10,15 @@ public interface ConstructResolver {
     String toString(Map<String, Map<String, List<String>>> classMap);
 
     default String resolve(Class<?> clazz) {
-        return toString(generateClassMap(Collections.singleton(clazz)));
+        return toString(generateClassMap(Collections.singleton(clazz), null));
     }
 
     default String resolve(Set<Class<?>> classSet) {
-        return toString(generateClassMap(classSet));
+        return toString(generateClassMap(classSet, null));
     }
 
-    default Map<String, Map<String, List<String>>> generateClassMap(Set<Class<?>> classSet) {
-        Map<String, Map<String, List<String>>> classMap = new HashMap<>();
+    default Map<String, Map<String, List<String>>> generateClassMap(Set<Class<?>> classSet, Map<String, Map<String, List<String>>> classMap) {
+        if (classMap == null) classMap = new HashMap<>();
 
         for (Class<?> clazz : classSet) {
             if (clazz.equals(Object.class) ||
@@ -62,19 +62,23 @@ public interface ConstructResolver {
 
     default void addParameterizedTypeToFieldInfo(List<String> fieldInfo, List<Class<?>> temp, ParameterizedType parameterizedType, Class<?> type) {
         Type[] typeArguments = parameterizedType.getActualTypeArguments();
-        String[] collect = Arrays.stream(typeArguments)
-                .map(typeArgument -> {
-                    if (typeArgument instanceof Class) {
-                        temp.add(((Class<?>) typeArgument).getNestHost());
-                        String[] split = typeArgument.getTypeName().split("\\.");
-                        return split[split.length - 1];
-                    } else {
-                        // Handle the case where typeArgument is not a Class (could be a type variable, wildcard, etc.)
-                        // You'll need to decide what to do in this case.
-                        return typeArgument.getTypeName();
-                    }
-                })
-                .toArray(String[]::new);
+        List<String> collect = new ArrayList<>();
+
+        for (Type typeArgument : typeArguments) {
+            if (typeArgument instanceof Class) {
+                temp.add(((Class<?>) typeArgument).getNestHost());
+                String[] split = typeArgument.getTypeName().split("\\.");
+                collect.add(split[split.length - 1]);
+            } else if (typeArgument instanceof ParameterizedType) {
+                // Recursive call to handle nested generic types
+                List<String> nestedFieldInfo = new ArrayList<>();
+                addParameterizedTypeToFieldInfo(nestedFieldInfo, temp, (ParameterizedType) typeArgument, (Class<?>) ((ParameterizedType) typeArgument).getRawType());
+                collect.add(nestedFieldInfo.get(0));
+            } else {
+                // Handle the case where typeArgument is not a Class (could be a type variable, wildcard, etc.)
+                collect.add(typeArgument.getTypeName());
+            }
+        }
 
         fieldInfo.add(String.format("%s<%s>", type.getSimpleName(), String.join(", ", collect)));
     }
@@ -83,6 +87,6 @@ public interface ConstructResolver {
     default void analyzeNonPrimitiveClasses(Map<String, Map<String, List<String>>> classMap, List<Class<?>> classes) {
         classes.stream()
                 .filter(t -> !t.isPrimitive() && !String.class.equals(t) && !Number.class.isAssignableFrom(t) && !Object.class.equals(t))
-                .forEach(t -> generateClassMap(Collections.singleton(t)));
+                .forEach(t -> generateClassMap(Collections.singleton(t), classMap));
     }
 }

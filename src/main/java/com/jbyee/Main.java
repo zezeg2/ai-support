@@ -26,13 +26,13 @@ public class Main {
 
         List<Constraint> constraintList = ConstraintsFactory
                 .builder()
-                .addArgument("", "this function generate 'pros' and 'cons' in given number about Python.  and store them in Map. keys are 'pros' , 'cons'value is list")
                 .build();
 
         String description = "this function generate 'pros' and 'cons' in given number about Python.  and store them in Map. keys are 'pros' , 'cons'value is list";
 
-        AISupporter aiSupporter = new AISupporter(new OpenAiService(""), new ObjectMapper(), new JAVAConstructResolver());
+        AISupporter aiSupporter = new AISupporter(new OpenAiService("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"), new ObjectMapper(), new JAVAConstructResolver());
         Map<String, Object> result = aiSupporter.aiFunction(functionName, records, constraintList, description, GPT3Model.GPT_3_5_TURBO);
+//        String result = aiSupporter.aiFunction(functionName, String.class, records, constraintList, description, GPT3Model.GPT_3_5_TURBO);
         System.out.println(result);
     }
 

@@ -80,7 +80,10 @@ public class AISupporter {
     }
 
     private List<ChatMessage> createChatMessages(String description, String refTypes, String functionName, String function, List<Argument> args, String constraints) {
-        String valuesString = args.stream().map(Argument::getValue).collect(Collectors.joining(", "));
+        String valuesString = args.stream().map(argument -> {
+            String value = argument.getType().equals("String") ? "\"" + argument.getValue() + "\"" : argument.getValue();
+            return argument.getField() + ": " + value;
+        } ).collect(Collectors.joining("\n"));
 
         return List.of(
                 new ChatMessage(ROLE.SYSTEM.getValue(), "You are now the following Java Lambda function: \n"
