@@ -1,14 +1,14 @@
-package com.jbyee;
+package io.github.zezeg2;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jbyee.ai.AISupporter;
-import com.jbyee.ai.function.Argument;
-import com.jbyee.ai.function.ArgumentsFactory;
-import com.jbyee.ai.function.Constraint;
-import com.jbyee.ai.function.ConstraintsFactory;
-import com.jbyee.ai.model.gpt.GPT3Model;
-import com.jbyee.resolver.JAVAConstructResolver;
+import io.github.zezeg2.ai.AISupporter;
+import io.github.zezeg2.ai.function.Argument;
+import io.github.zezeg2.ai.function.ArgumentsFactory;
+import io.github.zezeg2.ai.function.Constraint;
+import io.github.zezeg2.ai.function.ConstraintsFactory;
+import io.github.zezeg2.ai.model.gpt.GPT3Model;
+import io.github.zezeg2.resolver.JAVAConstructResolver;
 import com.theokanning.openai.service.OpenAiService;
 
 import java.util.List;

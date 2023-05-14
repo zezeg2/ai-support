@@ -1,4 +1,4 @@
-package com.jbyee.ai.model.gpt;
+package io.github.zezeg2.ai.model.gpt;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;

@@ -1,4 +1,4 @@
-package com.jbyee.resolver;
+package io.github.zezeg2.resolver;
 
 import java.util.Arrays;
 import java.util.List;

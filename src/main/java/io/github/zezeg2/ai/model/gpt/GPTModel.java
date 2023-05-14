@@ -1,8 +1,8 @@
-package com.jbyee.ai.model.gpt;
+package io.github.zezeg2.ai.model.gpt;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.jbyee.ai.model.AIModel;
-import com.jbyee.ai.model.ModelDeserializer;
+import io.github.zezeg2.ai.model.AIModel;
+import io.github.zezeg2.ai.model.ModelDeserializer;
 
 
 @JsonDeserialize(using = ModelDeserializer.class)

@@ -1,4 +1,4 @@
-package com.jbyee.common.enums;
+package io.github.zezeg2.common.enums;
 
 public enum PLANG {
     JAVA("JAVA"),

@@ -1,4 +1,4 @@
-package com.jbyee.ai.function;
+package io.github.zezeg2.ai.function;
 
 import java.util.ArrayList;
 import java.util.List;

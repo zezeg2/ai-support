@@ -1,11 +1,11 @@
-package com.jbyee.ai.model;
+package io.github.zezeg2.ai.model;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.jbyee.ai.model.gpt.GPT3Model;
-import com.jbyee.ai.model.gpt.GPT4Model;
-import com.jbyee.ai.model.gpt.GPTModel;
+import io.github.zezeg2.ai.model.gpt.GPT3Model;
+import io.github.zezeg2.ai.model.gpt.GPT4Model;
+import io.github.zezeg2.ai.model.gpt.GPTModel;
 
 import java.io.IOException;
 import java.util.stream.Stream;
