@@ -39,7 +39,7 @@ public class AISupporter {
             public class Main {
                 public static void main(String[] args) {
                     FC fc = (%s) -> {
-                        return [RESULT] //TODO: JsonString of %s
+                        return [RESULT] //TODO: JsonString of %s.class
                     };
                 }
             }
@@ -82,7 +82,7 @@ public class AISupporter {
     private String createConstraints(List<Constraint> constraintList) {
         return constraintList.stream()
                 .map(constraint -> !constraint.topic().isBlank() ? constraint.topic() + ": " + constraint.description() : constraint.description())
-                .collect(Collectors.joining("\n- ", "- ", "\n"));
+                .collect(Collectors.joining("\n- ", "\n- ", "\n"));
     }
 
     private List<ChatMessage> createChatMessages(String description, String refTypes, String functionName, String function, List<Argument> args, String constraints) {
