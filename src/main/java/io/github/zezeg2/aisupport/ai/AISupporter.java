@@ -11,6 +11,7 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
+import io.github.zezeg2.aisupport.resolver.JAVAConstructResolver;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,6 +20,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AISupporter {
+    public AISupporter(String apiKey) {
+        this.service = new OpenAiService(apiKey);
+        this.mapper = new ObjectMapper();
+        this.resolver = new JAVAConstructResolver();
+    }
+
+    public AISupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver) {
+        this.service = service;
+        this.mapper = mapper;
+        this.resolver = resolver;
+    }
     private static final String FUNCTION_TEMPLATE = """
             @FunctionalInterface
             public interface FC {
@@ -33,17 +45,12 @@ public class AISupporter {
                 }
             }
             """;
-    private static final Class<LinkedHashMap> DEFAULT_RETURN_TYPE = LinkedHashMap.class;
 
+    private static final Class<LinkedHashMap> DEFAULT_RETURN_TYPE = LinkedHashMap.class;
     private final OpenAiService service;
     private final ObjectMapper mapper;
-    private final ConstructResolver resolver;
 
-    public AISupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver) {
-        this.service = service;
-        this.mapper = mapper;
-        this.resolver = resolver;
-    }
+    private final ConstructResolver resolver;
 
     public Map<String, Object> aiFunction(String functionName, List<Argument> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
         return aiFunction(functionName, DEFAULT_RETURN_TYPE, args, constraintList, description, model);

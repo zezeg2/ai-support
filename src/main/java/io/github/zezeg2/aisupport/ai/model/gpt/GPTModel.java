@@ -7,10 +7,5 @@ import io.github.zezeg2.aisupport.ai.model.ModelDeserializer;
 
 @JsonDeserialize(using = ModelDeserializer.class)
 public interface GPTModel extends AIModel {
-
-    /**
-     * Возвращает цену за 1 токен.
-     */
     double getPrice();
-
 }

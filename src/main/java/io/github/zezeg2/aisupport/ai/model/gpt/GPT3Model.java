@@ -11,10 +11,10 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum GPT3Model implements GPTModel {
 
-    GPT_3_5_TURBO("gpt-3.5-turbo", 0.000002),
-    GPT_3_5_TURBO_0301("gpt-3.5-turbo-0301", 0.000002),
-    TEXT_DAVINCI_003("text-davinci-003", 0.000002),
-    TEXT_DAVINCI_002("text-davinci-002", 0.000002);
+    GPT_3_5_TURBO("gpt-3.5-turbo", 0.000002d),
+    GPT_3_5_TURBO_0301("gpt-3.5-turbo-0301", 0.000002d),
+    TEXT_DAVINCI_003("text-davinci-003", 0.000002d),
+    TEXT_DAVINCI_002("text-davinci-002", 0.000002d);
 
     private final String value;
     private final double price;
