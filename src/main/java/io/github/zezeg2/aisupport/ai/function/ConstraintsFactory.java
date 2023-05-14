@@ -15,7 +15,7 @@ public class ConstraintsFactory {
         return new ConstraintsFactory();
     }
 
-    public ConstraintsFactory addArgument(String topic, String description) {
+    public ConstraintsFactory addConstraint(String topic, String description) {
         constraintList.add(new Constraint(topic, description));
         return this;
     }
