@@ -1,4 +1,4 @@
-package io.github.zezeg2.resolver;
+package io.github.zezeg2.aisupport.resolver;
 
 import java.util.List;
 import java.util.Map;

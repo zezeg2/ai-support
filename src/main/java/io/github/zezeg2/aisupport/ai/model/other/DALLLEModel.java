@@ -1,6 +1,6 @@
-package io.github.zezeg2.ai.model.other;
+package io.github.zezeg2.aisupport.ai.model.other;
 
-import io.github.zezeg2.ai.model.AIModel;
+import io.github.zezeg2.aisupport.ai.model.AIModel;
 
 public class DALLLEModel implements AIModel {
 

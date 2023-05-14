@@ -1,4 +1,4 @@
-package io.github.zezeg2.ai.function;
+package io.github.zezeg2.aisupport.ai.function;
 
 public record Argument(String field, Object value, Class<?> type) {
     public String getType() {

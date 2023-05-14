@@ -1,4 +1,4 @@
-package io.github.zezeg2.ai.model;
+package io.github.zezeg2.aisupport.ai.model;
 
 public interface AIModel {
 

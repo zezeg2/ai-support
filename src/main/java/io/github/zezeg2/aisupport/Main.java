@@ -1,14 +1,14 @@
-package io.github.zezeg2;
+package io.github.zezeg2.aisupport;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.zezeg2.ai.AISupporter;
-import io.github.zezeg2.ai.function.Argument;
-import io.github.zezeg2.ai.function.ArgumentsFactory;
-import io.github.zezeg2.ai.function.Constraint;
-import io.github.zezeg2.ai.function.ConstraintsFactory;
-import io.github.zezeg2.ai.model.gpt.GPT3Model;
-import io.github.zezeg2.resolver.JAVAConstructResolver;
+import io.github.zezeg2.aisupport.ai.AISupporter;
+import io.github.zezeg2.aisupport.ai.function.Argument;
+import io.github.zezeg2.aisupport.ai.function.ArgumentsFactory;
+import io.github.zezeg2.aisupport.ai.function.Constraint;
+import io.github.zezeg2.aisupport.ai.function.ConstraintsFactory;
+import io.github.zezeg2.aisupport.ai.model.gpt.GPT3Model;
+import io.github.zezeg2.aisupport.resolver.JAVAConstructResolver;
 import com.theokanning.openai.service.OpenAiService;
 
 import java.util.List;

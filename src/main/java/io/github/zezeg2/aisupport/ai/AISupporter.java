@@ -1,12 +1,12 @@
-package io.github.zezeg2.ai;
+package io.github.zezeg2.aisupport.ai;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.zezeg2.ai.function.Argument;
-import io.github.zezeg2.ai.function.Constraint;
-import io.github.zezeg2.ai.model.gpt.GPTModel;
-import io.github.zezeg2.common.enums.ROLE;
-import io.github.zezeg2.resolver.ConstructResolver;
+import io.github.zezeg2.aisupport.ai.function.Argument;
+import io.github.zezeg2.aisupport.ai.function.Constraint;
+import io.github.zezeg2.aisupport.ai.model.gpt.GPTModel;
+import io.github.zezeg2.aisupport.common.enums.ROLE;
+import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;

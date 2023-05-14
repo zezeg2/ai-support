@@ -1,12 +1,12 @@
-package io.github.zezeg2.common.enums;
+package io.github.zezeg2.aisupport.common.enums;
 
-public enum PLANG {
-    JAVA("JAVA"),
-    TYPESCRIPT("TYPESCRIPT");
+public enum ROLE {
+    SYSTEM("system"),
+    USER("user");
 
     private String value;
 
-    PLANG(String value) {
+    ROLE(String value) {
         this.value = value;
     }
 
