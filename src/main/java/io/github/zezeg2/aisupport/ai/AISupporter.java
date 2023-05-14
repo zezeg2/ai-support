@@ -34,13 +34,12 @@ public class AISupporter {
     private static final String FUNCTION_TEMPLATE = """
             @FunctionalInterface
             public interface FC {
-                %s %s(%s);
+                String %s(%s);
             }
             public class Main {
                 public static void main(String[] args) {
                     FC fc = (%s) -> {
-                        //TODO: implement or just return result
-                        return //TODO: fill your result here. your return will be converted by ObjectMapper.
+                        return [RESULT] //TODO: JsonString of %s
                     };
                 }
             }
@@ -71,7 +70,7 @@ public class AISupporter {
                 .map(argument -> argument.getType() + " " + argument.getField())
                 .collect(Collectors.joining(", "));
 
-        return FUNCTION_TEMPLATE.formatted(returnType.getSimpleName(), functionName, fieldTypesString, fieldsString);
+        return FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, returnType.getSimpleName());
     }
 
     private String resolveRefTypes(List<Argument> args, Class<?> returnType) {
@@ -116,10 +115,6 @@ public class AISupporter {
 
     private <T> T parseResponse(ChatCompletionResult response, Class<T> returnType) throws JsonProcessingException {
         String content = response.getChoices().get(0).getMessage().getContent();
-        if (DEFAULT_RETURN_TYPE.getSimpleName().equals(returnType.getSimpleName())) {
-            return mapper.readValue(content, returnType);
-        } else {
-            return mapper.convertValue(content, returnType);
-        }
+        return mapper.readValue(content, returnType);
     }
 }
