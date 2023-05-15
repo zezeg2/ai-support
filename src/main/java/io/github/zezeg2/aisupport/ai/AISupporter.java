@@ -13,6 +13,7 @@ import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.resolver.JAVAConstructResolver;
 
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,12 @@ import java.util.stream.Collectors;
 public class AISupporter {
     public AISupporter(String apiKey) {
         this.service = new OpenAiService(apiKey);
+        this.mapper = new ObjectMapper();
+        this.resolver = new JAVAConstructResolver();
+    }
+
+    public AISupporter(String apiKey, int timeout) {
+        this.service = new OpenAiService(apiKey, Duration.ofSeconds(timeout));
         this.mapper = new ObjectMapper();
         this.resolver = new JAVAConstructResolver();
     }
@@ -39,7 +46,7 @@ public class AISupporter {
             public class Main {
                 public static void main(String[] args) {
                     FC fc = (%s) -> {
-                        return [RESULT] //TODO: [RESULT] is JsonString of %s.class
+                        return [RESULT] //TODO: [RESULT] is JsonString of `%s.class`
                     };
                 }
             }
