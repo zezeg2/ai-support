@@ -39,7 +39,7 @@ public class AISupporter {
             public class Main {
                 public static void main(String[] args) {
                     FC fc = (%s) -> {
-                        return [RESULT] //TODO: JsonString of %s.class
+                        return [RESULT] //TODO: [RESULT] is JsonString of %s.class
                     };
                 }
             }
