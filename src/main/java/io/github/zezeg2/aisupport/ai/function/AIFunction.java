@@ -7,11 +7,14 @@ import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
+import io.github.zezeg2.aisupport.common.enums.BaseSupportType;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -41,8 +44,14 @@ public class AIFunction<T> {
             }
             """;
 
-    public T execute(List<Argument> args, AIModel model) throws JsonProcessingException {
+    public T execute(List<Argument> args, AIModel model) throws JsonProcessingException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         List<ChatMessage> messages = createMessages(args);
+        if (Arrays.stream(returnType.getInterfaces()).toList().contains(BaseSupportType.class)){
+            BaseSupportType baseSupportType = (BaseSupportType) returnType.getConstructor().newInstance();
+            messages.get(0).setContent(messages.get(0).getContent() +
+                    "- result example : " +
+                    baseSupportType.getExample());
+        }
         ChatCompletionResult response = createChatCompletion(model, messages);
 
         return parseResponse(response);
@@ -62,7 +71,7 @@ public class AIFunction<T> {
                 + "// description: This function " + description + "\n"
                 + functionTemplate + "\n"
                 + "```\n"
-                + "- Only respond with your `return` value. Do not include any other explanatory text in your response."
+                + "- Only respond with your `return` value. Do not include any other explanatory text in your response.\n"
                 + constraints;
     }
 
@@ -96,7 +105,7 @@ public class AIFunction<T> {
     private String createConstraints(List<Constraint> constraintList) {
         return constraintList.stream()
                 .map(constraint -> !constraint.topic().isBlank() ? constraint.topic() + ": " + constraint.description() : constraint.description())
-                .collect(Collectors.joining("\n- ", "\n- ", "\n"));
+                .collect(Collectors.joining("\n- ", "- ", "\n"));
     }
 
     private <T> String createFunctionTemplate(Class<T> returnType, String functionName, List<Argument> args) {
