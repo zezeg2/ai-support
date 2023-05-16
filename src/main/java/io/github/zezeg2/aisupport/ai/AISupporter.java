@@ -2,6 +2,7 @@ package io.github.zezeg2.aisupport.ai;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.zezeg2.aisupport.ai.function.AIFunction;
 import io.github.zezeg2.aisupport.ai.function.Argument;
 import io.github.zezeg2.aisupport.ai.function.Constraint;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPTModel;
@@ -62,16 +63,26 @@ public class AISupporter {
         return aiFunction(functionName, DEFAULT_RETURN_TYPE, args, constraintList, description, model);
     }
 
+    @Deprecated
     public <T> T aiFunction(String functionName, Class<T> returnType, List<Argument> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
-        String function = createFunction(returnType, functionName, args);
+        String functionTemplate = createFunctionTemplate(returnType, functionName, args);
         String refTypes = resolveRefTypes(args, returnType);
         String constraints = createConstraints(constraintList);
-        List<ChatMessage> messages = createChatMessages(description, refTypes, functionName, function, args, constraints);
+        List<ChatMessage> messages = createChatMessages(description, refTypes, functionName, functionTemplate, args, constraints);
         ChatCompletionResult response = executeChatCompletion(model.getValue(), messages);
         return parseResponse(response, returnType);
     }
 
-    private <T> String createFunction(Class<T> returnType, String functionName, List<Argument> args) {
+    public AIFunction createFunction(String functionName, String description, List<Constraint> constraintList){
+        return new AIFunction(functionName, description, constraintList, service, mapper, LinkedHashMap.class, resolver);
+    }
+    public <T> AIFunction<T> createFunction(String functionName,  String description, Class<T> returnType, List<Constraint> constraintList){
+        return new AIFunction<T>(functionName, description, constraintList, service, mapper, returnType, resolver);
+    }
+
+
+
+    private <T> String createFunctionTemplate(Class<T> returnType, String functionName, List<Argument> args) {
         String fieldsString = args.stream().map(Argument::getField).collect(Collectors.joining(", "));
         String fieldTypesString = args.stream()
                 .map(argument -> argument.getType() + " " + argument.getField())
@@ -79,12 +90,12 @@ public class AISupporter {
 
         return FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, returnType.getSimpleName());
     }
-
     private String resolveRefTypes(List<Argument> args, Class<?> returnType) {
         Set<Class<?>> classList = args.stream().map(Argument::type).collect(Collectors.toSet());
         if (returnType != null) classList.add(returnType);
         return resolver.resolve(classList);
     }
+
 
     private String createConstraints(List<Constraint> constraintList) {
         return constraintList.stream()
@@ -99,17 +110,20 @@ public class AISupporter {
         }).collect(Collectors.joining("\n"));
 
         return List.of(
-                new ChatMessage(ROLE.SYSTEM.getValue(), "You are now the following Java Lambda function: \n"
-                        + "```java \n"
-                        + "// description: " + description + "\n"
-                        + refTypes + "\n"
-                        + functionName + "\n"
-                        + function + "\n"
-                        + "```\n"
-                        + "- Only respond with your `return` value. Do not include any other explanatory text in your response."
-                        + constraints
-                ),
+                createTemplate(description, refTypes, function, constraints),
                 new ChatMessage(ROLE.USER.getValue(), valuesString)
+        );
+    }
+
+    private static ChatMessage createTemplate(String description, String refTypes, String function, String constraints) {
+        return new ChatMessage(ROLE.SYSTEM.getValue(), "You are now the following Java Lambda function: \n"
+                + "```java \n"
+                + refTypes + "\n"
+                + "// description: This function" + description + "\n"
+                + function + "\n"
+                + "```\n"
+                + "- Only respond with your `return` value. Do not include any other explanatory text in your response."
+                + constraints
         );
     }
 
@@ -122,6 +136,7 @@ public class AISupporter {
 
     private <T> T parseResponse(ChatCompletionResult response, Class<T> returnType) throws JsonProcessingException {
         String content = response.getChoices().get(0).getMessage().getContent();
+        System.out.println(content);
         return mapper.readValue(content, returnType);
     }
 }
