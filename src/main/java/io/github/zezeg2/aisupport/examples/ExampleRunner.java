@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.example;
+package io.github.zezeg2.aisupport.examples;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.example;
+package io.github.zezeg2.aisupport.examples;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

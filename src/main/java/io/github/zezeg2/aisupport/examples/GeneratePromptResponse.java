@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.example;
+package io.github.zezeg2.aisupport.examples;
 
 import io.github.zezeg2.aisupport.common.enums.BaseSupportType;
 import lombok.Data;
