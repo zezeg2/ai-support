@@ -1,6 +1,5 @@
 package io.github.zezeg2.aisupport.examples;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.AISupporter;
@@ -10,7 +9,6 @@ import io.github.zezeg2.aisupport.ai.function.ConstraintsFactory;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPT3Model;
 import io.github.zezeg2.aisupport.resolver.JAVAConstructResolver;
 
-import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.List;
 
