@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 @Data
 @RequiredArgsConstructor
-@Slf4j
+//@Slf4j
 public class AIFunction<T> {
 
     private final String functionName;
@@ -143,7 +143,8 @@ public class AIFunction<T> {
 
     private T parseResponse(ChatCompletionResult response) throws JsonProcessingException {
         String content = response.getChoices().get(0).getMessage().getContent();
-        log.info(content);
+//        log.info(content);
+        System.out.println(content);
         return mapper.readValue(content, returnType);
     }
 
