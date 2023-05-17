@@ -20,6 +20,11 @@ public class ArgumentsFactory {
         return this;
     }
 
+    public ArgumentsFactory addArgument(String field, Object value, Class<?> type, String desc) {
+        arguments.add(new Argument(field, value, type, desc));
+        return this;
+    }
+
     public List<Argument> build() {
         return new ArrayList<>(arguments);
     }

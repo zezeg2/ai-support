@@ -15,7 +15,7 @@ import java.time.Duration;
 import java.util.List;
 
 public class ExampleRunner {
-    public static void main(String[] args) throws JsonProcessingException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    public static void main(String[] args) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         Question question = new Question();
         question.setType("subjective");
@@ -39,7 +39,7 @@ public class ExampleRunner {
                 """));
 
         AISupporter aiSupporter = new AISupporter(
-                new OpenAiService("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", Duration.ofSeconds(60)),
+                new OpenAiService("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", Duration.ofSeconds(60)),
                 new ObjectMapper(),
                 new JAVAConstructResolver());
 
@@ -52,7 +52,7 @@ public class ExampleRunner {
                         .addConstraint("", "think as a mathematical item review specialist")
                         .addConstraint("language", "english")
                         .build()
-                );
+        );
 
         AnalysisPromptResponse res1 = analysisFunction.execute(ArgumentsFactory
                 .builder()
@@ -76,7 +76,7 @@ public class ExampleRunner {
 
         GeneratePromptResponse res2 = generateQuestionFunction.execute(ArgumentsFactory
                 .builder()
-                .addArgument("requiredKnowledgeList", question, AnalysisPromptResponse.class)
+                .addArgument("requiredKnowledgeList", res1.getRequiredKnowledgeList(), RequiredKnowledge.class)
                 .build(), GPT3Model.GPT_3_5_TURBO
         );
     }

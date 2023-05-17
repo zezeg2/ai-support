@@ -1,6 +1,6 @@
 package io.github.zezeg2.aisupport.examples;
 
-import io.github.zezeg2.aisupport.common.enums.BaseSupportType;
+import io.github.zezeg2.aisupport.common.BaseSupportType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
