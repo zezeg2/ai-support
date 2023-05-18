@@ -2,16 +2,17 @@ package io.github.zezeg2.aisupport.ai;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.zezeg2.aisupport.ai.function.AIFunction;
-import io.github.zezeg2.aisupport.ai.function.Argument;
-import io.github.zezeg2.aisupport.ai.function.Constraint;
-import io.github.zezeg2.aisupport.ai.model.gpt.GPTModel;
-import io.github.zezeg2.aisupport.common.enums.ROLE;
-import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
+import io.github.zezeg2.aisupport.ai.function.AIFunction;
+import io.github.zezeg2.aisupport.ai.function.argument.Argument;
+import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
+import io.github.zezeg2.aisupport.ai.model.gpt.GPTModel;
+import io.github.zezeg2.aisupport.common.enums.ROLE;
+import io.github.zezeg2.aisupport.common.enums.WRAPPING;
+import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.resolver.JAVAConstructResolver;
 
 import java.time.Duration;
@@ -39,6 +40,7 @@ public class AISupporter {
         this.mapper = mapper;
         this.resolver = resolver;
     }
+
     private static final String FUNCTION_TEMPLATE = """
             @FunctionalInterface
             public interface FC {
@@ -59,12 +61,12 @@ public class AISupporter {
 
     private final ConstructResolver resolver;
 
-    public Map<String, Object> aiFunction(String functionName, List<Argument> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
+    public Map<String, Object> aiFunction(String functionName, List<Argument<?>> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
         return aiFunction(functionName, DEFAULT_RETURN_TYPE, args, constraintList, description, model);
     }
 
-    @Deprecated
-    public <T> T aiFunction(String functionName, Class<T> returnType, List<Argument> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
+        @Deprecated
+    public <T> T aiFunction(String functionName, Class<T> returnType, List<Argument<?>> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
         String functionTemplate = createFunctionTemplate(returnType, functionName, args);
         String refTypes = resolveRefTypes(args, returnType);
         String constraints = createConstraints(constraintList);
@@ -72,26 +74,21 @@ public class AISupporter {
         ChatCompletionResult response = executeChatCompletion(model.getValue(), messages);
         return parseResponse(response, returnType);
     }
-
-    public AIFunction createFunction(String functionName, String description, List<Constraint> constraintList){
-        return new AIFunction(functionName, description, constraintList, service, mapper, LinkedHashMap.class, resolver);
-    }
-    public <T> AIFunction<T> createFunction(String functionName,  String description, Class<T> returnType, List<Constraint> constraintList){
-        return new AIFunction<T>(functionName, description, constraintList, service, mapper, returnType, resolver);
+    public <T> AIFunction<T> createFunction(String functionName, String description, WRAPPING wrapping, Class<T> returnType, List<Constraint> constraintList) {
+        return new AIFunction<T>(functionName, description, constraintList, wrapping, returnType, service, mapper, resolver);
     }
 
-
-
-    private <T> String createFunctionTemplate(Class<T> returnType, String functionName, List<Argument> args) {
-        String fieldsString = args.stream().map(Argument::getField).collect(Collectors.joining(", "));
+    private <T> String createFunctionTemplate(Class<T> returnType, String functionName, List<Argument<?>> args) {
+        String fieldsString = args.stream().map(Argument::getFieldName).collect(Collectors.joining(", "));
         String fieldTypesString = args.stream()
-                .map(argument -> argument.getType() + " " + argument.getField())
+                .map(argument -> argument.getTypeName() + " " + argument.getFieldName())
                 .collect(Collectors.joining(", "));
 
         return FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, returnType.getSimpleName());
     }
-    private String resolveRefTypes(List<Argument> args, Class<?> returnType) {
-        Set<Class<?>> classList = args.stream().map(Argument::type).collect(Collectors.toSet());
+
+    private String resolveRefTypes(List<Argument<?>> args, Class<?> returnType) {
+        Set<Class<?>> classList = args.stream().map(Argument::getType).collect(Collectors.toSet());
         if (returnType != null) classList.add(returnType);
         return resolver.resolve(classList);
     }
@@ -103,10 +100,10 @@ public class AISupporter {
                 .collect(Collectors.joining("\n- ", "\n- ", "\n"));
     }
 
-    private List<ChatMessage> createChatMessages(String description, String refTypes, String functionName, String function, List<Argument> args, String constraints) {
+    private List<ChatMessage> createChatMessages(String description, String refTypes, String functionName, String function, List<Argument<?>> args, String constraints) {
         String valuesString = args.stream().map(argument -> {
-            String value = argument.getType().equals("String") ? "\"" + argument.getValue() + "\"" : argument.getValue();
-            return argument.getField() + ": " + value;
+            String value = argument.getTypeName().equals("String") ? "\"" + argument.getValueToString() + "\"" : argument.getValueToString();
+            return argument.getFieldName() + ": " + value;
         }).collect(Collectors.joining("\n"));
 
         return List.of(

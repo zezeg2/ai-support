@@ -41,4 +41,5 @@ bin/
 ### Mac OS ###
 .DS_Store
 
+
 /src/main/java/io/github/zezeg2/aisupport/examples/*

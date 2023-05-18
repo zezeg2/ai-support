@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.common.enums;
+package io.github.zezeg2.aisupport.common;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

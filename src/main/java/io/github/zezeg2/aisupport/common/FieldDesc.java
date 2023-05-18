@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.common.enums;
+package io.github.zezeg2.aisupport.common;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
