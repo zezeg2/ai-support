@@ -9,15 +9,15 @@ public interface ConstructResolver {
 
     String toString(Map<String, Map<String, List<String>>> classMap);
 
-    default String resolve(Class clazz) {
+    default String resolve(Class<?> clazz) {
         return toString(generateClassMap(Collections.singleton(clazz), null));
     }
 
-    default String resolve(Set<Class> classSet) {
+    default String resolve(Set<Class<?>> classSet) {
         return toString(generateClassMap(classSet, null));
     }
 
-    default Map<String, Map<String, List<String>>> generateClassMap(Set<Class> classSet, Map<String, Map<String, List<String>>> classMap) {
+    default Map<String, Map<String, List<String>>> generateClassMap(Set<Class<?>> classSet, Map<String, Map<String, List<String>>> classMap) {
         if (classMap == null) classMap = new HashMap<>();
 
         for (Class<?> clazz : classSet) {

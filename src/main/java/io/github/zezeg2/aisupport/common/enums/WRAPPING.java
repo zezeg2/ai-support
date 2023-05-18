@@ -7,7 +7,7 @@ public enum WRAPPING {
     NONE(Object.class),
     LIST(Collection.class),
     MAP(Map.class);
-    private Class<?> value;
+    private final Class<?> value;
 
     WRAPPING(Class<?> value) {
         this.value = value;

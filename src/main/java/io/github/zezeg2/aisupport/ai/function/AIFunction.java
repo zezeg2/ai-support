@@ -168,7 +168,7 @@ public class AIFunction<T> {
     }
 
     protected String resolveRefTypes(List<Argument<?>> args, Class<?> returnType) {
-        Set<Class> classList = args.stream().map(Argument::getType).collect(Collectors.toSet());
+        Set<Class<?>> classList = args.stream().map(Argument::getType).collect(Collectors.toSet());
         if (returnType != null) classList.add(returnType);
         return resolver.resolve(classList);
     }
