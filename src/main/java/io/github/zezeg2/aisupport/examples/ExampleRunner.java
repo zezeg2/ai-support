@@ -7,6 +7,7 @@ import io.github.zezeg2.aisupport.ai.function.AIFunction;
 import io.github.zezeg2.aisupport.ai.function.ArgumentsFactory;
 import io.github.zezeg2.aisupport.ai.function.ConstraintsFactory;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPT3Model;
+import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import io.github.zezeg2.aisupport.resolver.JAVAConstructResolver;
 
 import java.time.Duration;
@@ -41,41 +42,80 @@ public class ExampleRunner {
                 new ObjectMapper(),
                 new JAVAConstructResolver());
 
-        AIFunction<AnalysisPromptResponse> analysisFunction = aiSupporter.createFunction(
-                "analyzeMathQuestion",
-                "analyze the concrete mathematical knowledge required to solve given mathematics question and return them",
-                AnalysisPromptResponse.class,
-                ConstraintsFactory
-                        .builder()
-                        .addConstraint("", "think as a mathematical item review specialist")
-                        .addConstraint("language", "english")
+//        AIFunction<AnalysisPromptResponse> analysisFunction = aiSupporter.createFunction(
+//                "analyzeMathQuestion",
+//                "analyze the concrete mathematical knowledge required to solve given mathematics question and return them",
+//                AnalysisPromptResponse.class,
+//                ConstraintsFactory
+//                        .builder()
+//                        .addConstraint("", "think as a mathematical item review specialist")
+//                        .addConstraint("language", "english")
+//                        .build()
+//        );
+//
+//        AnalysisPromptResponse res1 = analysisFunction.execute(ArgumentsFactory
+//                .builder()
+//                .addArgument("question", question, Question.class)
+//                .build(), GPT3Model.GPT_3_5_TURBO
+//        );
+//
+//        AIFunction<GeneratePromptResponse> generateQuestionFunction = aiSupporter.createFunction(
+//                "generateQuestions",
+//                "generate new mathematics question base on given requiredKnowledgeList",
+//                GeneratePromptResponse.class,
+//                ConstraintsFactory
+//                        .builder()
+//                        .addConstraint("", "think as a Professional of Mathematics Education")
+//                        .addConstraint("language", "english")
+//                        .addConstraint("", "express the generated question contents(question, solving, choices and answer) entirely in a laTex expression")
+//                        .addConstraint("difficulty level", "advanced")
+//                        .addConstraint("number of question", "1")
+//                        .build()
+//        );
+//
+//        GeneratePromptResponse res2 = generateQuestionFunction.execute(ArgumentsFactory
+//                .builder()
+//                .addArgument("requiredKnowledgeList", res1.getRequiredKnowledgeList(), RequiredKnowledge.class)
+//                .build(), GPT3Model.GPT_3_5_TURBO
+//        );
+
+        String prevFix = "Given two points on a graph $(x_1, y_1)$ and $(x_2, y_2)$, we can find the slope of the line passing through them using the formula $m = \\\frac{y_2-y_1}{x_2-x_1}$. Then, using the point-slope form of a line, we can express the equation of the line as $y-y_1 = m(x-x_1)$. Finally, we can simplify this expression to find the slope-intercept form of the line, which is $y = mx+b$, where $m$ is the slope we just found and $b=y_1-mx_1$ is the y-intercept of the line.";
+        AIFunction<String> fixLaTexExpressionFunction = aiSupporter.createFunction("fixLaTexExpression",
+                "Correct the given LaTex expression if it is not valid",
+                WRAPPING.NONE,
+                String.class,
+                ConstraintsFactory.builder()
+                        .addConstraint("", "Optimize for Java String")
+                        .addConstraint("", "Please consider escape characters\n")
+                        .addConstraint("", "\\ -> \\\\")
                         .build()
         );
-
-        AnalysisPromptResponse res1 = analysisFunction.execute(ArgumentsFactory
-                .builder()
-                .addArgument("question", question, Question.class)
+        String fixed = fixLaTexExpressionFunction.execute(ArgumentsFactory.builder()
+                .addArgument(WRAPPING.NONE, String.class, "prevFix", prevFix, "LaTex expression before fix")
                 .build(), GPT3Model.GPT_3_5_TURBO
         );
 
-        AIFunction<GeneratePromptResponse> generateQuestionFunction = aiSupporter.createFunction(
-                "generateQuestions",
-                "generate new mathematics question base on given requiredKnowledgeList",
-                GeneratePromptResponse.class,
-                ConstraintsFactory
-                        .builder()
-                        .addConstraint("", "think as a Professional of Mathematics Education")
-                        .addConstraint("language", "english")
-                        .addConstraint("", "express the generated question contents(question, solving, choices and answer) entirely in a laTex expression")
-                        .addConstraint("difficulty level", "advanced")
-                        .addConstraint("number of question", "1")
+        AIFunction<Contents> rewriteFunction = aiSupporter.createFunction("rewriteFunction",
+                "Rearrange given paragraph into an array of lines following constraint",
+                WRAPPING.NONE,
+                Contents.class,
+                ConstraintsFactory.builder()
+                        .addConstraint("", "Each line within 10 words")
+                        .addConstraint("", "Keep the LaTex expression(enclosed with $)")
+                        .addConstraint("", "a LaTex expression is considered a word")
                         .build()
         );
 
-        GeneratePromptResponse res2 = generateQuestionFunction.execute(ArgumentsFactory
-                .builder()
-                .addArgument("requiredKnowledgeList", res1.getRequiredKnowledgeList(), RequiredKnowledge.class)
-                .build(), GPT3Model.GPT_3_5_TURBO
-        );
+        Contents rewrote = rewriteFunction.execute(ArgumentsFactory.builder()
+                .addArgument(WRAPPING.NONE, String.class, "paragraph",
+                        """
+                        %s
+                        """.formatted(fixed), "input paragraph")
+                .build(), GPT3Model.GPT_3_5_TURBO);
+
+
+        System.out.println("Finish");
+
+
     }
 }

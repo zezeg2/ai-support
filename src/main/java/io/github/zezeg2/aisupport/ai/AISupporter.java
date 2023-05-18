@@ -11,14 +11,12 @@ import io.github.zezeg2.aisupport.ai.function.Argument;
 import io.github.zezeg2.aisupport.ai.function.Constraint;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPTModel;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
+import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.resolver.JAVAConstructResolver;
 
 import java.time.Duration;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class AISupporter {
@@ -73,15 +71,9 @@ public class AISupporter {
         ChatCompletionResult response = executeChatCompletion(model.getValue(), messages);
         return parseResponse(response, returnType);
     }
-
-    public AIFunction createFunction(String functionName, String description, List<Constraint> constraintList) {
-        return new AIFunction(functionName, description, constraintList, service, mapper, LinkedHashMap.class, resolver);
+    public <T> AIFunction<T> createFunction(String functionName, String description, WRAPPING wrapping, Class<T> returnType, List<Constraint> constraintList) {
+        return new AIFunction<T>(functionName, description, constraintList, wrapping, returnType, service, mapper, resolver);
     }
-
-    public <T> AIFunction<T> createFunction(String functionName, String description, Class<T> returnType, List<Constraint> constraintList) {
-        return new AIFunction<T>(functionName, description, constraintList, service, mapper, returnType, resolver);
-    }
-
 
     private <T> String createFunctionTemplate(Class<T> returnType, String functionName, List<Argument> args) {
         String fieldsString = args.stream().map(Argument::getFieldName).collect(Collectors.joining(", "));
