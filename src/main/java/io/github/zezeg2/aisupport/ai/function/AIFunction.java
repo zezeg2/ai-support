@@ -95,7 +95,7 @@ public class AIFunction<T> {
         }
     }
 
-    protected boolean isBaseSupportType(Class<?> type) throws Exception {
+    protected boolean isBaseSupportType(Class<?> type) {
         return Arrays.stream(type.getInterfaces()).toList().contains(BaseSupportType.class);
     }
 
