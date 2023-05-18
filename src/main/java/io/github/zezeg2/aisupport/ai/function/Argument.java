@@ -1,26 +1,30 @@
 package io.github.zezeg2.aisupport.ai.function;
 
+import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import lombok.Data;
 
 @Data
-public final class Argument {
+public class Argument {
+    private final WRAPPING wrapping;
+    private final Class<?> type;
     private final String fieldName;
     private final Object value;
-    private final Class<?> type;
     private final String desc;
 
-    public Argument(String fieldName, Object value, Class<?> type, String desc) {
+    public Argument(WRAPPING wrapping, Class<?> type, String fieldName, Object value) {
+        this.wrapping = wrapping;
+        this.type = type;
         this.fieldName = fieldName;
         this.value = value;
-        this.type = type;
-        this.desc = desc;
+        this.desc = null;
     }
 
-    public Argument(String fieldName, Object value, Class<?> type) {
+    public Argument(WRAPPING wrapping, Class<?> type, String fieldName, Object value, String desc) {
+        this.wrapping = wrapping;
+        this.type = type;
         this.fieldName = fieldName;
         this.value = value;
-        this.type = type;
-        this.desc = null;
+        this.desc = desc;
     }
 
     public String getTypeName() {

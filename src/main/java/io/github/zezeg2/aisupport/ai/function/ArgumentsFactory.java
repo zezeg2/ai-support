@@ -1,5 +1,7 @@
 package io.github.zezeg2.aisupport.ai.function;
 
+import io.github.zezeg2.aisupport.common.enums.WRAPPING;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,13 +17,13 @@ public class ArgumentsFactory {
         return new ArgumentsFactory();
     }
 
-    public ArgumentsFactory addArgument(String field, Object value, Class<?> type) {
-        arguments.add(new Argument(field, value, type));
+    public ArgumentsFactory addArgument(WRAPPING wrapping,  Class<?> type, String field, Object value) {
+        arguments.add(new Argument(wrapping, type, field, value));
         return this;
     }
 
-    public ArgumentsFactory addArgument(String field, Object value, Class<?> type, String desc) {
-        arguments.add(new Argument(field, value, type, desc));
+    public ArgumentsFactory addArgument(WRAPPING wrapping,  Class<?> type, String field, Object value, String desc) {
+        arguments.add(new Argument(wrapping, type, field, value, desc));
         return this;
     }
 

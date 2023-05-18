@@ -3,7 +3,7 @@ package io.github.zezeg2.aisupport.ai.function;
 import lombok.Data;
 
 @Data
-public final class Constraint {
+public class Constraint {
     private final String topic;
     private final String description;
 
