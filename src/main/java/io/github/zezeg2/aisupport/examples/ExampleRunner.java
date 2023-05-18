@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.AISupporter;
 import io.github.zezeg2.aisupport.ai.function.AIFunction;
-import io.github.zezeg2.aisupport.ai.function.ArgumentsFactory;
-import io.github.zezeg2.aisupport.ai.function.ConstraintsFactory;
+import io.github.zezeg2.aisupport.ai.function.argument.ArgumentsFactory;
+import io.github.zezeg2.aisupport.ai.function.constraint.ConstraintsFactory;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPT3Model;
 import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import io.github.zezeg2.aisupport.resolver.JAVAConstructResolver;
@@ -42,23 +42,24 @@ public class ExampleRunner {
                 new ObjectMapper(),
                 new JAVAConstructResolver());
 
-//        AIFunction<AnalysisPromptResponse> analysisFunction = aiSupporter.createFunction(
-//                "analyzeMathQuestion",
-//                "analyze the concrete mathematical knowledge required to solve given mathematics question and return them",
-//                AnalysisPromptResponse.class,
-//                ConstraintsFactory
-//                        .builder()
-//                        .addConstraint("", "think as a mathematical item review specialist")
-//                        .addConstraint("language", "english")
-//                        .build()
-//        );
-//
-//        AnalysisPromptResponse res1 = analysisFunction.execute(ArgumentsFactory
-//                .builder()
-//                .addArgument("question", question, Question.class)
-//                .build(), GPT3Model.GPT_3_5_TURBO
-//        );
-//
+        AIFunction<AnalysisPromptResponse> analysisFunction = aiSupporter.createFunction(
+                "analyzeMathQuestion",
+                "analyze the concrete mathematical knowledge required to solve given mathematics question and return them",
+                WRAPPING.NONE,
+                AnalysisPromptResponse.class,
+                ConstraintsFactory
+                        .builder()
+                        .addConstraint("", "think as a mathematical item review specialist")
+                        .addConstraint("language", "english")
+                        .build()
+        );
+
+        AnalysisPromptResponse res1 = analysisFunction.execute(ArgumentsFactory
+                .builder()
+                .addArgument(WRAPPING.NONE, Question.class, "question", question)
+                .build(), GPT3Model.GPT_3_5_TURBO
+        );
+
 //        AIFunction<GeneratePromptResponse> generateQuestionFunction = aiSupporter.createFunction(
 //                "generateQuestions",
 //                "generate new mathematics question base on given requiredKnowledgeList",
@@ -86,7 +87,7 @@ public class ExampleRunner {
                 String.class,
                 ConstraintsFactory.builder()
                         .addConstraint("", "Optimize for Java String")
-                        .addConstraint("", "Please consider escape characters\n")
+                        .addConstraint("", "Please consider escape characters")
                         .addConstraint("", "\\ -> \\\\")
                         .build()
         );
@@ -109,8 +110,8 @@ public class ExampleRunner {
         Contents rewrote = rewriteFunction.execute(ArgumentsFactory.builder()
                 .addArgument(WRAPPING.NONE, String.class, "paragraph",
                         """
-                        %s
-                        """.formatted(fixed), "input paragraph")
+                                %s
+                                """.formatted(fixed), "input paragraph")
                 .build(), GPT3Model.GPT_3_5_TURBO);
 
 

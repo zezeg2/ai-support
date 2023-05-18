@@ -6,6 +6,8 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
+import io.github.zezeg2.aisupport.ai.function.argument.Argument;
+import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
@@ -45,17 +47,18 @@ public class AIFunction<T> {
             }
             """;
 
-    public T execute(List<Argument> args, AIModel model) throws Exception {
+    public T execute(List<Argument<?>> args, AIModel model) throws Exception {
         List<ChatMessage> messages = createMessages(args);
         ChatCompletionResult response = createChatCompletion(model, messages);
         return parseResponse(response);
     }
 
-    protected String buildInputFormat(List<Argument> args) throws Exception {
+    protected String buildInputFormat(List<Argument<?>> args) throws Exception {
         Map<String, Object> inputDescMap = new LinkedHashMap<>();
-        for (Argument argument : args) {
+        for (Argument<?> argument : args) {
             updateInputDescMap(inputDescMap, argument);
         }
+
         return convertMapToJson(inputDescMap);
     }
 
@@ -66,7 +69,7 @@ public class AIFunction<T> {
     }
 
 
-    protected void updateInputDescMap(Map<String, Object> inputDescMap, Argument argument) throws Exception {
+    protected <A> void updateInputDescMap(Map<String, Object> inputDescMap, Argument<A> argument) throws Exception {
         Class<?> argWrapping = argument.getWrapping().getValue();
         Class<?> type = argument.getType();
         Object value = argument.getValue();
@@ -74,7 +77,7 @@ public class AIFunction<T> {
         Map<String, Object> descMap = generateDescMap(argument, type);
         if (argWrapping.equals(WRAPPING.NONE.getValue())) {
             inputDescMap.put(argument.getFieldName(), descMap);
-        } else if (argWrapping.equals(WRAPPING.COLLECTION.getValue())) {
+        } else if (argWrapping.equals(WRAPPING.LIST.getValue())) {
             inputDescMap.put(argument.getFieldName(), List.of(descMap.entrySet().stream().findFirst().get().getValue()));
         } else if (argWrapping.equals(WRAPPING.MAP.getValue())) {
             inputDescMap.put(argument.getFieldName(), ((Map<String, Object>) value).keySet().stream().map(k -> Map.of(k, descMap)));
@@ -83,7 +86,7 @@ public class AIFunction<T> {
         }
     }
 
-    protected Map<String, Object> generateDescMap(Argument argument, Class<?> type) throws Exception {
+    protected <A> Map<String, Object> generateDescMap(Argument<A> argument, Class<?> type) throws Exception {
         if (isBaseSupportType(type)) {
             return Map.of(argument.getFieldName(), ((BaseSupportType) type.getConstructor().newInstance()).getExampleMap());
         } else if (argument.getDesc() == null) {
@@ -105,7 +108,7 @@ public class AIFunction<T> {
         }
     }
 
-    protected List<ChatMessage> createMessages(List<Argument> args) throws Exception {
+    protected List<ChatMessage> createMessages(List<Argument<?>> args) throws Exception {
         String executeTemplate = createTemplate(
                 resolveRefTypes(args, returnType),
                 description,
@@ -143,7 +146,7 @@ public class AIFunction<T> {
                 + "- Result Format : " + resultFormat;
     }
 
-    protected String createValuesString(List<Argument> args) {
+    protected String createValuesString(List<Argument<?>> args) {
         return args.stream().map(argument -> {
             String value = argument.getTypeName().equals("String") ? "\"" + argument.getValueToString() + "\"" : argument.getValueToString();
             return argument.getFieldName() + ": " + value;
@@ -164,8 +167,8 @@ public class AIFunction<T> {
         return mapper.readValue(content, returnType);
     }
 
-    protected String resolveRefTypes(List<Argument> args, Class<?> returnType) {
-        Set<Class<?>> classList = args.stream().map(Argument::getType).collect(Collectors.toSet());
+    protected String resolveRefTypes(List<Argument<?>> args, Class<?> returnType) {
+        Set<Class> classList = args.stream().map(Argument::getType).collect(Collectors.toSet());
         if (returnType != null) classList.add(returnType);
         return resolver.resolve(classList);
     }
@@ -176,16 +179,12 @@ public class AIFunction<T> {
                 .collect(Collectors.joining("\n- ", "- ", "\n")) : "";
     }
 
-    protected <T> String createFunctionTemplate(Class<T> returnType, String functionName, List<Argument> args) {
+    protected <T> String createFunctionTemplate(Class<T> returnType, String functionName, List<Argument<?>> args) {
         String fieldsString = args.stream().map(Argument::getFieldName).collect(Collectors.joining(", "));
         String fieldTypesString = args.stream()
                 .map(argument -> argument.getTypeName() + " " + argument.getFieldName())
                 .collect(Collectors.joining(", "));
 
-        return FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, wrapping.equals(WRAPPING.NONE)  ? returnType.getSimpleName() : wrapping + "<" + returnType.getSimpleName() + ">");
+        return FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, wrapping.equals(WRAPPING.NONE) ? returnType.getSimpleName() : wrapping + "<" + returnType.getSimpleName() + ">");
     }
 }
-
-
-
-

@@ -7,16 +7,17 @@ import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.AIFunction;
-import io.github.zezeg2.aisupport.ai.function.Argument;
-import io.github.zezeg2.aisupport.ai.function.Constraint;
-import io.github.zezeg2.aisupport.ai.model.gpt.GPTModel;
+import io.github.zezeg2.aisupport.ai.function.argument.Argument;
+import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.resolver.JAVAConstructResolver;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AISupporter {
@@ -58,19 +59,19 @@ public class AISupporter {
 
     private final ConstructResolver resolver;
 
-    public Map<String, Object> aiFunction(String functionName, List<Argument> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
-        return aiFunction(functionName, DEFAULT_RETURN_TYPE, args, constraintList, description, model);
-    }
+//    public Map<String, Object> aiFunction(String functionName, List<Argument> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
+//        return aiFunction(functionName, DEFAULT_RETURN_TYPE, args, constraintList, description, model);
+//    }
 
-    @Deprecated
-    public <T> T aiFunction(String functionName, Class<T> returnType, List<Argument> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
-        String functionTemplate = createFunctionTemplate(returnType, functionName, args);
-        String refTypes = resolveRefTypes(args, returnType);
-        String constraints = createConstraints(constraintList);
-        List<ChatMessage> messages = createChatMessages(description, refTypes, functionName, functionTemplate, args, constraints);
-        ChatCompletionResult response = executeChatCompletion(model.getValue(), messages);
-        return parseResponse(response, returnType);
-    }
+    //    @Deprecated
+//    public <T> T aiFunction(String functionName, Class<T> returnType, List<Argument> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
+//        String functionTemplate = createFunctionTemplate(returnType, functionName, args);
+//        String refTypes = resolveRefTypes(args, returnType);
+//        String constraints = createConstraints(constraintList);
+//        List<ChatMessage> messages = createChatMessages(description, refTypes, functionName, functionTemplate, args, constraints);
+//        ChatCompletionResult response = executeChatCompletion(model.getValue(), messages);
+//        return parseResponse(response, returnType);
+//    }
     public <T> AIFunction<T> createFunction(String functionName, String description, WRAPPING wrapping, Class<T> returnType, List<Constraint> constraintList) {
         return new AIFunction<T>(functionName, description, constraintList, wrapping, returnType, service, mapper, resolver);
     }
@@ -85,7 +86,7 @@ public class AISupporter {
     }
 
     private String resolveRefTypes(List<Argument> args, Class<?> returnType) {
-        Set<Class<?>> classList = args.stream().map(Argument::getType).collect(Collectors.toSet());
+        Set<Class> classList = args.stream().map(Argument::getType).collect(Collectors.toSet());
         if (returnType != null) classList.add(returnType);
         return resolver.resolve(classList);
     }

@@ -5,7 +5,7 @@ import java.util.Map;
 
 public enum WRAPPING {
     NONE(Object.class),
-    COLLECTION(Collection.class),
+    LIST(Collection.class),
     MAP(Map.class);
     private Class<?> value;
 
