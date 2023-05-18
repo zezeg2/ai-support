@@ -1,14 +1,11 @@
 package io.github.zezeg2.aisupport.ai.function.argument;
 
-import io.github.zezeg2.aisupport.common.enums.WRAPPING;
-
 public interface Argument<T> {
 
-    Class<T> getType();
+    Class<?> getType();
+    Class<T> getWrapping();
 
     String getDesc();
-
-    WRAPPING getWrapping();
 
     Object getValue();
 
@@ -17,4 +14,6 @@ public interface Argument<T> {
     String getValueToString();
 
     String getFieldName();
+
+
 }

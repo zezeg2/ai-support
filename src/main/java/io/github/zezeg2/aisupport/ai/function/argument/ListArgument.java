@@ -1,37 +1,39 @@
 package io.github.zezeg2.aisupport.ai.function.argument;
 
-import io.github.zezeg2.aisupport.common.enums.WRAPPING;
-import lombok.Data;
-
 import java.util.List;
 
-@Data
-public class ListArgument<T> implements Argument<T> {
-    private final WRAPPING wrapping;
-    private final Class<T> type;
-    private final String fieldName;
-    private final List<T> value;
-    private final String desc;
+public class ListArgument<T> extends BaseArgument<List<T>> {
 
-    public ListArgument(WRAPPING wrapping, Class<T> type, String fieldName, List<T> value) {
-        this.wrapping = wrapping;
-        this.type = type;
-        this.fieldName = fieldName;
-        this.value = value;
-        this.desc = null;
+    private final Class<T> wrappedType;
+
+    public ListArgument(Class<List<T>> type, String fieldName, List<T> value, String desc, Class<T> wrappedType) {
+        super(type, fieldName, value, desc);
+        this.wrappedType = wrappedType;
     }
 
-    public ListArgument(WRAPPING wrapping, Class<T> type, String fieldName, List<T> value, String desc) {
-        this.wrapping = wrapping;
-        this.type = type;
-        this.fieldName = fieldName;
-        this.value = value;
-        this.desc = desc;
+    @Override
+    public Class<?> getType() {
+        return wrappedType;
+    }
+
+    @Override
+    public Class<List<T>> getWrapping() {
+        return type;
+    }
+
+    @Override
+    public String getDesc() {
+        return desc;
+    }
+
+    @Override
+    public List<T> getValue() {
+        return value;
     }
 
     @Override
     public String getTypeName() {
-        return wrapping.toString() + "<" +type.getSimpleName() + ">";
+        return "List<" +type.getSimpleName() + ">";
     }
 
     @Override

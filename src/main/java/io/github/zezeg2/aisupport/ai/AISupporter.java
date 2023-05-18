@@ -6,7 +6,7 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
-import io.github.zezeg2.aisupport.ai.function.AIFunction;
+import io.github.zezeg2.aisupport.ai.function.*;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPTModel;
@@ -65,7 +65,7 @@ public class AISupporter {
         return aiFunction(functionName, DEFAULT_RETURN_TYPE, args, constraintList, description, model);
     }
 
-        @Deprecated
+    @Deprecated
     public <T> T aiFunction(String functionName, Class<T> returnType, List<Argument<?>> args, List<Constraint> constraintList, String description, GPTModel model) throws JsonProcessingException {
         String functionTemplate = createFunctionTemplate(returnType, functionName, args);
         String refTypes = resolveRefTypes(args, returnType);
@@ -74,8 +74,21 @@ public class AISupporter {
         ChatCompletionResult response = executeChatCompletion(model.getValue(), messages);
         return parseResponse(response, returnType);
     }
-    public <T> AIFunction<T> createFunction(String functionName, String description, WRAPPING wrapping, Class<T> returnType, List<Constraint> constraintList) {
-        return new AIFunction<T>(functionName, description, constraintList, wrapping, returnType, service, mapper, resolver);
+
+    public <T> AIFunctionDeprecated<T> createFunction(String functionName, String description, WRAPPING wrapping, Class<T> returnType, List<Constraint> constraintList) {
+        return new AIFunctionDeprecated<T>(functionName, description, constraintList, wrapping, returnType, service, mapper, resolver);
+    }
+
+    public <T> AIFunction<T> createSingleFunction(String functionName, String description, Class<T> returnType, List<Constraint> constraintList) {
+        return new AISingleFunction<>(functionName, description, constraintList, returnType, service, mapper, resolver);
+    }
+
+    public <T> AIFunction<List<T>> createListFunction(String functionName, String description, Class<T> returnType, List<Constraint> constraintList) {
+        return new AIListFunction<>(functionName, description, constraintList, (Class<List<T>>)(Class<?>)List.class, service, mapper, resolver, returnType);
+    }
+
+    public <T> AIFunction<Map<String, T>> createMapFunction(String functionName, String description, Class<T> returnType, List<Constraint> constraintList) {
+        return new AIMapFunction<>(functionName, description, constraintList, (Class<Map<String ,T>>)(Class<?>)Map.class, service, mapper, resolver, returnType);
     }
 
     private <T> String createFunctionTemplate(Class<T> returnType, String functionName, List<Argument<?>> args) {

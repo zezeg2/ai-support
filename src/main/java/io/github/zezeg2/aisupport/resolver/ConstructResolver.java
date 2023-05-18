@@ -21,6 +21,7 @@ public interface ConstructResolver {
         if (classMap == null) classMap = new HashMap<>();
 
         for (Class<?> clazz : classSet) {
+            if (clazz.getSuperclass() == null) continue;
             if (clazz.equals(Object.class) ||
                     clazz.equals(String.class) ||
                     clazz.getSuperclass().equals(Number.class) ||

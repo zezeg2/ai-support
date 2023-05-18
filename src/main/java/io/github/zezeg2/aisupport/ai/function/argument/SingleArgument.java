@@ -5,26 +5,28 @@ import lombok.Data;
 
 @Data
 public class SingleArgument<T> implements Argument<T> {
-    private final WRAPPING wrapping;
     private final Class<T> type;
     private final String fieldName;
-    private final Object value;
+    private final T value;
     private final String desc;
 
-    public SingleArgument(WRAPPING wrapping, Class<T> type, String fieldName, Object value) {
-        this.wrapping = wrapping;
+    public SingleArgument(Class<T> type, String fieldName, T value) {
         this.type = type;
         this.fieldName = fieldName;
         this.value = value;
         this.desc = null;
     }
 
-    public SingleArgument(WRAPPING wrapping, Class<T> type, String fieldName, Object value, String desc) {
-        this.wrapping = wrapping;
+    public SingleArgument(Class<T> type, String fieldName, T value, String desc) {
         this.type = type;
         this.fieldName = fieldName;
         this.value = value;
         this.desc = desc;
+    }
+
+    @Override
+    public Class<T> getWrapping() {
+        return null;
     }
 
     @Override

@@ -1,37 +1,38 @@
 package io.github.zezeg2.aisupport.ai.function.argument;
 
-import io.github.zezeg2.aisupport.common.enums.WRAPPING;
-import lombok.Data;
-
 import java.util.Map;
 
-@Data
-public class MapArgument<T> implements Argument<T> {
-    private final WRAPPING wrapping;
-    private final Class<T> type;
-    private final String fieldName;
-    private final Map<String, T> value;
-    private final String desc;
+public class MapArgument<T> extends BaseArgument<Map<String, T>> {
+    private final Class<T> wrappedType;
 
-    public MapArgument(WRAPPING wrapping, Class<T> type, String fieldName, Map<String, T> value) {
-        this.wrapping = wrapping;
-        this.type = type;
-        this.fieldName = fieldName;
-        this.value = value;
-        this.desc = null;
+    public MapArgument(Class<Map<String, T>> type, String fieldName, Map<String, T> value, String desc, Class<T> wrappedType) {
+        super(type, fieldName, value, desc);
+        this.wrappedType = wrappedType;
     }
 
-    public MapArgument(WRAPPING wrapping, Class<T> type, String fieldName, Map<String, T> value, String desc) {
-        this.wrapping = wrapping;
-        this.type = type;
-        this.fieldName = fieldName;
-        this.value = value;
-        this.desc = desc;
+    @Override
+    public Class<?> getType() {
+        return wrappedType;
+    }
+
+    @Override
+    public Class<Map<String, T>> getWrapping() {
+        return type;
+    }
+
+    @Override
+    public String getDesc() {
+        return desc;
+    }
+
+    @Override
+    public Map<String, T> getValue() {
+        return value;
     }
 
     @Override
     public String getTypeName() {
-        return type.getSimpleName();
+        return "Map<String, " +wrappedType.getSimpleName() + ">";
     }
 
     @Override
