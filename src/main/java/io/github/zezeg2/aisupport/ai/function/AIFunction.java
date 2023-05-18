@@ -7,6 +7,7 @@ import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
+import io.github.zezeg2.aisupport.ai.function.argument.MapArgument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
@@ -71,18 +72,16 @@ public class AIFunction<T> {
 
     protected <A> void updateInputDescMap(Map<String, Object> inputDescMap, Argument<A> argument) throws Exception {
         Class<?> argWrapping = argument.getWrapping().getValue();
-        Class<?> type = argument.getType();
-        Object value = argument.getValue();
 
-        Map<String, Object> descMap = generateDescMap(argument, type);
+        Map<String, Object> descMap = generateDescMap(argument, argument.getType());
         if (argWrapping.equals(WRAPPING.NONE.getValue())) {
             inputDescMap.put(argument.getFieldName(), descMap);
         } else if (argWrapping.equals(WRAPPING.LIST.getValue())) {
-            inputDescMap.put(argument.getFieldName(), List.of(descMap.entrySet().stream().findFirst().get().getValue()));
+            descMap.entrySet().stream().findFirst().ifPresent(entry -> inputDescMap.put(argument.getFieldName(), List.of(entry.getValue())));
         } else if (argWrapping.equals(WRAPPING.MAP.getValue())) {
-            inputDescMap.put(argument.getFieldName(), ((Map<String, Object>) value).keySet().stream().map(k -> Map.of(k, descMap)));
+            inputDescMap.put(argument.getFieldName(), ((MapArgument<A>)argument).getValue().keySet().stream().map(k -> Map.of(k, descMap)));
         } else {
-            inputDescMap.put(argument.getFieldName(), descMap.entrySet().stream().findFirst().get().getValue());
+            descMap.entrySet().stream().findFirst().ifPresent(entry -> inputDescMap.put(argument.getFieldName(), entry.getValue()));
         }
     }
 
