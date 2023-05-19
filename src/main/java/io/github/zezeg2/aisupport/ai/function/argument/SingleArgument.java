@@ -1,31 +1,29 @@
 package io.github.zezeg2.aisupport.ai.function.argument;
 
-import lombok.Data;
-
-@Data
-public class SingleArgument<T> implements Argument<T> {
-    private final Class<T> type;
-    private final String fieldName;
-    private final T value;
-    private final String desc;
-
-    public SingleArgument(Class<T> type, String fieldName, T value) {
-        this.type = type;
-        this.fieldName = fieldName;
-        this.value = value;
-        this.desc = null;
+public class SingleArgument<T> extends BaseArgument<T> {
+    public SingleArgument(Class<T> type, String fieldName, T value, String desc, Class<?> wrappedType) {
+        super(type, fieldName, value, desc, wrappedType);
     }
 
-    public SingleArgument(Class<T> type, String fieldName, T value, String desc) {
-        this.type = type;
-        this.fieldName = fieldName;
-        this.value = value;
-        this.desc = desc;
+
+    @Override
+    public Class<?> getType() {
+        return type;
     }
 
     @Override
     public Class<T> getWrapping() {
         return null;
+    }
+
+    @Override
+    public String getDesc() {
+        return desc;
+    }
+
+    @Override
+    public Object getValue() {
+        return value;
     }
 
     @Override

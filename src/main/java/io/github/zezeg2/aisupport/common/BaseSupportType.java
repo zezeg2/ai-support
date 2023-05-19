@@ -76,4 +76,9 @@ public interface BaseSupportType {
             throw new RuntimeException("Failed to convert map to JSON", e);
         }
     }
+
+    @JsonIgnore
+    default Object getExampleValue() throws IllegalAccessException {
+        return getExampleMap().entrySet().stream().findFirst().get().getValue();
+    }
 }

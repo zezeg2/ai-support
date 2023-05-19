@@ -3,11 +3,9 @@ package io.github.zezeg2.aisupport.ai.function.argument;
 import java.util.Map;
 
 public class MapArgument<T> extends BaseArgument<Map<String, T>> {
-    private final Class<T> wrappedType;
 
-    public MapArgument(Class<Map<String, T>> type, String fieldName, Map<String, T> value, String desc, Class<T> wrappedType) {
-        super(type, fieldName, value, desc);
-        this.wrappedType = wrappedType;
+    public MapArgument(Class<Map<String, T>> type, String fieldName, Map<String, T> value, String desc, Class<?> wrappedType) {
+        super(type, fieldName, value, desc, wrappedType);
     }
 
     @Override

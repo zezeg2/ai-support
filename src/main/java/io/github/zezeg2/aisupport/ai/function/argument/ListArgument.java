@@ -4,11 +4,8 @@ import java.util.List;
 
 public class ListArgument<T> extends BaseArgument<List<T>> {
 
-    private final Class<T> wrappedType;
-
-    public ListArgument(Class<List<T>> type, String fieldName, List<T> value, String desc, Class<T> wrappedType) {
-        super(type, fieldName, value, desc);
-        this.wrappedType = wrappedType;
+    public ListArgument(Class<List<T>> type, String fieldName, List<T> value, String desc, Class<?> wrappedType) {
+        super(type, fieldName, value, desc, wrappedType);
     }
 
     @Override

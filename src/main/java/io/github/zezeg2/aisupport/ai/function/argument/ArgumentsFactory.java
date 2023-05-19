@@ -35,7 +35,7 @@ public class ArgumentsFactory {
 //    }
 
     public <T> ArgumentsFactory addArgument(Class<T> type, String fieldName, T value, String desc) {
-        arguments.add(new SingleArgument<>(type, fieldName, value, desc));
+        arguments.add(new SingleArgument<>(type, fieldName, value, desc, null));
         return this;
     }
 

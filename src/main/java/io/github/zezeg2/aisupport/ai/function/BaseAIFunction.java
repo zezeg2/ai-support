@@ -1,7 +1,6 @@
 package io.github.zezeg2.aisupport.ai.function;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
@@ -15,6 +14,7 @@ import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
+import io.github.zezeg2.aisupport.common.exceptions.NotSupportArgumentException;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import lombok.Data;
 
@@ -78,7 +78,10 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
 
         Map<String, Object> descMap = generateDescMap(argument, argument.getType());
         if (argWrapping == null) {
-            inputDescMap.put(argument.getFieldName(), descMap);
+            if (!descMap.isEmpty()) {
+                Map.Entry<String, Object> entry = descMap.entrySet().iterator().next();
+                inputDescMap.put(argument.getFieldName(), entry.getValue());
+            }
         } else if (argWrapping.equals(WRAPPING.LIST.getValue())) {
             if (!descMap.isEmpty()) {
                 Map.Entry<String, Object> entry = descMap.entrySet().iterator().next();
@@ -92,16 +95,14 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             }
             inputDescMap.put(argument.getFieldName(), transformedMap);
         } else {
-            if (!descMap.isEmpty()) {
-                Map.Entry<String, Object> entry = descMap.entrySet().iterator().next();
-                inputDescMap.put(argument.getFieldName(), entry.getValue());
-            }
+            throw new NotSupportArgumentException("Argument Wrapping NotSupported");
         }
     }
 
     protected <A> Map<String, Object> generateDescMap(Argument<A> argument, Class<?> type) throws Exception {
         if (isBaseSupportType(type)) {
-            return Map.of(argument.getFieldName(), ((BaseSupportType) type.getConstructor().newInstance()).getExampleMap());
+            BaseSupportType baseSupportType = (BaseSupportType) type.getConstructor().newInstance();
+            return Map.of(argument.getFieldName(), baseSupportType.getExampleMap());
         } else if (argument.getDesc() == null) {
             return Map.of(argument.getFieldName(), argument.getFieldName());
         } else {
