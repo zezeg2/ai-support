@@ -7,7 +7,10 @@ import java.util.List;
 
 public interface AIFunction<T> {
     T execute(List<Argument<?>> args, AIModel model) throws Exception;
+
     String buildResultFormat() throws Exception;
+
     String createTemplate(String refTypes, String description, String functionTemplate, String constraints, String inputFormat, String resultFormat);
+
     String createFunctionTemplate(List<Argument<?>> args);
 }

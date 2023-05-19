@@ -32,7 +32,7 @@ public class MapArgument<T> extends BaseArgument<Map<String, T>> {
 
     @Override
     public String getTypeName() {
-        return "Map<String, " +wrappedType.getSimpleName() + ">";
+        return "Map<String, " + wrappedType.getSimpleName() + ">";
     }
 
     @Override

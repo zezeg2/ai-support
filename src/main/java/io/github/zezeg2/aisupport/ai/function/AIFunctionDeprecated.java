@@ -80,7 +80,7 @@ public class AIFunctionDeprecated<T> {
         } else if (argWrapping.equals(WRAPPING.LIST.getValue())) {
             descMap.entrySet().stream().findFirst().ifPresent(entry -> inputDescMap.put(argument.getFieldName(), List.of(entry.getValue())));
         } else if (argWrapping.equals(WRAPPING.MAP.getValue())) {
-            inputDescMap.put(argument.getFieldName(), ((MapArgument<A>)argument).getValue().keySet().stream().map(k -> Map.of(k, descMap)));
+            inputDescMap.put(argument.getFieldName(), ((MapArgument<A>) argument).getValue().keySet().stream().map(k -> Map.of(k, descMap)));
         } else {
             descMap.entrySet().stream().findFirst().ifPresent(entry -> inputDescMap.put(argument.getFieldName(), entry.getValue()));
         }

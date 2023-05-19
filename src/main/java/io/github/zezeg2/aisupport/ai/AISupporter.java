@@ -10,6 +10,7 @@ import io.github.zezeg2.aisupport.ai.function.*;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPTModel;
+import io.github.zezeg2.aisupport.common.enums.FunctionType;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
@@ -79,16 +80,27 @@ public class AISupporter {
         return new AIFunctionDeprecated<T>(functionName, description, constraintList, wrapping, returnType, service, mapper, resolver);
     }
 
+    public <T> AIFunction<?> createFunction(FunctionType type, String functionName, String description, Class<T> returnType, List<Constraint> constraintList) {
+        return switch (type) {
+            case SINGLE ->
+                    new AISingleFunction<>(functionName, description, constraintList, returnType, service, mapper, resolver);
+            case LIST ->
+                    new AIListFunction<>(functionName, description, constraintList, (Class<List<T>>) (Class<?>) List.class, service, mapper, resolver, returnType);
+            case MAP ->
+                    new AIMapFunction<>(functionName, description, constraintList, (Class<Map<String, T>>) (Class<?>) Map.class, service, mapper, resolver, returnType);
+        };
+    }
+
     public <T> AIFunction<T> createSingleFunction(String functionName, String description, Class<T> returnType, List<Constraint> constraintList) {
         return new AISingleFunction<>(functionName, description, constraintList, returnType, service, mapper, resolver);
     }
 
     public <T> AIFunction<List<T>> createListFunction(String functionName, String description, Class<T> returnType, List<Constraint> constraintList) {
-        return new AIListFunction<>(functionName, description, constraintList, (Class<List<T>>)(Class<?>)List.class, service, mapper, resolver, returnType);
+        return new AIListFunction<>(functionName, description, constraintList, (Class<List<T>>) (Class<?>) List.class, service, mapper, resolver, returnType);
     }
 
     public <T> AIFunction<Map<String, T>> createMapFunction(String functionName, String description, Class<T> returnType, List<Constraint> constraintList) {
-        return new AIMapFunction<>(functionName, description, constraintList, (Class<Map<String ,T>>)(Class<?>)Map.class, service, mapper, resolver, returnType);
+        return new AIMapFunction<>(functionName, description, constraintList, (Class<Map<String, T>>) (Class<?>) Map.class, service, mapper, resolver, returnType);
     }
 
     private <T> String createFunctionTemplate(Class<T> returnType, String functionName, List<Argument<?>> args) {

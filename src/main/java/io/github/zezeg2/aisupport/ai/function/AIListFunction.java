@@ -34,6 +34,7 @@ public class AIListFunction<T> extends BaseAIFunction<List<T>> {
             return ((BaseSupportType) wrappedType.getConstructor().newInstance()).getExample();
         else return wrappedType.getSimpleName();
     }
+
     @Override
     public String createTemplate(String refTypes, String description, String functionTemplate, String constraints, String inputFormat, String resultFormat) {
 
