@@ -1,11 +1,11 @@
 package io.github.zezeg2.aisupport.common.enums;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public enum WRAPPING {
     NONE(Object.class),
-    LIST(Collection.class),
+    LIST(List.class),
     MAP(Map.class);
     private final Class<?> value;
 

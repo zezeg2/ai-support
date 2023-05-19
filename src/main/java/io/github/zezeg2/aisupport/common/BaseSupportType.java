@@ -1,5 +1,6 @@
 package io.github.zezeg2.aisupport.common;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.lang.reflect.Field;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface BaseSupportType {
+    @JsonIgnore
     default Map<String, Object> getExampleMap() throws IllegalAccessException {
         Map<String, Object> fieldDescriptions = new HashMap<>();
         for (Field field : this.getClass().getDeclaredFields()) {
@@ -65,6 +67,7 @@ public interface BaseSupportType {
         return fieldDescriptions;
     }
 
+    @JsonIgnore
     default String getExample() throws IllegalAccessException {
         ObjectMapper objectMapper = new ObjectMapper();
         try {

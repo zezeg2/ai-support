@@ -59,8 +59,8 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
 
     protected T parseResponse(ChatCompletionResult response) throws JsonProcessingException {
         String content = response.getChoices().get(0).getMessage().getContent();
-        return mapper.readValue(content, new TypeReference<T>() {
-        });
+        System.out.println(content);
+        return mapper.readValue(content, returnType);
     }
 
     protected String buildInputFormat(List<Argument<?>> args) throws Exception {
