@@ -42,4 +42,4 @@ bin/
 .DS_Store
 
 
-#/src/main/java/io/github/zezeg2/aisupport/examples/*
+/src/main/java/io/github/zezeg2/aisupport/examples/*
