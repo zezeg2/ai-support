@@ -1,6 +1,6 @@
 ext {
     PUBLISH_GROUP_ID = 'io.github.zezeg2'
-    PUBLISH_VERSION = '1.0.6'
+    PUBLISH_VERSION = '1.0.7'
     PUBLISH_ARTIFACT_ID = 'ai-support'
     PUBLISH_DESCRIPTION = 'PSH: Problem Solving Helper'
     PUBLISH_URL = 'https://github.com/zezeg2/ai-support'
