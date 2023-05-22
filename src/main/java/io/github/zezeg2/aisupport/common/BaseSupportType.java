@@ -4,11 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class BaseSupportType implements Supportable {
+    private static final ObjectMapper mapper = new ObjectMapper();
     @JsonIgnore
     public String getFormat() throws IllegalAccessException {
-        ObjectMapper objectMapper = new ObjectMapper();
+
         try {
-            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(getFormatMap());
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(getFormatMap());
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert map to JSON", e);
         }
