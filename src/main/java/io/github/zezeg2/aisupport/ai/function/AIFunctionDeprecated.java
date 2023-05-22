@@ -11,6 +11,7 @@ import io.github.zezeg2.aisupport.ai.function.argument.MapArgument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
+import io.github.zezeg2.aisupport.common.Supportable;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
@@ -66,7 +67,7 @@ public class AIFunctionDeprecated<T> {
 
     protected String buildResultFormat() throws Exception {
         if (isBaseSupportType(returnType))
-            return ((BaseSupportType) returnType.getConstructor().newInstance()).getExample();
+            return ((BaseSupportType) returnType.getConstructor().newInstance()).getFormat();
         else return returnType.getSimpleName();
     }
 
@@ -88,7 +89,7 @@ public class AIFunctionDeprecated<T> {
 
     protected <A> Map<String, Object> generateDescMap(Argument<A> argument, Class<?> type) throws Exception {
         if (isBaseSupportType(type)) {
-            return Map.of(argument.getFieldName(), ((BaseSupportType) type.getConstructor().newInstance()).getExampleMap());
+            return Map.of(argument.getFieldName(), ((Supportable) type.getConstructor().newInstance()).getFormatMap());
         } else if (argument.getDesc() == null) {
             return Map.of(argument.getFieldName(), argument.getFieldName());
         } else {
@@ -97,7 +98,7 @@ public class AIFunctionDeprecated<T> {
     }
 
     protected boolean isBaseSupportType(Class<?> type) {
-        return Arrays.stream(type.getInterfaces()).toList().contains(BaseSupportType.class);
+        return Arrays.stream(type.getInterfaces()).toList().contains(Supportable.class);
     }
 
     protected String convertMapToJson(Map<String, Object> inputDescMap) {

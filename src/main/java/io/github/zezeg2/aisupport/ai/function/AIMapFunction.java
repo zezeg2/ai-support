@@ -32,7 +32,7 @@ public class AIMapFunction<T> extends BaseAIFunction<Map<String, T>> {
     @Override
     public String buildResultFormat() throws Exception {
         if (isBaseSupportType(wrappedType))
-            return ((BaseSupportType) wrappedType.getConstructor().newInstance()).getExample();
+            return ((BaseSupportType) wrappedType.getConstructor().newInstance()).getFormat();
         else return wrappedType.getSimpleName();
     }
 

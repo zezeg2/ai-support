@@ -28,7 +28,7 @@ public class AISingleFunction<T> extends BaseAIFunction<T> {
     @Override
     public String buildResultFormat() throws Exception {
         if (isBaseSupportType(returnType))
-            return ((BaseSupportType) returnType.getConstructor().newInstance()).getExample();
+            return ((BaseSupportType) returnType.getConstructor().newInstance()).getFormat();
         else return returnType.getSimpleName();
     }
 

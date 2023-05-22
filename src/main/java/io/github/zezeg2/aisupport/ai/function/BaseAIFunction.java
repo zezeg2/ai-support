@@ -11,6 +11,7 @@ import io.github.zezeg2.aisupport.ai.function.argument.MapArgument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
+import io.github.zezeg2.aisupport.common.Supportable;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
@@ -18,7 +19,10 @@ import io.github.zezeg2.aisupport.common.exceptions.NotSupportArgumentException;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import lombok.Data;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Data
@@ -101,8 +105,8 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
 
     protected <A> Map<String, Object> generateDescMap(Argument<A> argument, Class<?> type) throws Exception {
         if (isBaseSupportType(type)) {
-            BaseSupportType baseSupportType = (BaseSupportType) type.getConstructor().newInstance();
-            return Map.of(argument.getFieldName(), baseSupportType.getExampleMap());
+            Supportable supportable = (Supportable) type.getConstructor().newInstance();
+            return Map.of(argument.getFieldName(), supportable.getFormatMap());
         } else if (argument.getDesc() == null) {
             return Map.of(argument.getFieldName(), argument.getFieldName());
         } else {
@@ -111,7 +115,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     }
 
     protected boolean isBaseSupportType(Class<?> type) {
-        return Arrays.stream(type.getInterfaces()).toList().contains(BaseSupportType.class);
+        return type.getSuperclass().equals(BaseSupportType.class);
     }
 
     protected String convertMapToJson(Map<String, Object> inputDescMap) {

@@ -10,7 +10,6 @@ import io.github.zezeg2.aisupport.ai.function.*;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPTModel;
-import io.github.zezeg2.aisupport.common.enums.FunctionType;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
@@ -80,9 +79,9 @@ public class AISupporter {
         return new AIFunctionDeprecated<T>(functionName, description, constraintList, wrapping, returnType, service, mapper, resolver);
     }
 
-    public <T> AIFunction<?> createFunction(FunctionType type, String functionName, String description, Class<T> returnType, List<Constraint> constraintList) {
-        return switch (type) {
-            case SINGLE ->
+    public <T> AIFunction<?> createFunction(WRAPPING wrapping, String functionName, String description, Class<T> returnType, List<Constraint> constraintList) {
+        return switch (wrapping) {
+            case NONE ->
                     new AISingleFunction<>(functionName, description, constraintList, returnType, service, mapper, resolver);
             case LIST ->
                     new AIListFunction<>(functionName, description, constraintList, (Class<List<T>>) (Class<?>) List.class, service, mapper, resolver, returnType);
