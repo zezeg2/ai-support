@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 @Data
 public abstract class BaseAIFunction<T> implements AIFunction<T> {
     protected final String functionName;
-    protected final String description;
+    protected final String purpose;
     protected final List<Constraint> constraintList;
     protected final Class<T> returnType;
     protected final OpenAiService service;
@@ -42,7 +42,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             public class Main {
                 public static void main(String[] args) {
                     FC fc = (%s) -> {
-                        return [RESULT] //TODO: RESULT is JsonString of `%s`
+                        return [RESULT] //TODO: [RESULT] is JsonString of `%s`
                     };
                 }
             }
@@ -51,7 +51,8 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             You are now the following Java Lambda function
             ```java
             %s
-            // description : This function %s
+            
+            // Purpose: %s
             %s
             ```
             Constraints
@@ -129,7 +130,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     protected List<ChatMessage> createMessages(List<Argument<?>> args) throws Exception {
         String executeTemplate = createTemplate(
                 resolveRefTypes(args, returnType),
-                description,
+                purpose,
                 createFunctionTemplate(args),
                 createConstraints(constraintList),
                 buildInputFormat(args),
