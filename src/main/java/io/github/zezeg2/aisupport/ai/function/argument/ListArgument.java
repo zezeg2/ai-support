@@ -30,7 +30,7 @@ public class ListArgument<T> extends BaseArgument<List<T>> {
 
     @Override
     public String getTypeName() {
-        return "List<" + type.getSimpleName() + ">";
+        return "List<" + wrappedType.getSimpleName() + ">";
     }
 
     @Override
