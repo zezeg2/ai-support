@@ -6,6 +6,7 @@ import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
+import io.github.zezeg2.aisupport.ai.function.validate.ResultValidator;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
@@ -20,6 +21,11 @@ public class AIListFunction<T> extends BaseAIFunction<List<T>> {
         this.wrappedType = wrappedType;
     }
 
+    public AIListFunction(String functionName, String purpose, List<Constraint> constraintList, Class<List<T>> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, List<ResultValidator> resultValidators, Class<T> wrappedType) {
+        super(functionName, purpose, constraintList, returnType, service, mapper, resolver, resultValidators);
+        this.wrappedType = wrappedType;
+    }
+
     private final Class<T> wrappedType;
 
     @Override
@@ -31,9 +37,9 @@ public class AIListFunction<T> extends BaseAIFunction<List<T>> {
 
     @Override
     public List<T> executeWithContext(List<Argument<?>> args, AIModel model) throws Exception {
-        String templateKey = initIfEmptyContext(args);
-        addMessageToContext(ROLE.USER, createValuesString(args), templateKey);
-        ChatCompletionResult response = createChatCompletion(model, messageContext.get(templateKey));
+        String promptKey = initIfEmptyContext(args);
+        addMessageToContext(ROLE.USER, createValuesString(args), promptKey);
+        ChatCompletionResult response = createChatCompletion(model, promptMessageContext.get(promptKey));
         return parseResponse(response);
     }
 
@@ -45,9 +51,9 @@ public class AIListFunction<T> extends BaseAIFunction<List<T>> {
     }
 
     @Override
-    public String createTemplate(String refTypes, String description, String functionTemplate, String constraints, String inputFormat, String resultFormat) {
+    public String createPrompt(String refTypes, String description, String functionTemplate, String constraints, String inputFormat, String resultFormat) {
 
-        return WHOLE_TEMPLATE.formatted(refTypes, description, functionTemplate, constraints, inputFormat, """
+        return PROMPT_TEMPLATE.formatted(refTypes, description, functionTemplate, constraints, inputFormat, """
                 [
                     %s,
                 ]

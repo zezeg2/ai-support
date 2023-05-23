@@ -10,7 +10,7 @@ import java.util.*;
 public interface Supportable {
     @JsonIgnore
     default Map<String, Object> getFormatMap() throws IllegalAccessException {
-        Map<String, Object> format = FormatStore.getFormat(this.getClass());
+        Map<String, Object> format = SupportableFormatStore.getFormat(this.getClass());
         if (format != null) return format;
         Map<String, Object> fieldDescriptions = new HashMap<>();
         for (Field field : this.getClass().getDeclaredFields()) {
@@ -46,8 +46,8 @@ public interface Supportable {
                     fieldValue = new HashMap<>();
                     Type[] actualTypeArguments = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
                     actualType = (Class<?>) actualTypeArguments[1];
-                    mapKeyDescription = mapKeyDescription == null ? actualTypeArguments[0] + " Key": mapKeyDescription;
-                    mapValueDescription = mapValueDescription == null ? actualTypeArguments[1] + " Value": mapValueDescription;
+                    mapKeyDescription = mapKeyDescription == null ? actualTypeArguments[0] + " Key" : mapKeyDescription;
+                    mapValueDescription = mapValueDescription == null ? actualTypeArguments[1] + " Value" : mapValueDescription;
                     if (Supportable.class.isAssignableFrom(actualType)) {
                         try {
                             ((Map<String, Object>) fieldValue).put(field.getName(), actualType.getDeclaredConstructor().newInstance());
@@ -76,7 +76,7 @@ public interface Supportable {
                 fieldDescriptions.put(field.getName(), listDescriptions);
             } else if (fieldValue instanceof Map<?, ?> map) {
                 Map<String, Object> mapDescription = new LinkedHashMap<>();
-                for (Map.Entry<String, Object> entry : ((Map<String, Object>)map).entrySet()) {
+                for (Map.Entry<String, Object> entry : ((Map<String, Object>) map).entrySet()) {
                     if (entry.getValue() instanceof Supportable) {
                         mapDescription.put(mapKeyDescription, ((Supportable) entry.getValue()).getFormatMap());
                     } else {
@@ -87,11 +87,11 @@ public interface Supportable {
                     mapDescription.put(mapKeyDescription, mapValueDescription);
                 }
                 fieldDescriptions.put(field.getName(), mapDescription);
-            }else {
+            } else {
                 fieldDescriptions.put(field.getName(), description);
             }
         }
-        FormatStore.save(this.getClass(), fieldDescriptions);
+        SupportableFormatStore.save(this.getClass(), fieldDescriptions);
         return fieldDescriptions;
     }
 }

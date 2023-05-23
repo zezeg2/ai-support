@@ -6,5 +6,6 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MapFieldDesc {
     String key() default "";
+
     String value() default "";
 }

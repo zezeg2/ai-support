@@ -61,6 +61,7 @@ public class AISupporter {
 
     private final ConstructResolver resolver;
 
+    @Deprecated
     public Map<String, Object> aiFunction(String functionName, List<Argument<?>> args, List<Constraint> constraintList, String purpose, GPTModel model) throws JsonProcessingException {
         return aiFunction(functionName, DEFAULT_RETURN_TYPE, args, constraintList, purpose, model);
     }
@@ -76,7 +77,7 @@ public class AISupporter {
     }
 
     public <T> AIFunctionDeprecated<T> createFunction(String functionName, String purpose, WRAPPING wrapping, Class<T> returnType, List<Constraint> constraintList) {
-        return new AIFunctionDeprecated<T>(functionName, purpose, constraintList, wrapping, returnType, service, mapper, resolver);
+        return new AIFunctionDeprecated<>(functionName, purpose, constraintList, wrapping, returnType, service, mapper, resolver);
     }
 
     public <T> AIFunction<?> createFunction(WRAPPING wrapping, String functionName, String purpose, Class<T> returnType, List<Constraint> constraintList) {

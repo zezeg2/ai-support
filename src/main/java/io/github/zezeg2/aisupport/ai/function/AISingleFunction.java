@@ -28,10 +28,13 @@ public class AISingleFunction<T> extends BaseAIFunction<T> {
 
     @Override
     public T executeWithContext(List<Argument<?>> args, AIModel model) throws Exception {
-        String templateKey = initIfEmptyContext(args);
-        addMessageToContext(ROLE.USER, createValuesString(args), templateKey);
-        ChatCompletionResult response = createChatCompletion(model, messageContext.get(templateKey));
-        return parseResponse(response);
+        String promptKey = initIfEmptyContext(args);
+        addMessageToContext(ROLE.USER, createValuesString(args), promptKey);
+        List<ChatMessage> contextMessages = promptMessageContext.get(promptKey);
+        ChatCompletionResult response = createChatCompletion(model, contextMessages);
+        ChatMessage responseMessage = response.getChoices().get(0).getMessage();
+        contextMessages.add(responseMessage);
+        return parseResponseWithValidate(responseMessage, promptKey);
     }
 
     @Override
@@ -42,8 +45,8 @@ public class AISingleFunction<T> extends BaseAIFunction<T> {
     }
 
     @Override
-    public String createTemplate(String refTypes, String description, String functionTemplate, String constraints, String inputFormat, String resultFormat) {
-        return WHOLE_TEMPLATE.formatted(refTypes, description, functionTemplate, constraints, inputFormat, resultFormat);
+    public String createPrompt(String refTypes, String description, String functionTemplate, String constraints, String inputFormat, String resultFormat) {
+        return PROMPT_TEMPLATE.formatted(refTypes, description, functionTemplate, constraints, inputFormat, resultFormat);
     }
 
     @Override

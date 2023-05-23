@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class FormatStore {
+public class SupportableFormatStore {
     @Getter
     private static final Map<String, Map<String, Object>> registry = new HashMap<>();
 

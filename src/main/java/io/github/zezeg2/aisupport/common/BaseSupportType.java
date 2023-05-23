@@ -5,8 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class BaseSupportType implements Supportable {
     private static final ObjectMapper mapper = new ObjectMapper();
+
     @JsonIgnore
-    public String getFormat() throws IllegalAccessException {
+    public String getFormat() {
 
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(getFormatMap());
