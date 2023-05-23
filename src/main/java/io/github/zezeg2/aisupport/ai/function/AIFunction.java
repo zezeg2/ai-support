@@ -12,7 +12,7 @@ public interface AIFunction<T> {
 
     String buildResultFormat() throws Exception;
 
-    String createPrompt(String refTypes, String description, String functionTemplate, String constraints, String inputFormat, String resultFormat);
+    String createPrompt(String description, String refTypes, String functionTemplate, String constraints, String inputFormat, String resultFormat);
 
-    String createFunctionTemplate(List<Argument<?>> args);
+    String createFunction(List<Argument<?>> args);
 }

@@ -6,9 +6,10 @@ import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
-import io.github.zezeg2.aisupport.ai.function.validate.ResultValidator;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
+import io.github.zezeg2.aisupport.ai.validate.Validator;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
+import io.github.zezeg2.aisupport.ai.function.prompt.PromptContext;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 
@@ -21,8 +22,8 @@ public class AIListFunction<T> extends BaseAIFunction<List<T>> {
         this.wrappedType = wrappedType;
     }
 
-    public AIListFunction(String functionName, String purpose, List<Constraint> constraintList, Class<List<T>> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, List<ResultValidator> resultValidators, Class<T> wrappedType) {
-        super(functionName, purpose, constraintList, returnType, service, mapper, resolver, resultValidators);
+    public AIListFunction(String functionName, String purpose, List<Constraint> constraintList, Class<List<T>> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, List<Validator> validators, Class<T> wrappedType) {
+        super(functionName, purpose, constraintList, returnType, service, mapper, resolver, validators);
         this.wrappedType = wrappedType;
     }
 
@@ -37,10 +38,14 @@ public class AIListFunction<T> extends BaseAIFunction<List<T>> {
 
     @Override
     public List<T> executeWithContext(List<Argument<?>> args, AIModel model) throws Exception {
-        String promptKey = initIfEmptyContext(args);
-        addMessageToContext(ROLE.USER, createValuesString(args), promptKey);
-        ChatCompletionResult response = createChatCompletion(model, promptMessageContext.get(promptKey));
-        return parseResponse(response);
+        initIfEmptyContext(args);
+        addMessage(ROLE.USER, createValuesString(args));
+        String identifier = Thread.currentThread().getName();
+        List<ChatMessage> contextMessages = PromptContext.getPromptMessageContext(functionName).get(identifier);
+        ChatCompletionResult response = createChatCompletion(model, contextMessages);
+        ChatMessage responseMessage = response.getChoices().get(0).getMessage();
+        contextMessages.add(responseMessage);
+        return parseResponseWithValidate(responseMessage);
     }
 
     @Override
@@ -51,7 +56,7 @@ public class AIListFunction<T> extends BaseAIFunction<List<T>> {
     }
 
     @Override
-    public String createPrompt(String refTypes, String description, String functionTemplate, String constraints, String inputFormat, String resultFormat) {
+    public String createPrompt(String description, String refTypes, String functionTemplate, String constraints, String inputFormat, String resultFormat) {
 
         return PROMPT_TEMPLATE.formatted(refTypes, description, functionTemplate, constraints, inputFormat, """
                 [
@@ -61,7 +66,7 @@ public class AIListFunction<T> extends BaseAIFunction<List<T>> {
     }
 
     @Override
-    public String createFunctionTemplate(List<Argument<?>> args) {
+    public String createFunction(List<Argument<?>> args) {
         String fieldsString = args.stream().map(Argument::getFieldName).collect(Collectors.joining(", "));
         String fieldTypesString = args.stream()
                 .map(argument -> argument.getTypeName() + " " + argument.getFieldName())

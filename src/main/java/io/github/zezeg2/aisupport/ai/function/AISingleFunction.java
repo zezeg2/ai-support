@@ -8,6 +8,7 @@ import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
+import io.github.zezeg2.aisupport.ai.function.prompt.PromptContext;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 
@@ -28,13 +29,13 @@ public class AISingleFunction<T> extends BaseAIFunction<T> {
 
     @Override
     public T executeWithContext(List<Argument<?>> args, AIModel model) throws Exception {
-        String promptKey = initIfEmptyContext(args);
-        addMessageToContext(ROLE.USER, createValuesString(args), promptKey);
-        List<ChatMessage> contextMessages = promptMessageContext.get(promptKey);
+        initIfEmptyContext(args);
+        addMessage(ROLE.USER, createValuesString(args));
+        List<ChatMessage> contextMessages = PromptContext.getPromptMessageContext(functionName).get(Thread.currentThread().getName());
         ChatCompletionResult response = createChatCompletion(model, contextMessages);
         ChatMessage responseMessage = response.getChoices().get(0).getMessage();
         contextMessages.add(responseMessage);
-        return parseResponseWithValidate(responseMessage, promptKey);
+        return parseResponseWithValidate(responseMessage);
     }
 
     @Override
@@ -45,12 +46,12 @@ public class AISingleFunction<T> extends BaseAIFunction<T> {
     }
 
     @Override
-    public String createPrompt(String refTypes, String description, String functionTemplate, String constraints, String inputFormat, String resultFormat) {
+    public String createPrompt(String description, String refTypes, String functionTemplate, String constraints, String inputFormat, String resultFormat) {
         return PROMPT_TEMPLATE.formatted(refTypes, description, functionTemplate, constraints, inputFormat, resultFormat);
     }
 
     @Override
-    public String createFunctionTemplate(List<Argument<?>> args) {
+    public String createFunction(List<Argument<?>> args) {
         String fieldsString = args.stream().map(Argument::getFieldName).collect(Collectors.joining(", "));
         String fieldTypesString = args.stream()
                 .map(argument -> argument.getTypeName() + " " + argument.getFieldName())

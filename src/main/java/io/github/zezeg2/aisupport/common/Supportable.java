@@ -10,7 +10,7 @@ import java.util.*;
 public interface Supportable {
     @JsonIgnore
     default Map<String, Object> getFormatMap() throws IllegalAccessException {
-        Map<String, Object> format = SupportableFormatStore.getFormat(this.getClass());
+        Map<String, Object> format = SupportableFormatRegistry.getFormat(this.getClass());
         if (format != null) return format;
         Map<String, Object> fieldDescriptions = new HashMap<>();
         for (Field field : this.getClass().getDeclaredFields()) {
@@ -91,7 +91,7 @@ public interface Supportable {
                 fieldDescriptions.put(field.getName(), description);
             }
         }
-        SupportableFormatStore.save(this.getClass(), fieldDescriptions);
+        SupportableFormatRegistry.save(this.getClass(), fieldDescriptions);
         return fieldDescriptions;
     }
 }

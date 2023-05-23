@@ -6,7 +6,10 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
-import io.github.zezeg2.aisupport.ai.function.*;
+import io.github.zezeg2.aisupport.ai.function.AIFunction;
+import io.github.zezeg2.aisupport.ai.function.AIListFunction;
+import io.github.zezeg2.aisupport.ai.function.AIMapFunction;
+import io.github.zezeg2.aisupport.ai.function.AISingleFunction;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPTModel;
@@ -74,10 +77,6 @@ public class AISupporter {
         List<ChatMessage> messages = createChatMessages(purpose, refTypes, functionName, functionTemplate, args, constraints);
         ChatCompletionResult response = executeChatCompletion(model.getValue(), messages);
         return parseResponse(response, returnType);
-    }
-
-    public <T> AIFunctionDeprecated<T> createFunction(String functionName, String purpose, WRAPPING wrapping, Class<T> returnType, List<Constraint> constraintList) {
-        return new AIFunctionDeprecated<>(functionName, purpose, constraintList, wrapping, returnType, service, mapper, resolver);
     }
 
     public <T> AIFunction<?> createFunction(WRAPPING wrapping, String functionName, String purpose, Class<T> returnType, List<Constraint> constraintList) {

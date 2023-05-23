@@ -9,9 +9,11 @@ import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.argument.MapArgument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
-import io.github.zezeg2.aisupport.ai.function.validate.ResultValidator;
+import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
+import io.github.zezeg2.aisupport.ai.validate.Validator;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
+import io.github.zezeg2.aisupport.ai.function.prompt.PromptContext;
 import io.github.zezeg2.aisupport.common.Supportable;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.WRAPPING;
@@ -20,19 +22,20 @@ import io.github.zezeg2.aisupport.common.exceptions.NotInitiatedContextException
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportArgumentException;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import lombok.Getter;
-import lombok.Setter;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 public abstract class BaseAIFunction<T> implements AIFunction<T> {
     protected final String functionName;
     protected final String purpose;
-    protected final List<Constraint> constraintList;
+    protected final List<Constraint> constraints;
     protected final Class<T> returnType;
-
     protected final OpenAiService service;
-
     protected final ObjectMapper mapper;
     protected final ConstructResolver resolver;
     protected static final String FUNCTION_TEMPLATE = """
@@ -62,37 +65,39 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             - Input Format : %s
             - Result Format : %s
             """;
-    protected final Map<String, List<ChatMessage>> promptMessageContext = new LinkedHashMap<>();
+
     @Getter
-    @Setter
-    protected final List<ResultValidator> resultValidators;
+    protected final List<Validator> validators;
 
-    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraintList, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver) {
+    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver) {
         this.functionName = functionName;
         this.purpose = purpose;
-        this.constraintList = constraintList;
+        this.constraints = constraints;
         this.returnType = returnType;
         this.service = service;
         this.mapper = mapper;
         this.resolver = resolver;
-        this.resultValidators = null;
+        this.validators = null;
     }
 
-    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraintList, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, List<ResultValidator> resultValidators) {
+    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, List<Validator> validators) {
         this.functionName = functionName;
         this.purpose = purpose;
-        this.constraintList = constraintList;
+        this.constraints = constraints;
         this.returnType = returnType;
         this.service = service;
         this.mapper = mapper;
         this.resolver = resolver;
-        this.resultValidators = resultValidators;
+        this.validators = validators;
     }
 
-    protected void addMessageToContext(ROLE role, String message, String templateEncoded) {
-        if (!promptMessageContext.containsKey(templateEncoded))
-            promptMessageContext.put(templateEncoded, new ArrayList<>());
-        List<ChatMessage> chatMessages = promptMessageContext.get(templateEncoded);
+    protected void addMessage(ROLE role, String message) {
+        String identifier = Thread.currentThread().getName();
+        Map<String, List<ChatMessage>> promptMessageContext = PromptContext.getPrompt(functionName).getPromptMessageContext();
+        if (!promptMessageContext.containsKey(identifier))
+            promptMessageContext.put(identifier, new CopyOnWriteArrayList<>());
+
+        List<ChatMessage> chatMessages = promptMessageContext.get(identifier);
         if (!chatMessages.isEmpty()) chatMessages.add(new ChatMessage(role.getValue(), message));
         else {
             if (role.equals(ROLE.SYSTEM)) chatMessages.add(new ChatMessage(role.getValue(), message));
@@ -100,21 +105,23 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         }
     }
 
-    protected String initIfEmptyContext(List<Argument<?>> args) throws Exception {
-        String prompt = createPrompt(
-                resolveRefTypes(args, returnType),
-                purpose,
-                createFunctionTemplate(args),
-                createConstraints(constraintList),
-                buildInputFormat(args),
-                buildResultFormat()
-        );
-        String promptKey = Base64.getEncoder().encodeToString(prompt.getBytes());
-        List<ChatMessage> contextMessages = promptMessageContext.get(promptKey);
-        if (contextMessages.isEmpty()) {
-            addMessageToContext(ROLE.SYSTEM, prompt, promptKey);
+    protected void initIfEmptyContext(List<Argument<?>> args) throws Exception {
+        if (!PromptContext.containsPrompt(functionName)) {
+            PromptContext.addPromptToContext(functionName, new Prompt(
+                    purpose,
+                    resolveRefTypes(args, returnType),
+                    createFunction(args),
+                    createConstraints(constraints),
+                    buildInputFormat(args),
+                    buildResultFormat())
+            );
         }
-        return promptKey;
+        Prompt prompt = PromptContext.getPrompt(functionName);
+        Map<String, List<ChatMessage>> promptMessageContext = prompt.getPromptMessageContext();
+        String identifier = Thread.currentThread().getName();
+        if (!promptMessageContext.containsKey(identifier)) {
+            addMessage(ROLE.SYSTEM, prompt.toString());
+        }
     }
 
     protected T parseResponse(ChatCompletionResult response) throws JsonProcessingException {
@@ -123,21 +130,21 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         return mapper.readValue(content, returnType);
     }
 
-    protected T parseResponseWithValidate(ChatMessage message, String promptKey) {
+    protected T parseResponseWithValidate(ChatMessage message) throws JsonProcessingException {
         String content = message.getContent();
         boolean success = false;
         System.out.println(content);
         T value = null;
-        while (!success) {
-            try {
-                value = mapper.readValue(content, returnType);
-                success = true;
-            } catch (JsonProcessingException e) {
-                value = null;
-                // TODO: 2023/05/23 Validator 에서 content 스트링을 검증하는 로직 추가(디폴트: JsonProcess Validate, 셀프 피드백 : Feedback Validator)
-            }
-        }
-
+//        while (!success) {
+//            try {
+//                value = mapper.readValue(content, returnType);
+//                success = true;
+//            } catch (JsonProcessingException e) {
+//                value = null;
+//                // TODO: 2023/05/23 Validator 에서 content 스트링을 검증하는 로직 추가(디폴트: JsonProcess Validate, 셀프 피드백 : Feedback Validator)
+//            }
+//        }
+        value = mapper.readValue(content, returnType);
         return value;
     }
 
@@ -203,8 +210,8 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         String systemTemplate = createPrompt(
                 resolveRefTypes(args, returnType),
                 purpose,
-                createFunctionTemplate(args),
-                createConstraints(constraintList),
+                createFunction(args),
+                createConstraints(constraints),
                 buildInputFormat(args),
                 buildResultFormat()
         );
