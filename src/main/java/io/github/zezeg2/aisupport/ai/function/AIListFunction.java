@@ -8,6 +8,7 @@ import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
+import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 
 import java.util.List;
@@ -25,6 +26,14 @@ public class AIListFunction<T> extends BaseAIFunction<List<T>> {
     public List<T> execute(List<Argument<?>> args, AIModel model) throws Exception {
         List<ChatMessage> messages = createMessages(args);
         ChatCompletionResult response = createChatCompletion(model, messages);
+        return parseResponse(response);
+    }
+
+    @Override
+    public List<T> executeWithContext(List<Argument<?>> args, AIModel model) throws Exception {
+        String templateKey = initIfEmptyContext(args);
+        addMessageToContext(ROLE.USER, createValuesString(args), templateKey);
+        ChatCompletionResult response = createChatCompletion(model, messageContext.get(templateKey));
         return parseResponse(response);
     }
 

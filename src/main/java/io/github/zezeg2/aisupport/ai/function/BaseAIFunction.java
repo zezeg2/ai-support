@@ -15,14 +15,12 @@ import io.github.zezeg2.aisupport.common.Supportable;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
+import io.github.zezeg2.aisupport.common.exceptions.NotInitiatedContextException;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportArgumentException;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import lombok.Data;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Data
@@ -51,7 +49,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             You are now the following Java Lambda function
             ```java
             %s
-            
+                        
             // Purpose: %s
             %s
             ```
@@ -61,6 +59,35 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             - Input Format : %s
             - Result Format : %s
             """;
+    protected final Map<String, List<ChatMessage>> messageContext = new LinkedHashMap<>();
+    // TODO: 2023/05/23 messageContext추가, excute() -> init + addMessage + createChatCompletion 으로 리팩토링
+
+    protected void addMessageToContext(ROLE role, String message, String templateEncoded) {
+        if (!messageContext.containsKey(templateEncoded)) messageContext.put(templateEncoded, new ArrayList<>());
+        List<ChatMessage> chatMessages = messageContext.get(templateEncoded);
+        if (!chatMessages.isEmpty()) chatMessages.add(new ChatMessage(role.getValue(), message));
+        else {
+            if (role.equals(ROLE.SYSTEM)) chatMessages.add(new ChatMessage(role.getValue(), message));
+            else throw new NotInitiatedContextException();
+        }
+    }
+
+    protected String initIfEmptyContext(List<Argument<?>> args) throws Exception {
+        String systemTemplate = createTemplate(
+                resolveRefTypes(args, returnType),
+                purpose,
+                createFunctionTemplate(args),
+                createConstraints(constraintList),
+                buildInputFormat(args),
+                buildResultFormat()
+        );
+        String encodedTemplate = Base64.getEncoder().encodeToString(systemTemplate.getBytes());
+        List<ChatMessage> contextMessages = messageContext.get(encodedTemplate);
+        if (contextMessages.isEmpty()) {
+            addMessageToContext(ROLE.SYSTEM, systemTemplate, encodedTemplate);
+        }
+        return encodedTemplate;
+    }
 
     protected T parseResponse(ChatCompletionResult response) throws JsonProcessingException {
         String content = response.getChoices().get(0).getMessage().getContent();
@@ -71,14 +98,13 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     protected String buildInputFormat(List<Argument<?>> args) throws Exception {
         Map<String, Object> inputDescMap = new LinkedHashMap<>();
         for (Argument<?> argument : args) {
-            updateInputDescMap(inputDescMap, argument);
+            addToInputDescMap(inputDescMap, argument);
         }
 
         return convertMapToJson(inputDescMap);
     }
 
-
-    protected <A> void updateInputDescMap(Map<String, Object> inputDescMap, Argument<A> argument) throws Exception {
+    protected <R> void addToInputDescMap(Map<String, Object> inputDescMap, Argument<R> argument) throws Exception {
         Class<?> argWrapping = argument.getWrapping();
 
         Map<String, Object> descMap = generateDescMap(argument, argument.getType());
@@ -95,7 +121,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
 
         } else if (argWrapping.equals(WRAPPING.MAP.getValue())) {
             Map<String, Map<String, Object>> transformedMap = new LinkedHashMap<>();
-            for (String key : ((MapArgument<A>) argument).getValue().keySet()) {
+            for (String key : ((MapArgument<R>) argument).getValue().keySet()) {
                 transformedMap.put(key, descMap);
             }
             inputDescMap.put(argument.getFieldName(), transformedMap);
@@ -128,7 +154,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     }
 
     protected List<ChatMessage> createMessages(List<Argument<?>> args) throws Exception {
-        String executeTemplate = createTemplate(
+        String systemTemplate = createTemplate(
                 resolveRefTypes(args, returnType),
                 purpose,
                 createFunctionTemplate(args),
@@ -137,7 +163,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
                 buildResultFormat()
         );
         String valuesString = createValuesString(args);
-        return List.of(new ChatMessage(ROLE.SYSTEM.getValue(), executeTemplate), new ChatMessage(ROLE.USER.getValue(), valuesString));
+        return List.of(new ChatMessage(ROLE.SYSTEM.getValue(), systemTemplate), new ChatMessage(ROLE.USER.getValue(), valuesString));
     }
 
     protected String createValuesString(List<Argument<?>> args) throws JsonProcessingException {
