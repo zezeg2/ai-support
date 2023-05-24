@@ -92,7 +92,8 @@ public interface Supportable {
     default Map<String, Object> getMapDescription(String fieldName, Map<String, Object> map, String mapKeyDescription, String mapValueDescription) throws IllegalAccessException {
         Map<String, Object> mapDescription = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : map.entrySet()) {
-            if (entry.getValue() instanceof Supportable) mapDescription.put(mapKeyDescription, ((Supportable) entry.getValue()).getFormatMap());
+            if (entry.getValue() instanceof Supportable)
+                mapDescription.put(mapKeyDescription, ((Supportable) entry.getValue()).getFormatMap());
         }
         if (map.isEmpty()) mapDescription.put(fieldName, Map.of(mapKeyDescription, mapValueDescription));
         return mapDescription;

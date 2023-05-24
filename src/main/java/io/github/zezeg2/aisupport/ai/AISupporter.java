@@ -19,6 +19,7 @@ public class AISupporter {
         this.mapper = mapper;
         this.resolver = resolver;
     }
+
     private final OpenAiService service;
     private final ObjectMapper mapper;
     private final ConstructResolver resolver;
