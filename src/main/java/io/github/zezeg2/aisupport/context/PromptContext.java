@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.ai.function.prompt;
+package io.github.zezeg2.aisupport.context;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
@@ -23,7 +23,7 @@ public class PromptContext {
         return registry.get(function);
     }
 
-    public static Map<String, List<ChatMessage>> getPromptMessageContext(String function){
+    public static Map<String, List<ChatMessage>> getPromptMessageContext(String function) {
         return getPrompt(function).getPromptMessageContext();
     }
 }

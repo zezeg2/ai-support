@@ -10,18 +10,21 @@ import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.argument.MapArgument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
+import io.github.zezeg2.aisupport.context.PromptContext;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.ai.validate.Validator;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
-import io.github.zezeg2.aisupport.ai.function.prompt.PromptContext;
+import io.github.zezeg2.aisupport.context.ContextIdentifierProvider;
 import io.github.zezeg2.aisupport.common.Supportable;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
 import io.github.zezeg2.aisupport.common.exceptions.NotInitiatedContextException;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportArgumentException;
+import io.github.zezeg2.aisupport.context.ThreadNameIdentifierProvider;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -65,9 +68,12 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             - Input Format : %s
             - Result Format : %s
             """;
-
     @Getter
-    protected final List<Validator> validators;
+    @Setter
+    protected List<Validator> validators;
+    @Getter
+    @Setter
+    protected ContextIdentifierProvider idProvider;
 
     public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver) {
         this.functionName = functionName;
@@ -78,9 +84,10 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         this.mapper = mapper;
         this.resolver = resolver;
         this.validators = null;
+        this.idProvider = new ThreadNameIdentifierProvider();
     }
 
-    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, List<Validator> validators) {
+    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, List<Validator> validators, ContextIdentifierProvider idProvider) {
         this.functionName = functionName;
         this.purpose = purpose;
         this.constraints = constraints;
@@ -89,10 +96,24 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         this.mapper = mapper;
         this.resolver = resolver;
         this.validators = validators;
+        this.idProvider = idProvider;
+    }
+
+    @Override
+    public T execute(List<Argument<?>> args, AIModel model) throws Exception {
+        List<ChatMessage> messages = createMessages(args);
+        ChatCompletionResult response = createChatCompletion(model, messages);
+        return parseResponse(response);
+    }
+
+    @Override
+    public T executeWithContext(List<Argument<?>> args, AIModel model) throws Exception {
+        ChatMessage responseMessage = exchangeMessages(args, model);
+        return parseResponseWithValidate(responseMessage);
     }
 
     protected void addMessage(ROLE role, String message) {
-        String identifier = Thread.currentThread().getName();
+        String identifier = idProvider.getId();
         Map<String, List<ChatMessage>> promptMessageContext = PromptContext.getPrompt(functionName).getPromptMessageContext();
         if (!promptMessageContext.containsKey(identifier))
             promptMessageContext.put(identifier, new CopyOnWriteArrayList<>());
@@ -105,7 +126,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         }
     }
 
-    protected void initIfEmptyContext(List<Argument<?>> args) throws Exception {
+    protected void initContext(List<Argument<?>> args) throws Exception {
         if (!PromptContext.containsPrompt(functionName)) {
             PromptContext.addPromptToContext(functionName, new Prompt(
                     purpose,
@@ -118,10 +139,19 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         }
         Prompt prompt = PromptContext.getPrompt(functionName);
         Map<String, List<ChatMessage>> promptMessageContext = prompt.getPromptMessageContext();
-        String identifier = Thread.currentThread().getName();
-        if (!promptMessageContext.containsKey(identifier)) {
+        if (!promptMessageContext.containsKey(idProvider.getId())) {
             addMessage(ROLE.SYSTEM, prompt.toString());
         }
+    }
+
+    protected ChatMessage exchangeMessages(List<Argument<?>> args, AIModel model) throws Exception {
+        initContext(args);
+        addMessage(ROLE.USER, createValuesString(args));
+        List<ChatMessage> contextMessages = PromptContext.getPromptMessageContext(functionName).get(idProvider.getId());
+        ChatCompletionResult response = createChatCompletion(model, contextMessages);
+        ChatMessage responseMessage = response.getChoices().get(0).getMessage();
+        contextMessages.add(responseMessage);
+        return responseMessage;
     }
 
     protected T parseResponse(ChatCompletionResult response) throws JsonProcessingException {
@@ -157,7 +187,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         return convertMapToJson(inputDescMap);
     }
 
-    protected <R> void addToInputDescMap(Map<String, Object> inputDescMap, Argument<R> argument) throws Exception {
+    protected void addToInputDescMap(Map<String, Object> inputDescMap, Argument<?> argument) throws Exception {
         Class<?> argWrapping = argument.getWrapping();
 
         Map<String, Object> descMap = generateDescMap(argument, argument.getType());
@@ -174,16 +204,16 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
 
         } else if (argWrapping.equals(WRAPPING.MAP.getValue())) {
             Map<String, Map<String, Object>> transformedMap = new LinkedHashMap<>();
-            for (String key : ((MapArgument<R>) argument).getValue().keySet()) {
+            for (String key : ((MapArgument<?>) argument).getValue().keySet()) {
                 transformedMap.put(key, descMap);
             }
             inputDescMap.put(argument.getFieldName(), transformedMap);
         } else {
-            throw new NotSupportArgumentException("Argument Wrapping NotSupported");
+            throw new NotSupportArgumentException();
         }
     }
 
-    protected <A> Map<String, Object> generateDescMap(Argument<A> argument, Class<?> type) throws Exception {
+    protected Map<String, Object> generateDescMap(Argument<?> argument, Class<?> type) throws Exception {
         if (isBaseSupportType(type)) {
             Supportable supportable = (Supportable) type.getConstructor().newInstance();
             return Map.of(argument.getFieldName(), supportable.getFormatMap());
@@ -207,7 +237,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     }
 
     protected List<ChatMessage> createMessages(List<Argument<?>> args) throws Exception {
-        String systemTemplate = createPrompt(
+        String prompt = createPrompt(
                 resolveRefTypes(args, returnType),
                 purpose,
                 createFunction(args),
@@ -216,12 +246,12 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
                 buildResultFormat()
         );
         String valuesString = createValuesString(args);
-        return List.of(new ChatMessage(ROLE.SYSTEM.getValue(), systemTemplate), new ChatMessage(ROLE.USER.getValue(), valuesString));
+        return List.of(new ChatMessage(ROLE.SYSTEM.getValue(), prompt), new ChatMessage(ROLE.USER.getValue(), valuesString));
     }
 
     protected String createValuesString(List<Argument<?>> args) throws JsonProcessingException {
         Map<String, Object> valueMap = new LinkedHashMap<>();
-        args.stream().forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
+        args.forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
 
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(valueMap);
     }

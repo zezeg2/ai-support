@@ -1,6 +1,7 @@
 package io.github.zezeg2.aisupport.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.github.zezeg2.aisupport.context.SupportableFormatRegistry;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -14,84 +15,86 @@ public interface Supportable {
         if (format != null) return format;
         Map<String, Object> fieldDescriptions = new HashMap<>();
         for (Field field : this.getClass().getDeclaredFields()) {
-            field.setAccessible(true);  // Allows us to access private fields
-
-            FieldDesc fieldDesc = field.getAnnotation(FieldDesc.class);
-            MapFieldDesc mapFieldDesc = field.getAnnotation(MapFieldDesc.class);
-            String description = fieldDesc != null ? fieldDesc.value() : field.getName();
-            String mapKeyDescription = mapFieldDesc != null && !mapFieldDesc.key().isEmpty() ? mapFieldDesc.key() : null;
-            String mapValueDescription = mapFieldDesc != null && !mapFieldDesc.value().isEmpty() ? mapFieldDesc.value() : null;
-
-
-            Object fieldValue = field.get(this);
-            Class<?> actualType = null;
-            if (fieldValue == null) {
-                if (Supportable.class.isAssignableFrom(field.getType())) {
-                    try {
-                        fieldValue = ((Class<?>) field.getType()).getDeclaredConstructor().newInstance();
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to create an instance of " + field.getType().getName(), e);
-                    }
-                } else if (List.class.isAssignableFrom(field.getType())) {
-                    fieldValue = new ArrayList<>();
-                    actualType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-                    if (Supportable.class.isAssignableFrom(actualType)) {
-                        try {
-                            ((List<Object>) fieldValue).add(actualType.getDeclaredConstructor().newInstance());
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to create an instance of " + actualType.getName(), e);
-                        }
-                    }
-                } else if (Map.class.isAssignableFrom(field.getType())) {
-                    fieldValue = new HashMap<>();
-                    Type[] actualTypeArguments = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
-                    actualType = (Class<?>) actualTypeArguments[1];
-                    mapKeyDescription = mapKeyDescription == null ? actualTypeArguments[0] + " Key" : mapKeyDescription;
-                    mapValueDescription = mapValueDescription == null ? actualTypeArguments[1] + " Value" : mapValueDescription;
-                    if (Supportable.class.isAssignableFrom(actualType)) {
-                        try {
-                            ((Map<String, Object>) fieldValue).put(field.getName(), actualType.getDeclaredConstructor().newInstance());
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to create an instance of " + actualType.getName(), e);
-                        }
-                    }
-                }
-            }
-
-            if (fieldValue instanceof Supportable) {
-                Map<String, Object> nestedMap = ((Supportable) fieldValue).getFormatMap();
-                fieldDescriptions.put(field.getName(), nestedMap);
-            } else if (fieldValue instanceof List<?> list) {
-                List<Object> listDescriptions = new ArrayList<>();
-                for (Object listItem : list) {
-                    if (listItem instanceof Supportable) {
-                        listDescriptions.add(((Supportable) listItem).getFormatMap());
-                    } else {
-                        listDescriptions.add(listItem.toString());
-                    }
-                }
-                if (list.isEmpty() && actualType != null && (String.class.isAssignableFrom(actualType) || Number.class.isAssignableFrom(actualType))) {
-                    listDescriptions.add(description);
-                }
-                fieldDescriptions.put(field.getName(), listDescriptions);
-            } else if (fieldValue instanceof Map<?, ?> map) {
-                Map<String, Object> mapDescription = new LinkedHashMap<>();
-                for (Map.Entry<String, Object> entry : ((Map<String, Object>) map).entrySet()) {
-                    if (entry.getValue() instanceof Supportable) {
-                        mapDescription.put(mapKeyDescription, ((Supportable) entry.getValue()).getFormatMap());
-                    } else {
-                        mapDescription.put(mapKeyDescription, Map.of(mapKeyDescription, mapValueDescription));
-                    }
-                }
-                if (map.isEmpty() && actualType != null && (String.class.isAssignableFrom(actualType) || Number.class.isAssignableFrom(actualType))) {
-                    mapDescription.put(mapKeyDescription, mapValueDescription);
-                }
-                fieldDescriptions.put(field.getName(), mapDescription);
-            } else {
-                fieldDescriptions.put(field.getName(), description);
-            }
+            field.setAccessible(true);
+            handleField(field, fieldDescriptions);
         }
         SupportableFormatRegistry.save(this.getClass(), fieldDescriptions);
         return fieldDescriptions;
+    }
+
+    default void handleField(Field field, Map<String, Object> fieldDescriptions) throws IllegalAccessException {
+        FieldDesc fieldDesc = field.getAnnotation(FieldDesc.class);
+        String description = fieldDesc != null ? fieldDesc.value() : field.getName();
+        Object fieldValue = getFieldValue(field);
+
+        if (fieldValue instanceof Supportable) {
+            Map<String, Object> nestedMap = ((Supportable) fieldValue).getFormatMap();
+            fieldDescriptions.put(field.getName(), nestedMap);
+        } else if (fieldValue instanceof List<?>) {
+            List<Object> listDescriptions = getListDescription((List<Object>) fieldValue, description);
+            fieldDescriptions.put(field.getName(), listDescriptions);
+        } else if (fieldValue instanceof Map<?, ?>) {
+            Type[] actualTypeArguments = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
+            MapFieldDesc mapFieldDesc = field.getAnnotation(MapFieldDesc.class);
+            String mapKeyDescription = mapFieldDesc == null || mapFieldDesc.key().equals("") ? actualTypeArguments[0] + " Key" : mapFieldDesc.key();
+            String mapValueDescription = mapFieldDesc == null || mapFieldDesc.value().equals("") ? actualTypeArguments[1] + " Value" : mapFieldDesc.value();
+            Map<String, Object> mapDescription = getMapDescription(field.getName(), (Map<String, Object>) fieldValue, mapKeyDescription, mapValueDescription);
+            fieldDescriptions.put(field.getName(), mapDescription);
+        } else {
+            fieldDescriptions.put(field.getName(), description);
+        }
+    }
+
+    default Object getFieldValue(Field field) throws IllegalAccessException {
+        Object fieldValue = field.get(this);
+        Class<?> actualType;
+        if (fieldValue == null) {
+            Class<?> fieldType = field.getType();
+            if (Supportable.class.isAssignableFrom(fieldType)) fieldValue = instantiateSupportable(fieldType);
+            else if (List.class.isAssignableFrom(fieldType)) {
+                fieldValue = new ArrayList<>();
+                actualType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+                if (Supportable.class.isAssignableFrom(actualType))
+                    ((List<Object>) fieldValue).add(instantiateSupportable(actualType));
+            } else if (Map.class.isAssignableFrom(fieldType)) {
+                fieldValue = new HashMap<>();
+                Type[] actualTypeArguments = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
+                actualType = (Class<?>) actualTypeArguments[1];
+                if (Supportable.class.isAssignableFrom(actualType)) {
+                    ((Map<String, Object>) fieldValue).put(field.getName(), instantiateSupportable(actualType));
+                }
+            }
+        }
+        return fieldValue;
+    }
+
+    default Object instantiateSupportable(Class<?> clazz) {
+        try {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create an instance of " + clazz.getName(), e);
+        }
+    }
+
+    default List<Object> getListDescription(List<Object> list, String description) throws IllegalAccessException {
+        List<Object> listDescriptions = new ArrayList<>();
+        for (Object listItem : list) {
+            if (listItem instanceof Supportable) {
+                listDescriptions.add(((Supportable) listItem).getFormatMap());
+            } else {
+                listDescriptions.add(listItem.toString());
+            }
+        }
+        if (list.isEmpty()) listDescriptions.add(description);
+        return listDescriptions;
+    }
+
+    default Map<String, Object> getMapDescription(String fieldName, Map<String, Object> map, String mapKeyDescription, String mapValueDescription) throws IllegalAccessException {
+        Map<String, Object> mapDescription = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            if (entry.getValue() instanceof Supportable) mapDescription.put(mapKeyDescription, ((Supportable) entry.getValue()).getFormatMap());
+        }
+        if (map.isEmpty()) mapDescription.put(fieldName, Map.of(mapKeyDescription, mapValueDescription));
+        return mapDescription;
     }
 }

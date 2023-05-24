@@ -1,15 +1,10 @@
 package io.github.zezeg2.aisupport.ai.function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.theokanning.openai.completion.chat.ChatCompletionResult;
-import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
-import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
-import io.github.zezeg2.aisupport.ai.function.prompt.PromptContext;
-import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 
 import java.util.List;
@@ -18,24 +13,6 @@ import java.util.stream.Collectors;
 public class AISingleFunction<T> extends BaseAIFunction<T> {
     public AISingleFunction(String functionName, String description, List<Constraint> constraintList, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver) {
         super(functionName, description, constraintList, returnType, service, mapper, resolver);
-    }
-
-    @Override
-    public T execute(List<Argument<?>> args, AIModel model) throws Exception {
-        List<ChatMessage> messages = createMessages(args);
-        ChatCompletionResult response = createChatCompletion(model, messages);
-        return parseResponse(response);
-    }
-
-    @Override
-    public T executeWithContext(List<Argument<?>> args, AIModel model) throws Exception {
-        initIfEmptyContext(args);
-        addMessage(ROLE.USER, createValuesString(args));
-        List<ChatMessage> contextMessages = PromptContext.getPromptMessageContext(functionName).get(Thread.currentThread().getName());
-        ChatCompletionResult response = createChatCompletion(model, contextMessages);
-        ChatMessage responseMessage = response.getChoices().get(0).getMessage();
-        contextMessages.add(responseMessage);
-        return parseResponseWithValidate(responseMessage);
     }
 
     @Override

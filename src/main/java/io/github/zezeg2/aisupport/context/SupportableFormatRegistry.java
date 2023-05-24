@@ -1,5 +1,6 @@
-package io.github.zezeg2.aisupport.common;
+package io.github.zezeg2.aisupport.context;
 
+import io.github.zezeg2.aisupport.common.Supportable;
 import lombok.Getter;
 
 import java.util.Map;
