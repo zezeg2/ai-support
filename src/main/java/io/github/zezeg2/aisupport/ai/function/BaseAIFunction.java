@@ -11,7 +11,7 @@ import io.github.zezeg2.aisupport.ai.function.argument.MapArgument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
-import io.github.zezeg2.aisupport.ai.validate.Validator;
+import io.github.zezeg2.aisupport.ai.validator.Validatable;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.Supportable;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
@@ -20,6 +20,7 @@ import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
 import io.github.zezeg2.aisupport.common.exceptions.NotInitiatedContextException;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportArgumentException;
 import io.github.zezeg2.aisupport.context.ContextIdentifierProvider;
+import io.github.zezeg2.aisupport.context.LocalPromptContext;
 import io.github.zezeg2.aisupport.context.PromptContext;
 import io.github.zezeg2.aisupport.context.ThreadNameIdentifierProvider;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
@@ -70,10 +71,13 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             """;
     @Getter
     @Setter
-    protected List<Validator> validators;
+    protected List<Validatable> validators;
     @Getter
     @Setter
     protected ContextIdentifierProvider idProvider;
+    @Getter
+    @Setter
+    protected PromptContext context;
 
     public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver) {
         this.functionName = functionName;
@@ -85,9 +89,10 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         this.resolver = resolver;
         this.validators = null;
         this.idProvider = new ThreadNameIdentifierProvider();
+        this.context = new LocalPromptContext();
     }
 
-    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, List<Validator> validators, ContextIdentifierProvider idProvider) {
+    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, List<Validatable> validators, ContextIdentifierProvider idProvider) {
         this.functionName = functionName;
         this.purpose = purpose;
         this.constraints = constraints;
@@ -114,7 +119,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
 
     protected void addMessage(ROLE role, String message) {
         String identifier = idProvider.getId();
-        Map<String, List<ChatMessage>> promptMessageContext = PromptContext.getPrompt(functionName).getPromptMessageContext();
+        Map<String, List<ChatMessage>> promptMessageContext = context.getPrompt(functionName).getPromptMessageContext();
         if (!promptMessageContext.containsKey(identifier))
             promptMessageContext.put(identifier, new CopyOnWriteArrayList<>());
 
@@ -127,8 +132,8 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     }
 
     protected void initContext(List<Argument<?>> args) throws Exception {
-        if (!PromptContext.containsPrompt(functionName)) {
-            PromptContext.addPromptToContext(functionName, new Prompt(
+        if (!context.containsPrompt(functionName)) {
+            context.addPromptToContext(functionName, new Prompt(
                     purpose,
                     resolveRefTypes(args, returnType),
                     createFunction(args),
@@ -137,7 +142,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
                     buildResultFormat())
             );
         }
-        Prompt prompt = PromptContext.getPrompt(functionName);
+        Prompt prompt = context.getPrompt(functionName);
         Map<String, List<ChatMessage>> promptMessageContext = prompt.getPromptMessageContext();
         if (!promptMessageContext.containsKey(idProvider.getId())) {
             addMessage(ROLE.SYSTEM, prompt.toString());
@@ -147,7 +152,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     protected ChatMessage exchangeMessages(List<Argument<?>> args, AIModel model) throws Exception {
         initContext(args);
         addMessage(ROLE.USER, createValuesString(args));
-        List<ChatMessage> contextMessages = PromptContext.getPromptMessageContext(functionName).get(idProvider.getId());
+        List<ChatMessage> contextMessages = context.getPromptMessageContext(functionName).get(idProvider.getId());
         ChatCompletionResult response = createChatCompletion(model, contextMessages);
         ChatMessage responseMessage = response.getChoices().get(0).getMessage();
         contextMessages.add(responseMessage);
@@ -167,6 +172,10 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         T value = null;
 //        while (!success) {
 //            try {
+//                validators.stream().filter(validator -> !validator.getClass().getSuperclass().equals(ExceptionValidator.class))
+//                        .forEach(v -> {
+//
+//                        });
 //                value = mapper.readValue(content, returnType);
 //                success = true;
 //            } catch (JsonProcessingException e) {

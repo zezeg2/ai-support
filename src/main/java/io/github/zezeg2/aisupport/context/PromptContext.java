@@ -5,25 +5,14 @@ import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-public class PromptContext {
-    private static final Map<String, Prompt> registry = new ConcurrentHashMap<>() {
-    };
+public interface PromptContext {
 
-    public static boolean containsPrompt(String function) {
-        return registry.containsKey(function);
-    }
+    boolean containsPrompt(String function);
 
-    public static void addPromptToContext(String function, Prompt prompt) {
-        registry.put(function, prompt);
-    }
+    void addPromptToContext(String function, Prompt prompt);
 
-    public static Prompt getPrompt(String function) {
-        return registry.get(function);
-    }
+    Prompt getPrompt(String function);
 
-    public static Map<String, List<ChatMessage>> getPromptMessageContext(String function) {
-        return getPrompt(function).getPromptMessageContext();
-    }
+    Map<String, List<ChatMessage>> getPromptMessageContext(String function);
 }
