@@ -6,7 +6,7 @@ import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import java.util.List;
 import java.util.Map;
 
-public interface PromptContext {
+public interface PromptContextHolder {
 
     boolean containsPrompt(String function);
 

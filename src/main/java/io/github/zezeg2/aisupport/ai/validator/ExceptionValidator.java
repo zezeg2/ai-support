@@ -1,16 +1,14 @@
 package io.github.zezeg2.aisupport.ai.validator;
 
-import com.theokanning.openai.service.OpenAiService;
-import io.github.zezeg2.aisupport.context.PromptContext;
+import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
+import lombok.Data;
 
+@Data
 public abstract class ExceptionValidator implements Validatable {
-    protected final OpenAiService service;
-    protected final PromptContext context;
-    protected final Exception exception;
+    protected final PromptManager promptManager;
+    protected Exception exception;
 
-    public ExceptionValidator(OpenAiService service, PromptContext context, Exception exception) {
-        this.service = service;
-        this.context = context;
-        this.exception = exception;
+    public ExceptionValidator(PromptManager promptManager) {
+        this.promptManager = promptManager;
     }
 }

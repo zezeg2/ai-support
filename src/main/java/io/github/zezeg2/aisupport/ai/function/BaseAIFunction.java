@@ -10,28 +10,24 @@ import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.argument.MapArgument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
+import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
-import io.github.zezeg2.aisupport.ai.validator.Validatable;
+import io.github.zezeg2.aisupport.ai.validator.*;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.Supportable;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.WRAPPING;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
-import io.github.zezeg2.aisupport.common.exceptions.NotInitiatedContextException;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportArgumentException;
-import io.github.zezeg2.aisupport.context.ContextIdentifierProvider;
-import io.github.zezeg2.aisupport.context.LocalPromptContext;
-import io.github.zezeg2.aisupport.context.PromptContext;
+import io.github.zezeg2.aisupport.context.LocalPromptContextHolder;
 import io.github.zezeg2.aisupport.context.ThreadNameIdentifierProvider;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 public abstract class BaseAIFunction<T> implements AIFunction<T> {
@@ -64,20 +60,15 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             %s
             ```
             Constraints
-            - Only respond with your `return` value. Do not include any other explanatory text in your response.
+            - Only respond with your `return` value. Do not include any other explanatory text in your response at all.
             %s
             - Input Format : %s
             - Result Format : %s
             """;
     @Getter
-    @Setter
-    protected List<Validatable> validators;
-    @Getter
-    @Setter
-    protected ContextIdentifierProvider idProvider;
-    @Getter
-    @Setter
-    protected PromptContext context;
+    protected final PromptManager promptManager;
+    protected final ExceptionValidatorChain exceptionValidatorChain;
+    protected final ResultValidatorChain resultValidatorChain;
 
     public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver) {
         this.functionName = functionName;
@@ -87,12 +78,12 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         this.service = service;
         this.mapper = mapper;
         this.resolver = resolver;
-        this.validators = null;
-        this.idProvider = new ThreadNameIdentifierProvider();
-        this.context = new LocalPromptContext();
+        this.promptManager = new PromptManager(service, new LocalPromptContextHolder(), new ThreadNameIdentifierProvider());
+        this.exceptionValidatorChain = new ExceptionValidatorChain(List.of(new DefaultExceptionValidator(promptManager)));
+        this.resultValidatorChain = new ResultValidatorChain(List.of(new DefaultResultValidator(promptManager)), Object.class);
     }
 
-    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, List<Validatable> validators, ContextIdentifierProvider idProvider) {
+    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ExceptionValidatorChain exceptionValidatorChain, ResultValidatorChain resultValidatorChain) {
         this.functionName = functionName;
         this.purpose = purpose;
         this.constraints = constraints;
@@ -100,8 +91,9 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         this.service = service;
         this.mapper = mapper;
         this.resolver = resolver;
-        this.validators = validators;
-        this.idProvider = idProvider;
+        this.promptManager = promptManager;
+        this.exceptionValidatorChain = exceptionValidatorChain;
+        this.resultValidatorChain = resultValidatorChain;
     }
 
     @Override
@@ -113,50 +105,19 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
 
     @Override
     public T executeWithContext(List<Argument<?>> args, AIModel model) throws Exception {
-        ChatMessage responseMessage = exchangeMessages(args, model);
-        return parseResponseWithValidate(responseMessage);
-    }
-
-    protected void addMessage(ROLE role, String message) {
-        String identifier = idProvider.getId();
-        Map<String, List<ChatMessage>> promptMessageContext = context.getPrompt(functionName).getPromptMessageContext();
-        if (!promptMessageContext.containsKey(identifier))
-            promptMessageContext.put(identifier, new CopyOnWriteArrayList<>());
-
-        List<ChatMessage> chatMessages = promptMessageContext.get(identifier);
-        if (!chatMessages.isEmpty()) chatMessages.add(new ChatMessage(role.getValue(), message));
-        else {
-            if (role.equals(ROLE.SYSTEM)) chatMessages.add(new ChatMessage(role.getValue(), message));
-            else throw new NotInitiatedContextException();
-        }
-    }
-
-    protected void initContext(List<Argument<?>> args) throws Exception {
-        if (!context.containsPrompt(functionName)) {
-            context.addPromptToContext(functionName, new Prompt(
+        if (promptManager.getContext().getPrompt(functionName) == null) {
+            Prompt prompt = new Prompt(
                     purpose,
                     resolveRefTypes(args, returnType),
                     createFunction(args),
                     createConstraints(constraints),
                     buildInputFormat(args),
-                    buildResultFormat())
-            );
+                    buildResultFormat());
+            promptManager.initPromptContext(functionName, prompt);
         }
-        Prompt prompt = context.getPrompt(functionName);
-        Map<String, List<ChatMessage>> promptMessageContext = prompt.getPromptMessageContext();
-        if (!promptMessageContext.containsKey(idProvider.getId())) {
-            addMessage(ROLE.SYSTEM, prompt.toString());
-        }
-    }
-
-    protected ChatMessage exchangeMessages(List<Argument<?>> args, AIModel model) throws Exception {
-        initContext(args);
-        addMessage(ROLE.USER, createValuesString(args));
-        List<ChatMessage> contextMessages = context.getPromptMessageContext(functionName).get(idProvider.getId());
-        ChatCompletionResult response = createChatCompletion(model, contextMessages);
-        ChatMessage responseMessage = response.getChoices().get(0).getMessage();
-        contextMessages.add(responseMessage);
-        return responseMessage;
+        promptManager.addMessage(functionName, ROLE.USER, createValuesString(args));
+        ChatMessage responseMessage = promptManager.exchangeMessages(functionName, model, true);
+        return parseResponseWithValidate(responseMessage);
     }
 
     protected T parseResponse(ChatCompletionResult response) throws JsonProcessingException {
@@ -170,20 +131,17 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         boolean success = false;
         System.out.println(content);
         T value = null;
-//        while (!success) {
-//            try {
-//                validators.stream().filter(validator -> !validator.getClass().getSuperclass().equals(ExceptionValidator.class))
-//                        .forEach(v -> {
-//
-//                        });
-//                value = mapper.readValue(content, returnType);
-//                success = true;
-//            } catch (JsonProcessingException e) {
-//                value = null;
-//                // TODO: 2023/05/23 Validator 에서 content 스트링을 검증하는 로직 추가(디폴트: JsonProcess Validate, 셀프 피드백 : Feedback Validator)
-//            }
-//        }
-        value = mapper.readValue(content, returnType);
+        while (!success) {
+            try {
+                content = resultValidatorChain.validate(functionName, content);
+                value = mapper.readValue(content, returnType);
+                success = true;
+            } catch (JsonProcessingException e) {
+                exceptionValidatorChain.setException(e);
+                content = exceptionValidatorChain.validate(functionName, content);
+                value = mapper.readValue(content, returnType);
+            }
+        }
         return value;
     }
 

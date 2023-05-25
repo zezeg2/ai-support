@@ -1,22 +1,14 @@
 package io.github.zezeg2.aisupport.ai.validator;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class ValidatorChain<T extends Validatable> {
-    private final List<T> validators = new ArrayList<>();
+public abstract class ValidatorChain<T extends Validatable> {
 
-    public void addValidator(T validator) {
-        validators.add(validator);
+    protected final List<T> validators;
+
+    public ValidatorChain(List<T> validators) {
+        this.validators = validators;
     }
 
-    public String validate(String target) {
-        String result = target;
-        for (T validator : validators) {
-            if (validator.isRequired(result)) {
-                result = validator.validate(result);
-            }
-        }
-        return result;
-    }
+    public abstract String validate(String functionName, String target);
 }
