@@ -7,6 +7,7 @@ import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,8 +31,8 @@ public class DefaultResultValidator extends ResultValidator {
     @Override
     public void initFeedbackAssistantContext(String functionName) {
         Prompt prompt = promptManager.getPrompt(functionName);
-        List<ChatMessage> feedbackAssistantMessageList = promptManager.getFeedbackAssistantMessageList(functionName);
-        if (feedbackAssistantMessageList.isEmpty()) {
+        Map<String, List<ChatMessage>> feedbackAssistantContext = prompt.getFeedbackAssistantContext();
+        if (!feedbackAssistantContext.containsKey(promptManager.getIdentifier())) {
             promptManager.addMessage(functionName, ROLE.SYSTEM, ContextType.FEEDBACK, SYSTEM_TEMPLATE.formatted(prompt.getConstraints(), prompt.getResultFormat()));
         }
     }
@@ -66,7 +67,7 @@ public class DefaultResultValidator extends ResultValidator {
 
             String lastFeedbackMessage = feedbackAssistantMessageList.get(feedbackAssistantMessageList.size() - 1).getContent();
             System.out.println(lastFeedbackMessage);
-            if (Boolean.parseBoolean(lastFeedbackMessage.toLowerCase())) {
+            if (Boolean.parseBoolean(parseBooleanFromString(lastFeedbackMessage.toLowerCase()))) {
                 return lastPromptMessage;
             }
 
