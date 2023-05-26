@@ -8,11 +8,13 @@ import java.util.Map;
 
 public interface PromptContextHolder {
 
-    boolean containsPrompt(String function);
+    boolean containsPrompt(String functionName);
 
-    void addPromptToContext(String function, Prompt prompt);
+    void addPromptToContext(String functionName, Prompt prompt);
 
-    Prompt getPrompt(String function);
+    Prompt getPrompt(String functionName);
 
-    Map<String, List<ChatMessage>> getPromptMessageContext(String function);
+    Map<String, List<ChatMessage>> getPromptMessageContext(String functionName);
+
+    Map<String, List<ChatMessage>> getFeedbackAssistantMessageContext(String functionName);
 }

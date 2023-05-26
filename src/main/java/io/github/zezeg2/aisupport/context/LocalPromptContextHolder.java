@@ -11,22 +11,28 @@ public class LocalPromptContextHolder implements PromptContextHolder {
     private static final Map<String, Prompt> registry = new ConcurrentHashMap<>();
 
     @Override
-    public boolean containsPrompt(String function) {
-        return registry.containsKey(function);
+    public boolean containsPrompt(String functionName) {
+        return registry.containsKey(functionName);
     }
 
     @Override
-    public void addPromptToContext(String function, Prompt prompt) {
-        registry.put(function, prompt);
+    public void addPromptToContext(String functionName, Prompt prompt) {
+        registry.put(functionName, prompt);
     }
 
     @Override
-    public Prompt getPrompt(String function) {
-        return registry.get(function);
+    public Prompt getPrompt(String functionName) {
+        return registry.get(functionName);
     }
 
     @Override
-    public Map<String, List<ChatMessage>> getPromptMessageContext(String function) {
-        return getPrompt(function).getPromptMessageContext();
+    public Map<String, List<ChatMessage>> getPromptMessageContext(String functionName) {
+        return getPrompt(functionName).getPromptMessageContext();
     }
+
+    @Override
+    public Map<String, List<ChatMessage>> getFeedbackAssistantMessageContext(String functionName) {
+        return getPrompt(functionName).getFeedbackAssistantContext();
+    }
+
 }

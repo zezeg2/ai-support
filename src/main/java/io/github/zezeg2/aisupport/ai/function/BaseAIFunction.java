@@ -9,14 +9,17 @@ import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.argument.MapArgument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
+import io.github.zezeg2.aisupport.ai.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
-import io.github.zezeg2.aisupport.ai.validator.*;
+import io.github.zezeg2.aisupport.ai.model.gpt.GPT3Model;
+import io.github.zezeg2.aisupport.ai.validator.DefaultResultValidator;
+import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.Supportable;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
-import io.github.zezeg2.aisupport.common.enums.WRAPPING;
+import io.github.zezeg2.aisupport.common.enums.STRUCTURE;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportArgumentException;
 import io.github.zezeg2.aisupport.context.LocalPromptContextHolder;
@@ -43,6 +46,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             public interface FC {
                 String %s(%s);
             }
+                        
             public class Main {
                 public static void main(String[] args) {
                     FC fc = (%s) -> {
@@ -53,21 +57,21 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             """;
     protected static final String PROMPT_TEMPLATE = """
             You are now the following Java Lambda function
+            Purpose: %s
             ```java
             %s
                         
-            // Purpose: %s
             %s
             ```
             Constraints
             - Only respond with your `return` value. Do not include any other explanatory text in your response at all.
+            - ensures that JSON string is parseable and fully compliant with the provided Result Format. If an object or field specified in the Result Format isn't contained within the correct JSON, it is omitted. The function also escapes any double quotes within JSON string values to ensure that they are valid. If the JSON string contains any empty values, they are replaced with null before being parsed.
             %s
             - Input Format : %s
             - Result Format : %s
             """;
     @Getter
     protected final PromptManager promptManager;
-    protected final ExceptionValidatorChain exceptionValidatorChain;
     protected final ResultValidatorChain resultValidatorChain;
 
     public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver) {
@@ -79,11 +83,10 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         this.mapper = mapper;
         this.resolver = resolver;
         this.promptManager = new PromptManager(service, new LocalPromptContextHolder(), new ThreadNameIdentifierProvider());
-        this.exceptionValidatorChain = new ExceptionValidatorChain(List.of(new DefaultExceptionValidator(promptManager)));
-        this.resultValidatorChain = new ResultValidatorChain(List.of(new DefaultResultValidator(promptManager)), Object.class);
+        this.resultValidatorChain = new ResultValidatorChain(List.of(new DefaultResultValidator(promptManager)));
     }
 
-    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ExceptionValidatorChain exceptionValidatorChain, ResultValidatorChain resultValidatorChain) {
+    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ResultValidatorChain resultValidatorChain) {
         this.functionName = functionName;
         this.purpose = purpose;
         this.constraints = constraints;
@@ -92,7 +95,6 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         this.mapper = mapper;
         this.resolver = resolver;
         this.promptManager = promptManager;
-        this.exceptionValidatorChain = exceptionValidatorChain;
         this.resultValidatorChain = resultValidatorChain;
     }
 
@@ -101,6 +103,23 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         List<ChatMessage> messages = createMessages(args);
         ChatCompletionResult response = createChatCompletion(model, messages);
         return parseResponse(response);
+    }
+
+    @Override
+    public T executeWithContext(List<Argument<?>> args) throws Exception {
+        if (promptManager.getContext().getPrompt(functionName) == null) {
+            Prompt prompt = new Prompt(
+                    purpose,
+                    resolveRefTypes(args, returnType),
+                    createFunction(args),
+                    createConstraints(constraints),
+                    buildInputFormat(args),
+                    buildResultFormat());
+            promptManager.initPromptContext(functionName, prompt);
+        }
+        promptManager.addMessage(functionName, ROLE.USER, createValuesString(args));
+        ChatMessage responseMessage = promptManager.exchangeMessages(functionName, GPT3Model.GPT_3_5_TURBO, ContextType.PROMPT, true);
+        return parseResponseWithValidate(responseMessage);
     }
 
     @Override
@@ -116,7 +135,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             promptManager.initPromptContext(functionName, prompt);
         }
         promptManager.addMessage(functionName, ROLE.USER, createValuesString(args));
-        ChatMessage responseMessage = promptManager.exchangeMessages(functionName, model, true);
+        ChatMessage responseMessage = promptManager.exchangeMessages(functionName, model, ContextType.PROMPT, true);
         return parseResponseWithValidate(responseMessage);
     }
 
@@ -128,21 +147,8 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
 
     protected T parseResponseWithValidate(ChatMessage message) throws JsonProcessingException {
         String content = message.getContent();
-        boolean success = false;
-        System.out.println(content);
-        T value = null;
-        while (!success) {
-            try {
-                content = resultValidatorChain.validate(functionName, content);
-                value = mapper.readValue(content, returnType);
-                success = true;
-            } catch (JsonProcessingException e) {
-                exceptionValidatorChain.setException(e);
-                content = exceptionValidatorChain.validate(functionName, content);
-                value = mapper.readValue(content, returnType);
-            }
-        }
-        return value;
+        content = resultValidatorChain.validate(functionName, content);
+        return mapper.readValue(content, returnType);
     }
 
     protected String buildInputFormat(List<Argument<?>> args) throws Exception {
@@ -163,13 +169,13 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
                 Map.Entry<String, Object> entry = descMap.entrySet().iterator().next();
                 inputDescMap.put(argument.getFieldName(), entry.getValue());
             }
-        } else if (argWrapping.equals(WRAPPING.LIST.getValue())) {
+        } else if (argWrapping.equals(STRUCTURE.LIST.getValue())) {
             if (!descMap.isEmpty()) {
                 Map.Entry<String, Object> entry = descMap.entrySet().iterator().next();
                 inputDescMap.put(argument.getFieldName(), List.of(entry.getValue()));
             }
 
-        } else if (argWrapping.equals(WRAPPING.MAP.getValue())) {
+        } else if (argWrapping.equals(STRUCTURE.MAP.getValue())) {
             Map<String, Map<String, Object>> transformedMap = new LinkedHashMap<>();
             for (String key : ((MapArgument<?>) argument).getValue().keySet()) {
                 transformedMap.put(key, descMap);

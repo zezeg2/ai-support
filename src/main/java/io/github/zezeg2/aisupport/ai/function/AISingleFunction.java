@@ -24,7 +24,7 @@ public class AISingleFunction<T> extends BaseAIFunction<T> {
 
     @Override
     public String createPrompt(String description, String refTypes, String functionTemplate, String constraints, String inputFormat, String resultFormat) {
-        return PROMPT_TEMPLATE.formatted(refTypes, description, functionTemplate, constraints, inputFormat, resultFormat);
+        return PROMPT_TEMPLATE.formatted(description, refTypes, functionTemplate, constraints, inputFormat, resultFormat);
     }
 
     @Override

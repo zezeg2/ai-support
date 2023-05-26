@@ -30,6 +30,7 @@ public class Prompt {
     private final String inputFormat;
     private final String resultFormat;
     private final Map<String, List<ChatMessage>> promptMessageContext;
+    private final Map<String, List<ChatMessage>> feedbackAssistantContext;
 
     public Prompt(String purpose, String refTypes, String function, String constraints, String inputFormat, String resultFormat) {
         this.purpose = purpose;
@@ -39,11 +40,11 @@ public class Prompt {
         this.inputFormat = inputFormat;
         this.resultFormat = resultFormat;
         this.promptMessageContext = new ConcurrentHashMap<>();
+        this.feedbackAssistantContext = new ConcurrentHashMap<>();
     }
 
     @Override
     public String toString() {
-        // return the generated prompt
         return String.format(PROMPT_TEMPLATE, this.function, this.purpose, this.refTypes, this.constraints, this.inputFormat, this.resultFormat);
     }
 }

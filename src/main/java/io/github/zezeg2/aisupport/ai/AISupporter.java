@@ -7,7 +7,7 @@ import io.github.zezeg2.aisupport.ai.function.AIListFunction;
 import io.github.zezeg2.aisupport.ai.function.AIMapFunction;
 import io.github.zezeg2.aisupport.ai.function.AISingleFunction;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
-import io.github.zezeg2.aisupport.common.enums.WRAPPING;
+import io.github.zezeg2.aisupport.common.enums.STRUCTURE;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 
 import java.util.List;
@@ -24,8 +24,8 @@ public class AISupporter {
     private final ObjectMapper mapper;
     private final ConstructResolver resolver;
 
-    public <T> AIFunction<?> createFunction(WRAPPING wrapping, String functionName, String purpose, Class<T> returnType, List<Constraint> constraintList) {
-        return switch (wrapping) {
+    public <T> AIFunction<?> createFunction(STRUCTURE structure, String functionName, String purpose, Class<T> returnType, List<Constraint> constraintList) {
+        return switch (structure) {
             case SINGLE ->
                     new AISingleFunction<>(functionName, purpose, constraintList, returnType, service, mapper, resolver);
             case LIST ->

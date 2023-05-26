@@ -1,4 +1,6 @@
-package io.github.zezeg2.aisupport.ai.validator;
+package io.github.zezeg2.aisupport.ai.validator.chain;
+
+import io.github.zezeg2.aisupport.ai.validator.Validatable;
 
 import java.util.List;
 
