@@ -10,18 +10,31 @@ import java.util.concurrent.ConcurrentHashMap;
 @Getter
 public class Prompt {
     protected static final String PROMPT_TEMPLATE = """
-            You are now the following Java Lambda function
+            You are now the following Java Lambda function. 
+                        
+            The class structure is as follows:
             ```java
             %s
+            ```
                         
-            // Purpose: %s
+            Here's the main class where you need to execute the lambda function:
+            ```java
+            // This function should %s
             %s
             ```
-            Constraints
+            Constraints:
             - Only respond with your `return` value. Do not include any other explanatory text in your response.
             %s
-            - Input Format : %s
-            - Result Format : %s
+                        
+            Input Format: 
+            ```json
+            %s
+            ```
+                        
+            Result Format:
+            ```json
+            %s
+            ```
             """;
     private final String purpose;
     private final String refTypes;
@@ -45,6 +58,6 @@ public class Prompt {
 
     @Override
     public String toString() {
-        return String.format(PROMPT_TEMPLATE, this.function, this.purpose, this.refTypes, this.constraints, this.inputFormat, this.resultFormat);
+        return String.format(PROMPT_TEMPLATE, this.refTypes, this.purpose, this.function, this.constraints, this.inputFormat, this.resultFormat);
     }
 }

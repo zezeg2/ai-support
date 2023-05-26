@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
+import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
+import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
+import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 
 import java.util.List;
@@ -12,12 +15,17 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class AIMapFunction<T> extends BaseAIFunction<Map<String, T>> {
-    public AIMapFunction(String functionName, String description, List<Constraint> constraintList, Class<Map<String, T>> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, Class<T> wrappedType) {
-        super(functionName, description, constraintList, returnType, service, mapper, resolver);
+    private final Class<T> wrappedType;
+
+    public AIMapFunction(String functionName, String purpose, List<Constraint> constraints, Class<Map<String, T>> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, BuildFormatUtil formatUtil, Class<T> wrappedType) {
+        super(functionName, purpose, constraints, returnType, service, mapper, resolver, formatUtil);
         this.wrappedType = wrappedType;
     }
 
-    private final Class<T> wrappedType;
+    public AIMapFunction(String functionName, String purpose, List<Constraint> constraints, Class<Map<String, T>> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, BuildFormatUtil formatUtil, PromptManager promptManager, ResultValidatorChain resultValidatorChain, Class<T> wrappedType) {
+        super(functionName, purpose, constraints, returnType, service, mapper, resolver, formatUtil, promptManager, resultValidatorChain);
+        this.wrappedType = wrappedType;
+    }
 
     @Override
     public String buildResultFormat() throws Exception {

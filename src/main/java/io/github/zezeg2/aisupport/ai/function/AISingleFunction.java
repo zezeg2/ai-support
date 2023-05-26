@@ -4,15 +4,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
+import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
+import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
+import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class AISingleFunction<T> extends BaseAIFunction<T> {
-    public AISingleFunction(String functionName, String description, List<Constraint> constraintList, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver) {
-        super(functionName, description, constraintList, returnType, service, mapper, resolver);
+    public AISingleFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, BuildFormatUtil formatUtil) {
+        super(functionName, purpose, constraints, returnType, service, mapper, resolver, formatUtil);
+    }
+
+    public AISingleFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, BuildFormatUtil formatUtil, PromptManager promptManager, ResultValidatorChain resultValidatorChain) {
+        super(functionName, purpose, constraints, returnType, service, mapper, resolver, formatUtil, promptManager, resultValidatorChain);
     }
 
     @Override

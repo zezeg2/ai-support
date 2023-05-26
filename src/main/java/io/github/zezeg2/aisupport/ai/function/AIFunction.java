@@ -6,11 +6,8 @@ import io.github.zezeg2.aisupport.ai.model.AIModel;
 import java.util.List;
 
 public interface AIFunction<T> {
+
     T execute(List<Argument<?>> args, AIModel model) throws Exception;
-
-    T executeWithContext(List<Argument<?>> args) throws Exception;
-
-    T executeWithContext(List<Argument<?>> args, AIModel model) throws Exception;
 
     String buildResultFormat() throws Exception;
 

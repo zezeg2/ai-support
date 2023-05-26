@@ -17,7 +17,7 @@ public class ResultValidatorChain extends ValidatorChain<ResultValidator> {
         for (ResultValidator validator : validators) {
             ValidateTarget targetFunction = validator.getClass().getAnnotation(ValidateTarget.class);
             List<String> targetFunctionList = Arrays.stream(targetFunction.names()).toList();
-            if (targetFunction.global() || targetFunctionList.contains(functionName) && validator.isRequired(functionName)) {
+            if (targetFunction.global() || targetFunctionList.contains(functionName)) {
                 result = validator.validate(functionName);
             }
         }

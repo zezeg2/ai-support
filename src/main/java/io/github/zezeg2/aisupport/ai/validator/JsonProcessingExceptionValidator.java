@@ -1,6 +1,6 @@
 package io.github.zezeg2.aisupport.ai.validator;
 
-import com.theokanning.openai.completion.chat.ChatMessage;
+import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import io.github.zezeg2.aisupport.ai.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
@@ -28,9 +28,9 @@ public class JsonProcessingExceptionValidator implements Validatable {
                             
                 Result Format : %s
                 """;
-        promptManager.addMessage(functionName, ROLE.USER, VALIDATE_EXCEPTION_TEMPLATE.formatted(exception.getClass().getSimpleName(), exception.getMessage(), prompt.getResultFormat()));
-        ChatMessage responseMessage = promptManager.exchangeMessages(functionName, GPT3Model.GPT_3_5_TURBO, ContextType.PROMPT, true);
-        String content = responseMessage.getContent();
+        promptManager.addMessage(functionName, ROLE.USER, ContextType.PROMPT, VALIDATE_EXCEPTION_TEMPLATE.formatted(exception.getClass().getSimpleName(), exception.getMessage(), prompt.getResultFormat()));
+        ChatCompletionResult response = promptManager.exchangeMessages(functionName, GPT3Model.GPT_3_5_TURBO, ContextType.PROMPT, true);
+        String content = response.getChoices().get(0).getMessage().getContent();
         System.out.println(content);
         return content;
     }

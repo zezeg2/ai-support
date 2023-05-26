@@ -5,7 +5,6 @@ import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
-import io.github.zezeg2.aisupport.ai.model.gpt.GPT3Model;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.exceptions.NotInitiatedContextException;
 import io.github.zezeg2.aisupport.context.ContextIdentifierProvider;
@@ -35,22 +34,7 @@ public class PromptManager {
         }
         Map<String, List<ChatMessage>> promptMessageContext = prompt.getPromptMessageContext();
         if (!promptMessageContext.containsKey(getIdentifier())) {
-            addMessage(functionName, ROLE.SYSTEM, prompt.toString());
-        }
-    }
-
-
-    public void addMessage(String functionName, ROLE role, String message) {
-        String identifier = getIdentifier();
-        Map<String, List<ChatMessage>> promptMessageContext = context.getPrompt(functionName).getPromptMessageContext();
-        if (!promptMessageContext.containsKey(identifier))
-            promptMessageContext.put(identifier, new CopyOnWriteArrayList<>());
-
-        List<ChatMessage> chatMessages = promptMessageContext.get(identifier);
-        if (!chatMessages.isEmpty()) chatMessages.add(new ChatMessage(role.getValue(), message));
-        else {
-            if (role.equals(ROLE.SYSTEM)) chatMessages.add(new ChatMessage(role.getValue(), message));
-            else throw new NotInitiatedContextException();
+            addMessage(functionName, ROLE.SYSTEM, ContextType.PROMPT, prompt.toString());
         }
     }
 
@@ -72,26 +56,27 @@ public class PromptManager {
         }
     }
 
-    public ChatMessage exchangeMessages(String functionName, ContextType contextType, boolean save) {
-        List<ChatMessage> contextMessages;
-        if (contextType.equals(ContextType.PROMPT))
-            contextMessages = context.getPrompt(functionName).getPromptMessageContext().get(getIdentifier());
-        else contextMessages = context.getPrompt(functionName).getFeedbackAssistantContext().get(getIdentifier());
-        ChatCompletionResult response = createChatCompletion(GPT3Model.GPT_3_5_TURBO, contextMessages);
-        ChatMessage responseMessage = response.getChoices().get(0).getMessage();
-        if (save) contextMessages.add(responseMessage);
-        return responseMessage;
-    }
-
-    public ChatMessage exchangeMessages(String functionName, AIModel model, ContextType contextType, boolean save) {
+    public ChatCompletionResult exchangeMessages(String functionName, AIModel model, ContextType contextType, boolean save) {
         List<ChatMessage> contextMessages;
         if (contextType.equals(ContextType.PROMPT))
             contextMessages = context.getPrompt(functionName).getPromptMessageContext().get(getIdentifier());
         else contextMessages = context.getPrompt(functionName).getFeedbackAssistantContext().get(getIdentifier());
         ChatCompletionResult response = createChatCompletion(model, contextMessages);
         ChatMessage responseMessage = response.getChoices().get(0).getMessage();
+        responseMessage.setContent(extractJsonFromMessage(responseMessage.getContent()));
         if (save) contextMessages.add(responseMessage);
-        return responseMessage;
+        return response;
+    }
+
+    private String extractJsonFromMessage(String originalString) {
+        int firstIndex = originalString.indexOf('{');
+        int lastIndex = originalString.lastIndexOf('}') + 1;
+
+        if (firstIndex != -1 && lastIndex != -1) {
+            return originalString.substring(firstIndex, lastIndex);
+        } else {
+            return originalString;
+        }
     }
 
     public ChatCompletionResult createChatCompletion(AIModel model, List<ChatMessage> messages) {

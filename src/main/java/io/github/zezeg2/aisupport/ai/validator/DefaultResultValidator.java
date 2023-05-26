@@ -4,6 +4,7 @@ import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.ai.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
+import io.github.zezeg2.aisupport.ai.model.gpt.GPT3Model;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 
 import java.util.List;
@@ -13,15 +14,16 @@ import java.util.regex.Pattern;
 
 @ValidateTarget(global = true)
 public class DefaultResultValidator extends ResultValidator {
-    private final static String SYSTEM_TEMPLATE = """
-            Make sure following JsonString strictly adheres to the given `Constraints` and `Result Format`. If the given jsonString is perfect, please respond with  just "true", otherwise please respond with feedback message to improve the jsonString. (response as String value)
+    private final static String FEEDBACK_TEMPLATE = """
+            You are tasked with inspecting the provided Json and supplying feedback. Firstly, verify that the supplied Json is in strict accordance with the `Result Format`. Secondly, inspect the Json content for full compliance with each item in the given `Constraints`. If the inspection results are flawless, respond with the term "true". If there are any issues identified from the inspection, provide the results as feedback. The response should be limited to the inspection results, without additional explanation.
                         
-            Remind Constraints
             Constraints
-            - Only respond with your `return` value. Do not include any other explanatory text in your response at all.
             %s
                         
-            Result Format: %s
+            Result Format:
+            ```json
+            %s
+            ```
             """;
 
     public DefaultResultValidator(PromptManager promptManager) {
@@ -33,20 +35,8 @@ public class DefaultResultValidator extends ResultValidator {
         Prompt prompt = promptManager.getPrompt(functionName);
         Map<String, List<ChatMessage>> feedbackAssistantContext = prompt.getFeedbackAssistantContext();
         if (!feedbackAssistantContext.containsKey(promptManager.getIdentifier())) {
-            promptManager.addMessage(functionName, ROLE.SYSTEM, ContextType.FEEDBACK, SYSTEM_TEMPLATE.formatted(prompt.getConstraints(), prompt.getResultFormat()));
+            promptManager.addMessage(functionName, ROLE.SYSTEM, ContextType.FEEDBACK, FEEDBACK_TEMPLATE.formatted(prompt.getConstraints(), prompt.getResultFormat()));
         }
-    }
-
-    @Override
-    public boolean isRequired(String functionName) {
-//        initFeedbackAssistantContext(functionName);
-//        Prompt prompt = promptManager.getPrompt(functionName);
-//        promptManager.addMessage(functionName, ROLE.USER, CHECK_TEMPLATE.formatted(prompt.getConstraints()));
-//        ChatMessage responseMessage = promptManager.exchangeMessages(functionName, GPT3Model.GPT_3_5_TURBO, ContextType.FEEDBACK, true);
-//        String content = parseBooleanFromString(responseMessage.getContent());
-//        System.out.println(content);
-//        return !Boolean.parseBoolean(content);
-        return true;
     }
 
     @Override
@@ -56,23 +46,24 @@ public class DefaultResultValidator extends ResultValidator {
         List<ChatMessage> feedbackAssistantMessageList = promptManager.getFeedbackAssistantMessageList(functionName);
         int count = 0;
         while (true) {
-            if (count > 2){
+            if (count > 2) {
                 throw new RuntimeException("Maximum Validate count over");
             }
-            System.out.println("try count : " +count++ + "--------------------------------------------------------------");
+            System.out.println("try count : " + (count++) + "--------------------------------------------------------------");
             String lastPromptMessage = promptMessageList.get(promptMessageList.size() - 1).getContent();
             System.out.println(lastPromptMessage);
             promptManager.addMessage(functionName, ROLE.USER, ContextType.FEEDBACK, lastPromptMessage);
-            promptManager.exchangeMessages(functionName, ContextType.FEEDBACK, true);
+            promptManager.exchangeMessages(functionName, GPT3Model.GPT_3_5_TURBO, ContextType.FEEDBACK, true);
 
             String lastFeedbackMessage = feedbackAssistantMessageList.get(feedbackAssistantMessageList.size() - 1).getContent();
             System.out.println(lastFeedbackMessage);
-            if (Boolean.parseBoolean(parseBooleanFromString(lastFeedbackMessage.toLowerCase()))) {
+            String lowerCase = lastFeedbackMessage.toLowerCase();
+            if (Boolean.parseBoolean(parseBooleanFromString(lowerCase))) {
                 return lastPromptMessage;
             }
 
-            promptManager.addMessage(functionName, ROLE.USER, ContextType.PROMPT, lastFeedbackMessage + "Please respond again, incorporating the feedback");
-            promptManager.exchangeMessages(functionName, ContextType.PROMPT, true);
+            promptManager.addMessage(functionName, ROLE.USER, ContextType.PROMPT, lastFeedbackMessage + "Respond again, incorporating the feedback");
+            promptManager.exchangeMessages(functionName, GPT3Model.GPT_3_5_TURBO, ContextType.PROMPT, true);
         }
     }
 
