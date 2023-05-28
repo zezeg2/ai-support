@@ -11,7 +11,5 @@ public interface AIFunction<T> {
 
     String buildResultFormat() throws Exception;
 
-    String createPrompt(String description, String refTypes, String functionTemplate, String constraints, String inputFormat, String resultFormat);
-
     String createFunction(List<Argument<?>> args);
 }

@@ -5,6 +5,7 @@ import io.github.zezeg2.aisupport.ai.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPT3Model;
+import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 
 import java.util.List;
@@ -14,29 +15,30 @@ import java.util.regex.Pattern;
 
 @ValidateTarget(global = true)
 public class DefaultResultValidator extends ResultValidator {
-    private final static String FEEDBACK_TEMPLATE = """
-            You are tasked with inspecting the provided Json and supplying feedback. Firstly, verify that the supplied Json is in strict accordance with the `Result Format`. Secondly, inspect the Json content for full compliance with each item in the given `Constraints`. If the inspection results are flawless, respond with the term "true". If there are any issues identified from the inspection, provide the results as feedback. The response should be limited to the inspection results, without additional explanation.
+
+    public DefaultResultValidator(PromptManager promptManager, BuildFormatUtil formatUtil) {
+        super(promptManager, formatUtil);
+    }
+    @Override
+    public String buildTemplate(String functionName) {
+        String FEEDBACK_TEMPLATE = """
+            You are tasked with inspecting the provided Json and supplying feedback.
+            Firstly, verify that the supplied Json is in strict accordance with the `Required Format`.
+            Secondly, inspect the Json content for full compliance with each item in the given `Constraints`.
+            If the inspection results are flawless, respond with the term "true".
+            If there are any issues identified from the inspection, provide the results as feedback.
+            The response should be limited to the inspection results, without additional explanation.
                         
             Constraints
             %s
                         
-            Result Format:
+            Required Format:
             ```json
             %s
             ```
             """;
-
-    public DefaultResultValidator(PromptManager promptManager) {
-        super(promptManager);
-    }
-
-    @Override
-    public void initFeedbackAssistantContext(String functionName) {
         Prompt prompt = promptManager.getPrompt(functionName);
-        Map<String, List<ChatMessage>> feedbackAssistantContext = prompt.getFeedbackAssistantContext();
-        if (!feedbackAssistantContext.containsKey(promptManager.getIdentifier())) {
-            promptManager.addMessage(functionName, ROLE.SYSTEM, ContextType.FEEDBACK, FEEDBACK_TEMPLATE.formatted(prompt.getConstraints(), prompt.getResultFormat()));
-        }
+        return FEEDBACK_TEMPLATE.formatted(prompt.getConstraints(), prompt.getResultFormat());
     }
 
     @Override
@@ -57,8 +59,7 @@ public class DefaultResultValidator extends ResultValidator {
 
             String lastFeedbackMessage = feedbackAssistantMessageList.get(feedbackAssistantMessageList.size() - 1).getContent();
             System.out.println(lastFeedbackMessage);
-            String lowerCase = lastFeedbackMessage.toLowerCase();
-            if (Boolean.parseBoolean(parseBooleanFromString(lowerCase))) {
+            if (Boolean.parseBoolean(parseBooleanFromString(lastFeedbackMessage))) {
                 return lastPromptMessage;
             }
 

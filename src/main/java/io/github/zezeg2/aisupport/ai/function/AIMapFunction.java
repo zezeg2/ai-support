@@ -35,16 +35,6 @@ public class AIMapFunction<T> extends BaseAIFunction<Map<String, T>> {
     }
 
     @Override
-    public String createPrompt(String description, String refTypes, String functionTemplate, String constraints, String inputFormat, String resultFormat) {
-
-        return PROMPT_TEMPLATE.formatted(description, refTypes, functionTemplate, constraints, inputFormat, """
-                {
-                    "key" : %s,
-                }
-                """.formatted(resultFormat));
-    }
-
-    @Override
     public String createFunction(List<Argument<?>> args) {
         String fieldsString = args.stream().map(Argument::getFieldName).collect(Collectors.joining(", "));
         String fieldTypesString = args.stream()

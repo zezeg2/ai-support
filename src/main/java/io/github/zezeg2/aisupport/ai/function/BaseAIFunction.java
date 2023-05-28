@@ -15,6 +15,7 @@ import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
+import io.github.zezeg2.aisupport.common.enums.STRUCTURE;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
 import io.github.zezeg2.aisupport.context.LocalPromptContextHolder;
 import io.github.zezeg2.aisupport.context.ThreadNameIdentifierProvider;
@@ -50,21 +51,6 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
                 }
             }
             """;
-    protected static final String PROMPT_TEMPLATE = """
-            You are now the following Java Lambda function
-            Purpose: %s
-            ```java
-            %s
-                        
-            %s
-            ```
-            Constraints
-            - Only respond with your `return` value. Do not include any other explanatory text in your response at all.
-            - ensures that JSON string is parseable and fully compliant with the provided Result Format. If an object or field specified in the Result Format isn't contained within the correct JSON, it is omitted. The function also escapes any double quotes within JSON string values to ensure that they are valid. If the JSON string contains any empty values, they are replaced with null before being parsed.
-            %s
-            - Input Format : %s
-            - Result Format : %s
-            """;
     @Getter
     protected final PromptManager promptManager;
     protected final ResultValidatorChain resultValidatorChain;
@@ -79,7 +65,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         this.resolver = resolver;
         this.formatUtil = formatUtil;
         this.promptManager = new PromptManager(service, new LocalPromptContextHolder(), new ThreadNameIdentifierProvider());
-        this.resultValidatorChain = new ResultValidatorChain(List.of(new DefaultResultValidator(promptManager)));
+        this.resultValidatorChain = new ResultValidatorChain(List.of(new DefaultResultValidator(promptManager, formatUtil)));
     }
 
     public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, BuildFormatUtil formatUtil, PromptManager promptManager, ResultValidatorChain resultValidatorChain) {
@@ -98,13 +84,28 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     @Override
     public T execute(List<Argument<?>> args, AIModel model) throws Exception {
         if (promptManager.getContext().getPrompt(functionName) == null) {
+            String resultFormat = buildResultFormat();
+            if (returnType.equals(STRUCTURE.LIST.getValue())){
+                resultFormat = """
+                [
+                    %s,
+                ]
+                """.formatted(resultFormat);
+            }
+            if (returnType.equals(STRUCTURE.MAP.getValue())){
+                resultFormat = """
+                {
+                    "key" : %s,
+                }
+                """.formatted(resultFormat);
+            }
             Prompt prompt = new Prompt(
                     purpose,
                     resolveRefTypes(args, returnType),
                     createFunction(args),
                     createConstraints(constraints),
                     convertMapToJson(formatUtil.getArgumentsFormatMap(args)),
-                    buildResultFormat());
+                    resultFormat);
             promptManager.initPromptContext(functionName, prompt);
         }
         promptManager.addMessage(functionName, ROLE.USER, ContextType.PROMPT, createValuesString(args));

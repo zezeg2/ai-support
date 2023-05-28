@@ -10,8 +10,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @Getter
 public class Prompt {
     protected static final String PROMPT_TEMPLATE = """
-            You are now the following Java Lambda function. 
-                        
+            You are a function execution delegate. When I present an input, you generate and return the result. If you perform your role well, the `Lambda Function` below will finally run in action.
+            
+            The purpose I want to achieve through the function is as follows.
+            Purpose: %s
+            
             The class structure is as follows:
             ```java
             %s
@@ -19,14 +22,15 @@ public class Prompt {
                         
             Here's the main class where you need to execute the lambda function:
             ```java
-            // This function should %s
             %s
             ```
+            
+            Please adhere to the following constraints when generating results.
             Constraints:
             - Only respond with your `return` value. Do not include any other explanatory text in your response.
             %s
                         
-            Input Format: 
+            Input Format:
             ```json
             %s
             ```
@@ -58,6 +62,6 @@ public class Prompt {
 
     @Override
     public String toString() {
-        return String.format(PROMPT_TEMPLATE, this.refTypes, this.purpose, this.function, this.constraints, this.inputFormat, this.resultFormat);
+        return String.format(PROMPT_TEMPLATE, this.purpose, this.refTypes, this.function, this.constraints, this.inputFormat, this.resultFormat);
     }
 }
