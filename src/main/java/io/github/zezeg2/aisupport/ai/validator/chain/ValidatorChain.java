@@ -12,5 +12,5 @@ public abstract class ValidatorChain<T extends Validatable> {
         this.validators = validators;
     }
 
-    public abstract String validate(String functionName, String target);
+    public abstract String validate(String functionName, String target) throws Exception;
 }

@@ -39,6 +39,12 @@ public class Prompt {
             ```json
             %s
             ```
+            
+            If you receive input in the given `Feedback Format`(FeedbackResponse.class), please respond by reflecting the content of the feedback in the previous results.
+            Feedback Format
+            ```json
+            %s
+            ```
             """;
     private final String purpose;
     private final String refTypes;
@@ -46,22 +52,25 @@ public class Prompt {
     private final String constraints;
     private final String inputFormat;
     private final String resultFormat;
+    private final String feedbackFormat;
     private final Map<String, List<ChatMessage>> promptMessageContext;
     private final Map<String, List<ChatMessage>> feedbackAssistantContext;
 
-    public Prompt(String purpose, String refTypes, String function, String constraints, String inputFormat, String resultFormat) {
+
+    public Prompt(String purpose, String refTypes, String function, String constraints, String inputFormat, String resultFormat, String feedbackFormat) {
         this.purpose = purpose;
         this.refTypes = refTypes;
         this.function = function;
         this.constraints = constraints;
         this.inputFormat = inputFormat;
         this.resultFormat = resultFormat;
+        this.feedbackFormat = feedbackFormat;
         this.promptMessageContext = new ConcurrentHashMap<>();
         this.feedbackAssistantContext = new ConcurrentHashMap<>();
     }
 
     @Override
     public String toString() {
-        return String.format(PROMPT_TEMPLATE, this.purpose, this.refTypes, this.function, this.constraints, this.inputFormat, this.resultFormat);
+        return String.format(PROMPT_TEMPLATE, this.purpose, this.refTypes, this.function, this.constraints, this.inputFormat, this.resultFormat, this.feedbackFormat);
     }
 }

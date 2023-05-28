@@ -11,6 +11,7 @@ import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.ai.validator.DefaultResultValidator;
+import io.github.zezeg2.aisupport.ai.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
@@ -101,11 +102,12 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             }
             Prompt prompt = new Prompt(
                     purpose,
-                    resolveRefTypes(args, returnType),
+                    resolveRefTypes(args),
                     createFunction(args),
                     createConstraints(constraints),
                     convertMapToJson(formatUtil.getArgumentsFormatMap(args)),
-                    resultFormat);
+                    resultFormat,
+                    formatUtil.getFormatString(FeedbackResponse.class));
             promptManager.initPromptContext(functionName, prompt);
         }
         promptManager.addMessage(functionName, ROLE.USER, ContextType.PROMPT, createValuesString(args));
@@ -119,7 +121,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         return mapper.readValue(content, returnType);
     }
 
-    protected T parseResponseWithValidate(ChatCompletionResult response) throws JsonProcessingException {
+    protected T parseResponseWithValidate(ChatCompletionResult response) throws Exception {
         String content = response.getChoices().get(0).getMessage().getContent();
         content = resultValidatorChain.validate(functionName, content);
         return mapper.readValue(content, returnType);
@@ -145,9 +147,10 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(valueMap);
     }
 
-    protected String resolveRefTypes(List<Argument<?>> args, Class<?> returnType) {
+    protected String resolveRefTypes(List<Argument<?>> args) {
         Set<Class<?>> classList = args.stream().map(Argument::getType).collect(Collectors.toSet());
-        if (returnType != null) classList.add(returnType);
+        classList.add(returnType);
+        classList.add(FeedbackResponse.class);
         return resolver.resolve(classList);
     }
 

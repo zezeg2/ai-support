@@ -1,5 +1,5 @@
 package io.github.zezeg2.aisupport.ai.validator;
 
 public interface Validatable {
-    String validate(String functionName);
+    String validate(String functionName) throws Exception;
 }

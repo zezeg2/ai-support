@@ -9,9 +9,6 @@ import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @ValidateTarget(global = true)
 public class DefaultResultValidator extends ResultValidator {
@@ -20,9 +17,8 @@ public class DefaultResultValidator extends ResultValidator {
         super(promptManager, formatUtil);
     }
     @Override
-    public String buildTemplate(String functionName) {
+    public String addContents(String functionName) {
         String FEEDBACK_TEMPLATE = """
-            You are tasked with inspecting the provided Json and supplying feedback.
             Firstly, verify that the supplied Json is in strict accordance with the `Required Format`.
             Secondly, inspect the Json content for full compliance with each item in the given `Constraints`.
             If the inspection results are flawless, respond with the term "true".
@@ -37,15 +33,19 @@ public class DefaultResultValidator extends ResultValidator {
             %s
             ```
             """;
+
+
         Prompt prompt = promptManager.getPrompt(functionName);
         return FEEDBACK_TEMPLATE.formatted(prompt.getConstraints(), prompt.getResultFormat());
     }
 
     @Override
-    public String validate(String functionName) {
+    public String validate(String functionName) throws Exception {
         initFeedbackAssistantContext(functionName);
         List<ChatMessage> promptMessageList = promptManager.getPromptMessageList(functionName);
         List<ChatMessage> feedbackAssistantMessageList = promptManager.getFeedbackAssistantMessageList(functionName);
+        ChatMessage feedbackMessage;
+        FeedbackResponse feedbackResult;
         int count = 0;
         while (true) {
             if (count > 2) {
@@ -55,23 +55,17 @@ public class DefaultResultValidator extends ResultValidator {
             String lastPromptMessage = promptMessageList.get(promptMessageList.size() - 1).getContent();
             System.out.println(lastPromptMessage);
             promptManager.addMessage(functionName, ROLE.USER, ContextType.FEEDBACK, lastPromptMessage);
-            promptManager.exchangeMessages(functionName, GPT3Model.GPT_3_5_TURBO, ContextType.FEEDBACK, true);
+            feedbackMessage = promptManager.exchangeMessages(functionName, GPT3Model.GPT_3_5_TURBO, ContextType.FEEDBACK, true).getChoices().get(0).getMessage();
+            feedbackResult = mapper.readValue(feedbackMessage.getContent(), FeedbackResponse.class);
 
             String lastFeedbackMessage = feedbackAssistantMessageList.get(feedbackAssistantMessageList.size() - 1).getContent();
-            System.out.println(lastFeedbackMessage);
-            if (Boolean.parseBoolean(parseBooleanFromString(lastFeedbackMessage))) {
+            System.out.println(feedbackResult);
+            if (feedbackResult.isValid()) {
                 return lastPromptMessage;
             }
 
-            promptManager.addMessage(functionName, ROLE.USER, ContextType.PROMPT, lastFeedbackMessage + "Respond again, incorporating the feedback");
+            promptManager.addMessage(functionName, ROLE.USER, ContextType.PROMPT, lastFeedbackMessage);
             promptManager.exchangeMessages(functionName, GPT3Model.GPT_3_5_TURBO, ContextType.PROMPT, true);
         }
-    }
-
-    private String parseBooleanFromString(String input) {
-        Pattern pattern = Pattern.compile("\\b(true|false)\\b", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(input.toLowerCase());
-        if (matcher.find()) return matcher.group();
-        return "false";
     }
 }
