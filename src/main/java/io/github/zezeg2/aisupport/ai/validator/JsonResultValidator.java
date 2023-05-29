@@ -11,32 +11,35 @@ import io.github.zezeg2.aisupport.common.enums.ROLE;
 import java.util.List;
 
 @ValidateTarget(global = true)
-public class DefaultResultValidator extends ResultValidator {
+public class JsonResultValidator extends ResultValidator {
 
-    public DefaultResultValidator(PromptManager promptManager, BuildFormatUtil formatUtil) {
+    public JsonResultValidator(PromptManager promptManager, BuildFormatUtil formatUtil) {
         super(promptManager, formatUtil);
     }
     @Override
     public String addContents(String functionName) {
-        String FEEDBACK_TEMPLATE = """
-            Firstly, verify that the supplied Json is in strict accordance with the `Required Format`.
-            Secondly, inspect the Json content for full compliance with each item in the given `Constraints`.
-            If the inspection results are flawless, respond with the term "true".
-            If there are any issues identified from the inspection, provide the results as feedback.
-            The response should be limited to the inspection results, without additional explanation.
-                        
-            Constraints
-            %s
-                        
-            Required Format:
-            ```json
-            %s
-            ```
-            """;
+        String FEEDBACK_TEMPLATE = """  
+                1. Ensure parseability: Check that the JSON string is valid and can be properly parsed as `Required Format`.
+                  
+                2. Verify schema compliance: The JSON string should comply with a given schema, omitting any objects or fields mentioned in the schema but not found in the JSON.
+                
+                3. Escape double quotes: Within JSON string values, double quotes should be correctly escaped to ensure JSON validity.
+                  
+                4. Handle incorrectly escaped characters: Check for and handle any incorrectly escaped characters within the JSON string.
+                  
+                5. Replace None or NaN values: Any 'None' or 'NaN' values in the JSON string should be replaced with 'null' to facilitate correct parsing.
+                  
+                6. Parse the JSON: Parse the cleaned, schema-compliant JSON.
+                
+                Required Format:
+                ```json
+                %s
+                ```
+                """;
 
 
         Prompt prompt = promptManager.getPrompt(functionName);
-        return FEEDBACK_TEMPLATE.formatted(prompt.getConstraints(), prompt.getResultFormat());
+        return FEEDBACK_TEMPLATE.formatted(prompt.getResultFormat());
     }
 
     @Override

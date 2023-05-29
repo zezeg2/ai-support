@@ -29,16 +29,22 @@ public abstract class ResultValidator implements Validatable {
         }
     }
 
+    protected Prompt getPrompt(String functionName){
+        return promptManager.getPrompt(functionName);
+    }
+
     private String buildTemplate(String functionName) throws Exception {
         String FEEDBACK_FRAME = """
                 You are tasked with inspecting the provided Json and please provide feedback according to the given `Feedback Format`
-                            
-                %s
                             
                 Feedback Format:
                 ```json
                 %s
                 ```
+                                
+                The inspection items are as follows.
+                %s
+                            
                             
                 Do not include any other explanatory text in your response other than result
                 """;

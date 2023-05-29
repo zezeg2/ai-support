@@ -10,7 +10,8 @@ import io.github.zezeg2.aisupport.ai.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
-import io.github.zezeg2.aisupport.ai.validator.DefaultResultValidator;
+import io.github.zezeg2.aisupport.ai.validator.DefaultExceptionValidator;
+import io.github.zezeg2.aisupport.ai.validator.JsonResultValidator;
 import io.github.zezeg2.aisupport.ai.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
@@ -66,7 +67,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         this.resolver = resolver;
         this.formatUtil = formatUtil;
         this.promptManager = new PromptManager(service, new LocalPromptContextHolder(), new ThreadNameIdentifierProvider());
-        this.resultValidatorChain = new ResultValidatorChain(List.of(new DefaultResultValidator(promptManager, formatUtil)));
+        this.resultValidatorChain = new ResultValidatorChain(List.of(new JsonResultValidator(promptManager, formatUtil)));
     }
 
     public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, BuildFormatUtil formatUtil, PromptManager promptManager, ResultValidatorChain resultValidatorChain) {
@@ -122,9 +123,22 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     }
 
     protected T parseResponseWithValidate(ChatCompletionResult response) throws Exception {
+        DefaultExceptionValidator exceptionValidator = new DefaultExceptionValidator(promptManager);
         String content = response.getChoices().get(0).getMessage().getContent();
         content = resultValidatorChain.validate(functionName, content);
-        return mapper.readValue(content, returnType);
+        boolean success = false;
+        T value = null;
+        while (!success){
+            try{
+                value = mapper.readValue(content, returnType);
+                success = true;
+            } catch (Exception e){
+                exceptionValidator.setException(e);
+                content = exceptionValidator.validate(content);
+            }
+        }
+
+        return value;
     }
 
 
