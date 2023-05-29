@@ -7,10 +7,12 @@ import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPT3Model;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @ValidateTarget(global = true)
+@Component
 public class JsonResultValidator extends ResultValidator {
 
     public JsonResultValidator(PromptManager promptManager, BuildFormatUtil formatUtil) {

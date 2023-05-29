@@ -2,10 +2,12 @@ package io.github.zezeg2.aisupport.ai.validator.chain;
 
 import io.github.zezeg2.aisupport.ai.validator.ResultValidator;
 import io.github.zezeg2.aisupport.ai.validator.ValidateTarget;
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
 
+@Component
 public class ResultValidatorChain extends ValidatorChain<ResultValidator> {
     public ResultValidatorChain(List<ResultValidator> validators) {
         super(validators);

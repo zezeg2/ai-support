@@ -8,9 +8,11 @@ import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPT3Model;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import lombok.Setter;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 public class DefaultExceptionValidator implements Validatable {
     protected final PromptManager promptManager;
     @Setter

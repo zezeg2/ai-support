@@ -2,7 +2,9 @@ package io.github.zezeg2.aisupport.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Data;
 
+@Data
 public abstract class BaseSupportType implements Supportable {
     private static final ObjectMapper mapper = new ObjectMapper();
 
