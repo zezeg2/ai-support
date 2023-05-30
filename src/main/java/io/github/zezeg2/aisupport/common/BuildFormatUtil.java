@@ -6,12 +6,13 @@ import io.github.zezeg2.aisupport.common.enums.STRUCTURE;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportedConstructException;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportedTypeException;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class BuildFormatUtil {
-    public Map<String, Object> getArgumentsFormatMap(List<Argument<?>> args) throws Exception {
+    public Map<String, Object> getArgumentsFormatMap(List<Argument<?>> args) {
         Map<String, Object> inputDescMap = new LinkedHashMap<>();
         for (Argument<?> argument : args) {
             addArgumentFormat(inputDescMap, argument);
@@ -20,7 +21,7 @@ public class BuildFormatUtil {
         return inputDescMap;
     }
 
-    public void addArgumentFormat(Map<String, Object> inputDescMap, Argument<?> argument) throws Exception {
+    public void addArgumentFormat(Map<String, Object> inputDescMap, Argument<?> argument) {
         Class<?> argWrapping = argument.getWrapping();
 
         Map<String, Object> descMap = generateDescMap(argument, argument.getType());
@@ -46,9 +47,21 @@ public class BuildFormatUtil {
         }
     }
 
-    public Map<String, Object> generateDescMap(Argument<?> argument, Class<?> type) throws Exception {
+    public BaseSupportType getTempInstance(Class<?> type) {
+        BaseSupportType supportable;
+        try {
+            supportable = (BaseSupportType) type.getConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException e) {
+            String errorMessage = "Error occurred while generating description map: " + e.getMessage();
+            throw new RuntimeException(errorMessage, e);
+        }
+        return supportable;
+    }
+
+    public Map<String, Object> generateDescMap(Argument<?> argument, Class<?> type) {
         if (isBaseSupportType(type)) {
-            Supportable supportable = (Supportable) type.getConstructor().newInstance();
+            Supportable supportable = getTempInstance(type);
             return Map.of(argument.getFieldName(), supportable.getFormatMap());
         } else if (argument.getDesc() == null) {
             return Map.of(argument.getFieldName(), argument.getFieldName());
@@ -61,15 +74,15 @@ public class BuildFormatUtil {
         return type.getSuperclass().equals(BaseSupportType.class);
     }
 
-    public Map<String, Object> getFormatMap(Class<?> returnType) throws Exception {
+    public Map<String, Object> getFormatMap(Class<?> returnType) {
         if (isBaseSupportType(returnType))
-            return ((BaseSupportType) returnType.getConstructor().newInstance()).getFormatMap();
+            return getTempInstance(returnType).getFormatMap();
         else throw new NotSupportedTypeException();
     }
 
-    public String getFormatString(Class<?> returnType) throws Exception {
+    public String getFormatString(Class<?> returnType) {
         if (isBaseSupportType(returnType))
-            return ((BaseSupportType) returnType.getConstructor().newInstance()).getFormat();
+            return getTempInstance(returnType).getFormat();
         else return returnType.getSimpleName();
     }
 }

@@ -10,7 +10,7 @@ import java.util.*;
 
 public interface Supportable {
     @JsonIgnore
-    default Map<String, Object> getFormatMap() throws IllegalAccessException {
+    default Map<String, Object> getFormatMap() {
         Map<String, Object> format = SupportableFormatRegistry.getFormat(this.getClass());
         if (format != null) return format;
         Map<String, Object> fieldDescriptions = new HashMap<>();
@@ -22,7 +22,7 @@ public interface Supportable {
         return fieldDescriptions;
     }
 
-    default void handleField(Field field, Map<String, Object> fieldDescriptions) throws IllegalAccessException {
+    default void handleField(Field field, Map<String, Object> fieldDescriptions) {
         FieldDesc fieldDesc = field.getAnnotation(FieldDesc.class);
         String description = fieldDesc != null ? fieldDesc.value() : field.getName();
         Object fieldValue = getFieldValue(field);
@@ -45,8 +45,13 @@ public interface Supportable {
         }
     }
 
-    default Object getFieldValue(Field field) throws IllegalAccessException {
-        Object fieldValue = field.get(this);
+    default Object getFieldValue(Field field) {
+        Object fieldValue;
+        try {
+            fieldValue = field.get(this);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Failed to access field", e);
+        }
         Class<?> actualType;
         if (fieldValue == null) {
             Class<?> fieldType = field.getType();
@@ -76,7 +81,7 @@ public interface Supportable {
         }
     }
 
-    default List<Object> getListDescription(List<Object> list, String description) throws IllegalAccessException {
+    default List<Object> getListDescription(List<Object> list, String description) {
         List<Object> listDescriptions = new ArrayList<>();
         for (Object listItem : list) {
             if (listItem instanceof Supportable) {
@@ -89,7 +94,7 @@ public interface Supportable {
         return listDescriptions;
     }
 
-    default Map<String, Object> getMapDescription(String fieldName, Map<String, Object> map, String mapKeyDescription, String mapValueDescription) throws IllegalAccessException {
+    default Map<String, Object> getMapDescription(String fieldName, Map<String, Object> map, String mapKeyDescription, String mapValueDescription) {
         Map<String, Object> mapDescription = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : map.entrySet()) {
             if (entry.getValue() instanceof Supportable)

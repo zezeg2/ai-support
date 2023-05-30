@@ -67,19 +67,19 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     public T execute(List<Argument<?>> args, AIModel model) throws Exception {
         if (promptManager.getContext().getPrompt(functionName) == null) {
             String resultFormat = buildResultFormat();
-            if (returnType.equals(STRUCTURE.LIST.getValue())){
+            if (returnType.equals(STRUCTURE.LIST.getValue())) {
                 resultFormat = """
-                [
-                    %s,
-                ]
-                """.formatted(resultFormat);
+                        [
+                            %s,
+                        ]
+                        """.formatted(resultFormat);
             }
-            if (returnType.equals(STRUCTURE.MAP.getValue())){
+            if (returnType.equals(STRUCTURE.MAP.getValue())) {
                 resultFormat = """
-                {
-                    "key" : %s,
-                }
-                """.formatted(resultFormat);
+                        {
+                            "key" : %s,
+                        }
+                        """.formatted(resultFormat);
             }
             Prompt prompt = new Prompt(
                     purpose,
@@ -112,11 +112,11 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         content = resultValidatorChain.validate(functionName, content);
         boolean success = false;
         T value = null;
-        while (!success){
-            try{
+        while (!success) {
+            try {
                 value = mapper.readValue(content, returnType);
                 success = true;
-            } catch (Exception e){
+            } catch (Exception e) {
                 exceptionValidator.setException(e);
                 content = exceptionValidator.validate(content);
             }

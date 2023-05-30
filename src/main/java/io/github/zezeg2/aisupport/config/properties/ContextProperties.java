@@ -9,13 +9,13 @@ public class ContextProperties {
     private CONTEXT context = CONTEXT.LOCAL;
     private IDENTIFIER identifier = IDENTIFIER.THREAD;
 
-    public enum CONTEXT{
+    public enum CONTEXT {
         LOCAL,
         REDIS,
         MONGO
     }
 
-    public enum IDENTIFIER{
+    public enum IDENTIFIER {
         THREAD,
         SESSION,
         AUTHENTICATION

@@ -21,7 +21,7 @@ public abstract class ResultValidator implements Validatable {
         this.formatUtil = formatUtil;
     }
 
-    public void initFeedbackAssistantContext(String functionName) throws Exception {
+    public void initFeedbackAssistantContext(String functionName) {
         Prompt prompt = promptManager.getPrompt(functionName);
         Map<String, List<ChatMessage>> feedbackAssistantContext = prompt.getFeedbackAssistantContext();
         if (!feedbackAssistantContext.containsKey(promptManager.getIdentifier())) {
@@ -29,11 +29,11 @@ public abstract class ResultValidator implements Validatable {
         }
     }
 
-    protected Prompt getPrompt(String functionName){
+    protected Prompt getPrompt(String functionName) {
         return promptManager.getPrompt(functionName);
     }
 
-    private String buildTemplate(String functionName) throws Exception {
+    private String buildTemplate(String functionName) {
         String FEEDBACK_FRAME = """
                 You are tasked with inspecting the provided Json and please provide feedback according to the given `Feedback Format`
                             

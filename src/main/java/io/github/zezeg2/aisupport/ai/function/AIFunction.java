@@ -8,9 +8,10 @@ import java.util.List;
 public interface AIFunction<T> {
 
     T execute(List<Argument<?>> args) throws Exception;
+
     T execute(List<Argument<?>> args, AIModel model) throws Exception;
 
-    String buildResultFormat() throws Exception;
+    String buildResultFormat();
 
     String createFunction(List<Argument<?>> args);
 }

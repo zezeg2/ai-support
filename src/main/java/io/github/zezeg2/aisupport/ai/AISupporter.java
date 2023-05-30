@@ -36,7 +36,7 @@ public class AISupporter {
             case SINGLE ->
                     new AISingleFunction<>(functionName, purpose, constraintList, returnType, service, mapper, resolver, formatUtil, promptManager, resultValidatorChain, openAIProperties);
             case LIST ->
-                    new AIListFunction<>(functionName, purpose, constraintList, (Class<List<T>>) (Class<?>) List.class, service, mapper, resolver, formatUtil,promptManager, resultValidatorChain, openAIProperties, returnType);
+                    new AIListFunction<>(functionName, purpose, constraintList, (Class<List<T>>) (Class<?>) List.class, service, mapper, resolver, formatUtil, promptManager, resultValidatorChain, openAIProperties, returnType);
             case MAP ->
                     new AIMapFunction<>(functionName, purpose, constraintList, (Class<Map<String, T>>) (Class<?>) Map.class, service, mapper, resolver, formatUtil, promptManager, resultValidatorChain, openAIProperties, returnType);
         };
@@ -47,10 +47,10 @@ public class AISupporter {
     }
 
     public <T> AIFunction<List<T>> createListFunction(String functionName, String purpose, Class<T> returnType, List<Constraint> constraintList) {
-        return new AIListFunction<>(functionName, purpose, constraintList, (Class<List<T>>) (Class<?>) List.class, service, mapper, resolver, formatUtil, promptManager, resultValidatorChain, openAIProperties,returnType);
+        return new AIListFunction<>(functionName, purpose, constraintList, (Class<List<T>>) (Class<?>) List.class, service, mapper, resolver, formatUtil, promptManager, resultValidatorChain, openAIProperties, returnType);
     }
 
     public <T> AIFunction<Map<String, T>> createMapFunction(String functionName, String purpose, Class<T> returnType, List<Constraint> constraintList) {
-        return new AIMapFunction<>(functionName, purpose, constraintList, (Class<Map<String, T>>) (Class<?>) Map.class, service, mapper, resolver, formatUtil, promptManager, resultValidatorChain, openAIProperties,returnType);
+        return new AIMapFunction<>(functionName, purpose, constraintList, (Class<Map<String, T>>) (Class<?>) Map.class, service, mapper, resolver, formatUtil, promptManager, resultValidatorChain, openAIProperties, returnType);
     }
 }

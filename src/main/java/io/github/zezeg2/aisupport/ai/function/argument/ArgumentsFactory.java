@@ -1,10 +1,9 @@
 package io.github.zezeg2.aisupport.ai.function.argument;
 
-import org.springframework.context.annotation.Configuration;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 public class ArgumentsFactory {
 
     private final List<Argument<?>> arguments;

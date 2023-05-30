@@ -48,7 +48,7 @@ public class AISupportModuleConfig {
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.context", havingValue = "MONGO")
     public PromptContextHolder mongoPromptContextHolder(MongoTemplate mongoTemplate,
-                                                        ContextIdentifierProvider  identifierProvider) {
+                                                        ContextIdentifierProvider identifierProvider) {
         return new MongoPromptContextHolder(mongoTemplate, identifierProvider);
     }
 
@@ -76,6 +76,7 @@ public class AISupportModuleConfig {
     public ContextIdentifierProvider threadNameIdentifierProvider() {
         return new ThreadNameIdentifierProvider();
     }
+
     @Bean
     public ObjectMapper mapper() {
         return new ObjectMapper();
@@ -92,7 +93,7 @@ public class AISupportModuleConfig {
     }
 
     @Bean
-    public PromptManager promptManager(OpenAiService service, PromptContextHolder promptContextHolder ,ContextIdentifierProvider contextIdentifierProvider){
+    public PromptManager promptManager(OpenAiService service, PromptContextHolder promptContextHolder, ContextIdentifierProvider contextIdentifierProvider) {
         return new PromptManager(service, promptContextHolder, contextIdentifierProvider);
     }
 }

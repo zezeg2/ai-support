@@ -6,7 +6,6 @@ import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
-import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
@@ -23,10 +22,8 @@ public class AIListFunction<T> extends BaseAIFunction<List<T>> {
     }
 
     @Override
-    public String buildResultFormat() throws Exception {
-        if (isBaseSupportType(wrappedType))
-            return ((BaseSupportType) wrappedType.getConstructor().newInstance()).getFormat();
-        else return wrappedType.getSimpleName();
+    public String buildResultFormat() {
+        return formatUtil.getFormatString(wrappedType);
     }
 
     @Override

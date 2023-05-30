@@ -6,7 +6,6 @@ import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
-import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
@@ -20,10 +19,8 @@ public class AISingleFunction<T> extends BaseAIFunction<T> {
     }
 
     @Override
-    public String buildResultFormat() throws Exception {
-        if (isBaseSupportType(returnType))
-            return ((BaseSupportType) returnType.getConstructor().newInstance()).getFormat();
-        else return returnType.getSimpleName();
+    public String buildResultFormat() {
+        return formatUtil.getFormatString(returnType);
     }
 
     @Override

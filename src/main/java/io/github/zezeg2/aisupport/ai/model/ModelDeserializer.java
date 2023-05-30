@@ -25,5 +25,4 @@ public class ModelDeserializer extends StdDeserializer<GPTModel> {
                 .findAny()
                 .orElseThrow(() -> new IllegalArgumentException("Invalid value for enum: %s".formatted(value)));
     }
-
 }
