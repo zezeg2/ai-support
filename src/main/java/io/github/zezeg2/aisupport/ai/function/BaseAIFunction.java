@@ -11,7 +11,6 @@ import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.ai.validator.DefaultExceptionValidator;
-import io.github.zezeg2.aisupport.ai.validator.JsonResultValidator;
 import io.github.zezeg2.aisupport.ai.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
@@ -19,10 +18,9 @@ import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.STRUCTURE;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
-import io.github.zezeg2.aisupport.context.LocalPromptContextHolder;
-import io.github.zezeg2.aisupport.context.ThreadNameIdentifierProvider;
+import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
-import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 public abstract class BaseAIFunction<T> implements AIFunction<T> {
     protected final String functionName;
     protected final String purpose;
@@ -53,34 +52,15 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
                 }
             }
             """;
-    @Getter
     protected final PromptManager promptManager;
     protected final ResultValidatorChain resultValidatorChain;
 
-    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, BuildFormatUtil formatUtil) {
-        this.functionName = functionName;
-        this.purpose = purpose;
-        this.constraints = constraints;
-        this.returnType = returnType;
-        this.service = service;
-        this.mapper = mapper;
-        this.resolver = resolver;
-        this.formatUtil = formatUtil;
-        this.promptManager = new PromptManager(service, new LocalPromptContextHolder(), new ThreadNameIdentifierProvider());
-        this.resultValidatorChain = new ResultValidatorChain(List.of(new JsonResultValidator(promptManager, formatUtil)));
-    }
+    private final OpenAIProperties openAIProperties;
 
-    public BaseAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, BuildFormatUtil formatUtil, PromptManager promptManager, ResultValidatorChain resultValidatorChain) {
-        this.functionName = functionName;
-        this.purpose = purpose;
-        this.constraints = constraints;
-        this.returnType = returnType;
-        this.service = service;
-        this.mapper = mapper;
-        this.resolver = resolver;
-        this.formatUtil = formatUtil;
-        this.promptManager = promptManager;
-        this.resultValidatorChain = resultValidatorChain;
+    @Override
+    public T execute(List<Argument<?>> args) throws Exception {
+        AIModel model = getDefaultModel();
+        return execute(args, model);
     }
 
     @Override
@@ -114,6 +94,10 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         promptManager.addMessage(functionName, ROLE.USER, ContextType.PROMPT, createValuesString(args));
         ChatCompletionResult response = promptManager.exchangeMessages(functionName, model, ContextType.PROMPT, true);
         return parseResponseWithValidate(response);
+    }
+
+    private AIModel getDefaultModel() {
+        return openAIProperties.getModel();
     }
 
     protected T parseResponse(ChatCompletionResult response) throws JsonProcessingException {

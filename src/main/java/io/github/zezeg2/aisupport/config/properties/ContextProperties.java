@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.ai.config.properties;
+package io.github.zezeg2.aisupport.config.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -12,11 +12,12 @@ public class ContextProperties {
     public enum CONTEXT{
         LOCAL,
         REDIS,
-        PERSISTENT
+        MONGO
     }
 
     public enum IDENTIFIER{
         THREAD,
-        SESSION
+        SESSION,
+        AUTHENTICATION
     }
 }
