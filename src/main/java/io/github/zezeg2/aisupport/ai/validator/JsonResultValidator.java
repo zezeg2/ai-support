@@ -51,12 +51,12 @@ public class JsonResultValidator extends ResultValidator {
         List<ChatMessage> feedbackAssistantMessageList = promptManager.getFeedbackAssistantMessageList(functionName);
         ChatMessage feedbackMessage;
         FeedbackResponse feedbackResult;
-        int count = 0;
+        int count = 1;
         while (true) {
-            if (count > 2) {
+            if (count > 3) {
                 throw new RuntimeException("Maximum Validate count over");
             }
-            System.out.println("try count : " + (count++) + "--------------------------------------------------------------");
+            System.out.println("Try Count : " + (count++) + "--------------------------------------------------------------");
             String lastPromptMessage = promptMessageList.get(promptMessageList.size() - 1).getContent();
             System.out.println(lastPromptMessage);
             promptManager.addMessage(functionName, ROLE.USER, ContextType.FEEDBACK, lastPromptMessage);
