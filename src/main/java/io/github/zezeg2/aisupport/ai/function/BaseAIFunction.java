@@ -11,7 +11,7 @@ import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.ai.model.gpt.ModelMapper;
-import io.github.zezeg2.aisupport.ai.validator.DefaultExceptionValidator;
+import io.github.zezeg2.aisupport.ai.validator.ExceptionValidator;
 import io.github.zezeg2.aisupport.ai.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
@@ -55,6 +55,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             """;
     protected final PromptManager promptManager;
     protected final ResultValidatorChain resultValidatorChain;
+    protected final ExceptionValidator exceptionValidator;
 
     private final OpenAIProperties openAIProperties;
 
@@ -108,7 +109,6 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     }
 
     protected T parseResponseWithValidate(ChatCompletionResult response) throws Exception {
-        DefaultExceptionValidator exceptionValidator = new DefaultExceptionValidator(promptManager);
         String content = response.getChoices().get(0).getMessage().getContent();
         content = resultValidatorChain.validate(functionName, content);
         boolean success = false;
@@ -117,9 +117,8 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
             try {
                 value = mapper.readValue(content, returnType);
                 success = true;
-            } catch (Exception e) {
-                exceptionValidator.setException(e);
-                content = exceptionValidator.validate(content);
+            } catch (Exception exception) {
+                content = exceptionValidator.validate(content, exception);
             }
         }
 

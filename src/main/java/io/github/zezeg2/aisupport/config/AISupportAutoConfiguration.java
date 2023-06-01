@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.AISupporter;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
+import io.github.zezeg2.aisupport.ai.validator.DefaultExceptionValidator;
+import io.github.zezeg2.aisupport.ai.validator.ExceptionValidator;
+import io.github.zezeg2.aisupport.ai.validator.ResultValidator;
 import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
@@ -20,6 +23,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Duration;
+import java.util.List;
 
 @Configuration
 @EnableConfigurationProperties({ContextProperties.class, OpenAIProperties.class})
@@ -31,14 +35,25 @@ public class AISupportAutoConfiguration {
         this.openAIProperties = openAIProperties;
         this.contextProperties = contextProperties;
     }
+
     @Bean
-    public AISupporter aiSupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, BuildFormatUtil formatUtil, ResultValidatorChain resultValidatorChain){
-        return new AISupporter(service, mapper, resolver, promptManager, formatUtil, resultValidatorChain, openAIProperties);
+    public AISupporter aiSupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, BuildFormatUtil formatUtil, ResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator) {
+        return new AISupporter(service, mapper, resolver, promptManager, formatUtil, resultValidatorChain, exceptionValidator, openAIProperties);
     }
 
     @Bean
     public OpenAiService openAiService() {
         return new OpenAiService(openAIProperties.getToken(), Duration.ofSeconds(openAIProperties.getTimeout()));
+    }
+
+    @Bean
+    public ResultValidatorChain resultValidatorChain(List<ResultValidator> validatorList){
+        return new ResultValidatorChain(validatorList);
+    }
+
+    @Bean(name = "defaultExceptionValidator")
+    public ExceptionValidator exceptionValidator(PromptManager promptManager){
+        return new DefaultExceptionValidator(promptManager);
     }
 
     @Bean

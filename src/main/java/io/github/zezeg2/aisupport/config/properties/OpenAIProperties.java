@@ -10,7 +10,7 @@ public class OpenAIProperties {
     private Integer timeout = 60;
     private MODEL model = MODEL.GPT_3_5_TURBO;
 
-    public enum MODEL{
+    public enum MODEL {
         GPT_3_5_TURBO,
         GPT_3_5_TURBO_0301,
         TEXT_DAVINCI_003,
