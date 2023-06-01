@@ -83,15 +83,19 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
                         }
                         """.formatted(resultFormat);
             }
-            Prompt prompt = new Prompt(
-                    purpose,
-                    resolveRefTypes(args),
-                    createFunction(args),
-                    createConstraints(constraints),
-                    convertMapToJson(formatUtil.getArgumentsFormatMap(args)),
-                    resultFormat,
-                    formatUtil.getFormatString(FeedbackResponse.class));
-            promptManager.initPromptContext(functionName, prompt);
+            if (!promptManager.getContext().containsPrompt(functionName)){
+                Prompt prompt = new Prompt(
+                        purpose,
+                        resolveRefTypes(args),
+                        createFunction(args),
+                        createConstraints(constraints),
+                        convertMapToJson(formatUtil.getArgumentsFormatMap(args)),
+                        resultFormat,
+                        formatUtil.getFormatString(FeedbackResponse.class),
+                        resultValidatorChain.peekValidators(functionName)
+                );
+                promptManager.initPromptContext(functionName, prompt);
+            } else promptManager.initPromptContext(functionName);
         }
         promptManager.addMessage(functionName, ROLE.USER, ContextType.PROMPT, createValuesString(args));
         ChatCompletionResult response = promptManager.exchangeMessages(functionName, model, ContextType.PROMPT, true);

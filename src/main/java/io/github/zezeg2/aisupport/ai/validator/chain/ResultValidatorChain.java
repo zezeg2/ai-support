@@ -26,4 +26,12 @@ public class ResultValidatorChain extends ValidatorChain<ResultValidator> {
         return result;
     }
 
+    public List<ResultValidator> peekValidators(String functionName){
+        return validators.stream().filter(validator -> {
+            ValidateTarget targetFunction = validator.getClass().getAnnotation(ValidateTarget.class);
+            List<String> targetFunctionList = Arrays.stream(targetFunction.names()).toList();
+            return targetFunction.global() || targetFunctionList.contains(functionName);
+        }).toList();
+    }
+
 }

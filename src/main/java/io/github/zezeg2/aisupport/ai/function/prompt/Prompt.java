@@ -1,6 +1,7 @@
 package io.github.zezeg2.aisupport.ai.function.prompt;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.ai.validator.ResultValidator;
 import lombok.Getter;
 
 import java.util.List;
@@ -55,9 +56,10 @@ public class Prompt {
     private final String feedbackFormat;
     private final Map<String, List<ChatMessage>> promptMessageContext;
     private final Map<String, List<ChatMessage>> feedbackAssistantContext;
+    private final List<ResultValidator> resultValidators;
 
 
-    public Prompt(String purpose, String refTypes, String function, String constraints, String inputFormat, String resultFormat, String feedbackFormat) {
+    public Prompt(String purpose, String refTypes, String function, String constraints, String inputFormat, String resultFormat, String feedbackFormat, List<ResultValidator> resultValidators) {
         this.purpose = purpose;
         this.refTypes = refTypes;
         this.function = function;
@@ -67,6 +69,8 @@ public class Prompt {
         this.feedbackFormat = feedbackFormat;
         this.promptMessageContext = new ConcurrentHashMap<>();
         this.feedbackAssistantContext = new ConcurrentHashMap<>();
+        this.resultValidators = resultValidators;
+
     }
 
     @Override

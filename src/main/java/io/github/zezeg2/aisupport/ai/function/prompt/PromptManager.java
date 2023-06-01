@@ -38,22 +38,49 @@ public class PromptManager {
         }
     }
 
+    public void initPromptContext(String functionName) {
+        Prompt prompt = context.getPrompt(functionName);
+        initPromptContext(functionName, prompt);
+    }
+
+    public void initMessageContext(String systemMessage, Map<String, List<ChatMessage>> feedbackContext) {
+        if (!feedbackContext.containsKey(getIdentifier())) {
+            addMessage(ROLE.SYSTEM, systemMessage, feedbackContext);
+        }
+    }
+
     public void addMessage(String functionName, ROLE role, ContextType contextType, String message) {
         String identifier = getIdentifier();
-        Map<String, List<ChatMessage>> messageContext;
-        if (contextType.equals(ContextType.PROMPT))
-            messageContext = context.getPrompt(functionName).getPromptMessageContext();
-        else messageContext = context.getPrompt(functionName).getFeedbackAssistantContext();
+        Map<String, List<ChatMessage>> messageContext = switch (contextType) {
+            case PROMPT -> context.getPrompt(functionName).getPromptMessageContext();
+            case FEEDBACK -> context.getPrompt(functionName).getFeedbackAssistantContext();
+        };
 
         if (!messageContext.containsKey(identifier))
             messageContext.put(identifier, new CopyOnWriteArrayList<>());
 
         List<ChatMessage> chatMessages = messageContext.get(identifier);
-        if (!chatMessages.isEmpty()) chatMessages.add(new ChatMessage(role.getValue(), message));
-        else {
-            if (role.equals(ROLE.SYSTEM)) chatMessages.add(new ChatMessage(role.getValue(), message));
-            else throw new NotInitiatedContextException();
+        if (chatMessages.isEmpty() && !role.equals(ROLE.SYSTEM)) {
+            throw new NotInitiatedContextException();
+        } else {
+            chatMessages.add(new ChatMessage(role.getValue(), message));
         }
+
+    }
+
+    public void addMessage(ROLE role, String message, Map<String, List<ChatMessage>> messageContext) {
+        String identifier = getIdentifier();
+
+        if (!messageContext.containsKey(identifier))
+            messageContext.put(identifier, new CopyOnWriteArrayList<>());
+
+        List<ChatMessage> chatMessages = messageContext.get(identifier);
+        if (chatMessages.isEmpty() && !role.equals(ROLE.SYSTEM)) {
+            throw new NotInitiatedContextException();
+        } else {
+            chatMessages.add(new ChatMessage(role.getValue(), message));
+        }
+
     }
 
     public ChatCompletionResult exchangeMessages(String functionName, AIModel model, ContextType contextType, boolean save) {
@@ -61,6 +88,15 @@ public class PromptManager {
         if (contextType.equals(ContextType.PROMPT))
             contextMessages = context.getPrompt(functionName).getPromptMessageContext().get(getIdentifier());
         else contextMessages = context.getPrompt(functionName).getFeedbackAssistantContext().get(getIdentifier());
+        ChatCompletionResult response = createChatCompletion(model, contextMessages);
+        ChatMessage responseMessage = response.getChoices().get(0).getMessage();
+        responseMessage.setContent(extractJsonFromMessage(responseMessage.getContent()));
+        if (save) contextMessages.add(responseMessage);
+        return response;
+    }
+
+    public ChatCompletionResult exchangeMessages(Map<String, List<ChatMessage>> messageContext, AIModel model, boolean save) {
+        List<ChatMessage> contextMessages = messageContext.get(getIdentifier());
         ChatCompletionResult response = createChatCompletion(model, contextMessages);
         ChatMessage responseMessage = response.getChoices().get(0).getMessage();
         responseMessage.setContent(extractJsonFromMessage(responseMessage.getContent()));

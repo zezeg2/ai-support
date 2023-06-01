@@ -2,31 +2,50 @@ package io.github.zezeg2.aisupport.ai.validator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatMessage;
-import io.github.zezeg2.aisupport.ai.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
+import io.github.zezeg2.aisupport.common.exceptions.NotInitiatedContextException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class ResultValidator implements Validatable {
     protected final PromptManager promptManager;
     protected final BuildFormatUtil formatUtil;
-    protected static ObjectMapper mapper = new ObjectMapper();
+    protected final ObjectMapper mapper;
+    private final Map<String, List<ChatMessage>> feedbackMessageContext;
 
-    public ResultValidator(PromptManager promptManager, BuildFormatUtil formatUtil) {
+    public ResultValidator(PromptManager promptManager, BuildFormatUtil formatUtil, ObjectMapper mapper) {
         this.promptManager = promptManager;
         this.formatUtil = formatUtil;
+        this.mapper = mapper;
+        this.feedbackMessageContext = new ConcurrentHashMap<>();
     }
 
-    public void initFeedbackAssistantContext(String functionName) {
-        Prompt prompt = promptManager.getPrompt(functionName);
-        Map<String, List<ChatMessage>> feedbackAssistantContext = prompt.getFeedbackAssistantContext();
-        if (!feedbackAssistantContext.containsKey(promptManager.getIdentifier())) {
-            promptManager.addMessage(functionName, ROLE.SYSTEM, ContextType.FEEDBACK, buildTemplate(functionName));
+    public void initFeedbackMessageContext(String functionName) {
+        promptManager.initMessageContext(buildTemplate(functionName), feedbackMessageContext);
+        if (!feedbackMessageContext.containsKey(promptManager.getIdentifier())) {
+            addMessage(ROLE.SYSTEM, buildTemplate(functionName));
         }
+    }
+
+    public void addMessage(ROLE role, String message) {
+        String identifier = promptManager.getIdentifier();
+
+        if (!feedbackMessageContext.containsKey(identifier))
+            feedbackMessageContext.put(identifier, new CopyOnWriteArrayList<>());
+
+        List<ChatMessage> chatMessages = feedbackMessageContext.get(identifier);
+        if (chatMessages.isEmpty() && !role.equals(ROLE.SYSTEM)) {
+            throw new NotInitiatedContextException();
+        } else {
+            chatMessages.add(new ChatMessage(role.getValue(), message));
+        }
+
     }
 
     protected Prompt getPrompt(String functionName) {
@@ -48,7 +67,7 @@ public abstract class ResultValidator implements Validatable {
                             
                 Do not include any other explanatory text in your response other than result
                 """;
-        return FEEDBACK_FRAME.formatted(addContents(functionName), formatUtil.getFormatString(FeedbackResponse.class));
+        return FEEDBACK_FRAME.formatted(formatUtil.getFormatString(FeedbackResponse.class), addContents(functionName));
     }
 
     protected abstract String addContents(String functionName);
