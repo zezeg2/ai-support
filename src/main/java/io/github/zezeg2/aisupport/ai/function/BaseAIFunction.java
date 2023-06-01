@@ -10,6 +10,7 @@ import io.github.zezeg2.aisupport.ai.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
+import io.github.zezeg2.aisupport.ai.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.ai.validator.DefaultExceptionValidator;
 import io.github.zezeg2.aisupport.ai.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
@@ -97,7 +98,7 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     }
 
     private AIModel getDefaultModel() {
-        return openAIProperties.getModel();
+        return ModelMapper.map(openAIProperties.getModel());
     }
 
     protected T parseResponse(ChatCompletionResult response) throws JsonProcessingException {

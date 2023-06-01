@@ -2,7 +2,9 @@ package io.github.zezeg2.aisupport.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.service.OpenAiService;
+import io.github.zezeg2.aisupport.ai.AISupporter;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
+import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
@@ -13,7 +15,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -21,15 +22,18 @@ import org.springframework.data.redis.core.RedisTemplate;
 import java.time.Duration;
 
 @Configuration
-@ComponentScan(basePackages = "io.github.zezeg2.aisupport")
 @EnableConfigurationProperties({ContextProperties.class, OpenAIProperties.class})
-public class AISupportModuleConfig {
+public class AISupportAutoConfiguration {
     private final OpenAIProperties openAIProperties;
     private final ContextProperties contextProperties;
 
-    public AISupportModuleConfig(OpenAIProperties openAIProperties, ContextProperties contextProperties) {
+    public AISupportAutoConfiguration(OpenAIProperties openAIProperties, ContextProperties contextProperties) {
         this.openAIProperties = openAIProperties;
         this.contextProperties = contextProperties;
+    }
+    @Bean
+    public AISupporter aiSupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, BuildFormatUtil formatUtil, ResultValidatorChain resultValidatorChain){
+        return new AISupporter(service, mapper, resolver, promptManager, formatUtil, resultValidatorChain, openAIProperties);
     }
 
     @Bean

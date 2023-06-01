@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 @RequiredArgsConstructor
-@Component
 public class AISupporter {
     private final OpenAiService service;
     private final ObjectMapper mapper;

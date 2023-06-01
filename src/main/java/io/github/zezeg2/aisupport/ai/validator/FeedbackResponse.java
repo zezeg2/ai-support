@@ -3,10 +3,12 @@ package io.github.zezeg2.aisupport.ai.validator;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.FieldDesc;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class FeedbackResponse extends BaseSupportType {
     @FieldDesc("Determine whether the given result is flawless or not and express it as boolean value true or false")
     private boolean valid;

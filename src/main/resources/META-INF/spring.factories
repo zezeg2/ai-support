@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  io.github.zezeg2.aisupport.config.AISupportAutoConfiguration
