@@ -29,16 +29,14 @@ import java.util.List;
 @EnableConfigurationProperties({ContextProperties.class, OpenAIProperties.class})
 public class AISupportAutoConfiguration {
     private final OpenAIProperties openAIProperties;
-    private final ContextProperties contextProperties;
 
-    public AISupportAutoConfiguration(OpenAIProperties openAIProperties, ContextProperties contextProperties) {
+    public AISupportAutoConfiguration(OpenAIProperties openAIProperties) {
         this.openAIProperties = openAIProperties;
-        this.contextProperties = contextProperties;
     }
 
     @Bean
     public AISupporter aiSupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, BuildFormatUtil formatUtil, ResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator) {
-        return new AISupporter(service, mapper, resolver, promptManager, formatUtil, resultValidatorChain, exceptionValidator, openAIProperties);
+        return new AISupporter(service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
     }
 
     @Bean
@@ -47,28 +45,26 @@ public class AISupportAutoConfiguration {
     }
 
     @Bean
-    public ResultValidatorChain resultValidatorChain(List<ResultValidator> validatorList){
+    public ResultValidatorChain resultValidatorChain(List<ResultValidator> validatorList) {
         return new ResultValidatorChain(validatorList);
     }
 
     @Bean(name = "defaultExceptionValidator")
-    public ExceptionValidator exceptionValidator(PromptManager promptManager){
+    public ExceptionValidator exceptionValidator(PromptManager promptManager) {
         return new DefaultExceptionValidator(promptManager);
     }
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.context", havingValue = "REDIS")
     public PromptContextHolder redisPromptContextHolder(RedisTemplate<String, String> redisTemplate,
-                                                        ContextIdentifierProvider identifierProvider,
                                                         ObjectMapper mapper) {
-        return new RedisPromptContextHolder(redisTemplate, identifierProvider, mapper);
+        return new RedisPromptContextHolder(redisTemplate, mapper);
     }
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.context", havingValue = "MONGO")
-    public PromptContextHolder mongoPromptContextHolder(MongoTemplate mongoTemplate,
-                                                        ContextIdentifierProvider identifierProvider) {
-        return new MongoPromptContextHolder(mongoTemplate, identifierProvider);
+    public PromptContextHolder mongoPromptContextHolder(MongoTemplate mongoTemplate) {
+        return new MongoPromptContextHolder(mongoTemplate);
     }
 
     @Bean
@@ -97,7 +93,7 @@ public class AISupportAutoConfiguration {
     }
 
     @Bean
-    public ObjectMapper mapper() {
+    public static ObjectMapper mapper() {
         return new ObjectMapper();
     }
 
@@ -112,7 +108,7 @@ public class AISupportAutoConfiguration {
     }
 
     @Bean
-    public PromptManager promptManager(OpenAiService service, PromptContextHolder promptContextHolder, ContextIdentifierProvider contextIdentifierProvider) {
-        return new PromptManager(service, promptContextHolder, contextIdentifierProvider);
+    public PromptManager promptManager(OpenAiService service, PromptContextHolder promptContextHolder, ContextIdentifierProvider contextIdentifierProvider, ContextProperties contextProperties) {
+        return new PromptManager(service, promptContextHolder, contextIdentifierProvider, contextProperties);
     }
 }

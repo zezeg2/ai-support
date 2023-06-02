@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 public class BuildFormatUtil {
-    public Map<String, Object> getArgumentsFormatMap(List<Argument<?>> args) {
+    public static Map<String, Object> getArgumentsFormatMap(List<Argument<?>> args) {
         Map<String, Object> inputDescMap = new LinkedHashMap<>();
         for (Argument<?> argument : args) {
             addArgumentFormat(inputDescMap, argument);
@@ -21,7 +21,7 @@ public class BuildFormatUtil {
         return inputDescMap;
     }
 
-    public void addArgumentFormat(Map<String, Object> inputDescMap, Argument<?> argument) {
+    private static void addArgumentFormat(Map<String, Object> inputDescMap, Argument<?> argument) {
         Class<?> argWrapping = argument.getWrapping();
 
         Map<String, Object> descMap = generateDescMap(argument, argument.getType());
@@ -47,7 +47,7 @@ public class BuildFormatUtil {
         }
     }
 
-    public BaseSupportType getTempInstance(Class<?> type) {
+    private static BaseSupportType getTempInstance(Class<?> type) {
         BaseSupportType supportable;
         try {
             supportable = (BaseSupportType) type.getConstructor().newInstance();
@@ -59,7 +59,7 @@ public class BuildFormatUtil {
         return supportable;
     }
 
-    public Map<String, Object> generateDescMap(Argument<?> argument, Class<?> type) {
+    private static Map<String, Object> generateDescMap(Argument<?> argument, Class<?> type) {
         if (isBaseSupportType(type)) {
             Supportable supportable = getTempInstance(type);
             return Map.of(argument.getFieldName(), supportable.getFormatMap());
@@ -70,17 +70,17 @@ public class BuildFormatUtil {
         }
     }
 
-    public boolean isBaseSupportType(Class<?> type) {
+    private static boolean isBaseSupportType(Class<?> type) {
         return type.getSuperclass().equals(BaseSupportType.class);
     }
 
-    public Map<String, Object> getFormatMap(Class<?> returnType) {
+    public static Map<String, Object> getFormatMap(Class<?> returnType) {
         if (isBaseSupportType(returnType))
             return getTempInstance(returnType).getFormatMap();
         else throw new NotSupportedTypeException();
     }
 
-    public String getFormatString(Class<?> returnType) {
+    public static String getFormatString(Class<?> returnType) {
         if (isBaseSupportType(returnType))
             return getTempInstance(returnType).getFormat();
         else return returnType.getSimpleName();

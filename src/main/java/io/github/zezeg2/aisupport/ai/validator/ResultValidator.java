@@ -2,7 +2,6 @@ package io.github.zezeg2.aisupport.ai.validator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatMessage;
-import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
@@ -27,31 +26,8 @@ public abstract class ResultValidator implements Validatable {
     }
 
     public void initFeedbackMessageContext(String functionName) {
-        promptManager.initMessageContext(buildTemplate(functionName), feedbackMessageContext);
-        if (!feedbackMessageContext.containsKey(promptManager.getIdentifier())) {
-            addMessage(ROLE.SYSTEM, buildTemplate(functionName));
-        }
+        promptManager.initMessageContext(functionName, buildTemplate(functionName), feedbackMessageContext);
     }
-
-    public void addMessage(ROLE role, String message) {
-        String identifier = promptManager.getIdentifier();
-
-        if (!feedbackMessageContext.containsKey(identifier))
-            feedbackMessageContext.put(identifier, new CopyOnWriteArrayList<>());
-
-        List<ChatMessage> chatMessages = feedbackMessageContext.get(identifier);
-        if (chatMessages.isEmpty() && !role.equals(ROLE.SYSTEM)) {
-            throw new NotInitiatedContextException();
-        } else {
-            chatMessages.add(new ChatMessage(role.getValue(), message));
-        }
-
-    }
-
-    protected Prompt getPrompt(String functionName) {
-        return promptManager.getPrompt(functionName);
-    }
-
     private String buildTemplate(String functionName) {
         String FEEDBACK_FRAME = """
                 You are tasked with inspecting the provided Json and please provide feedback according to the given `Feedback Format`

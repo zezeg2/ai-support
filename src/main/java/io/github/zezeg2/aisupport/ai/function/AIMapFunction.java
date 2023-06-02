@@ -18,14 +18,14 @@ import java.util.stream.Collectors;
 public class AIMapFunction<T> extends BaseAIFunction<Map<String, T>> {
     private final Class<T> wrappedType;
 
-    public AIMapFunction(String functionName, String purpose, List<Constraint> constraints, Class<Map<String, T>> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, BuildFormatUtil formatUtil, PromptManager promptManager, ResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator, OpenAIProperties openAIProperties, Class<T> wrappedType) {
-        super(functionName, purpose, constraints, returnType, service, mapper, resolver, formatUtil, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
+    public AIMapFunction(String functionName, String purpose, List<Constraint> constraints, Class<Map<String, T>> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator, OpenAIProperties openAIProperties, Class<T> wrappedType) {
+        super(functionName, purpose, constraints, returnType, service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
         this.wrappedType = wrappedType;
     }
 
     @Override
     public String buildResultFormat() {
-        return formatUtil.getFormatString(wrappedType);
+        return BuildFormatUtil.getFormatString(wrappedType);
     }
 
     @Override

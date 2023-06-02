@@ -1,9 +1,7 @@
 package io.github.zezeg2.aisupport.context;
 
-import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,7 +14,7 @@ public class LocalPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public void addPromptToContext(String functionName, Prompt prompt) {
+    public void savePromptToContext(String functionName, Prompt prompt) {
         registry.put(functionName, prompt);
     }
 
@@ -24,15 +22,4 @@ public class LocalPromptContextHolder implements PromptContextHolder {
     public Prompt getPrompt(String functionName) {
         return registry.get(functionName);
     }
-
-    @Override
-    public Map<String, List<ChatMessage>> getPromptMessageContext(String functionName) {
-        return getPrompt(functionName).getPromptMessageContext();
-    }
-
-    @Override
-    public Map<String, List<ChatMessage>> getFeedbackAssistantMessageContext(String functionName) {
-        return getPrompt(functionName).getFeedbackAssistantContext();
-    }
-
 }

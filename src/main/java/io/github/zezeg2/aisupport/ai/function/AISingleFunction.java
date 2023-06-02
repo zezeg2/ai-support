@@ -15,13 +15,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class AISingleFunction<T> extends BaseAIFunction<T> {
-    public AISingleFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, BuildFormatUtil formatUtil, PromptManager promptManager, ResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator, OpenAIProperties openAIProperties) {
-        super(functionName, purpose, constraints, returnType, service, mapper, resolver, formatUtil, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
+    public AISingleFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator, OpenAIProperties openAIProperties) {
+        super(functionName, purpose, constraints, returnType, service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
     }
 
     @Override
     public String buildResultFormat() {
-        return formatUtil.getFormatString(returnType);
+        return BuildFormatUtil.getFormatString(returnType);
     }
 
     @Override

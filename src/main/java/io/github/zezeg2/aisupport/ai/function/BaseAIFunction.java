@@ -6,7 +6,6 @@ import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
-import io.github.zezeg2.aisupport.ai.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
@@ -14,8 +13,8 @@ import io.github.zezeg2.aisupport.ai.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.ai.validator.ExceptionValidator;
 import io.github.zezeg2.aisupport.ai.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
-import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
+import io.github.zezeg2.aisupport.common.JsonUtils;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.STRUCTURE;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
@@ -38,7 +37,6 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
     protected final OpenAiService service;
     protected final ObjectMapper mapper;
     protected final ConstructResolver resolver;
-    protected final BuildFormatUtil formatUtil;
     protected static final String FUNCTION_TEMPLATE = """
             @FunctionalInterface
             public interface FC {
@@ -83,22 +81,22 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
                         }
                         """.formatted(resultFormat);
             }
-            if (!promptManager.getContext().containsPrompt(functionName)){
+            if (!promptManager.getContext().containsPrompt(functionName)) {
                 Prompt prompt = new Prompt(
                         purpose,
                         resolveRefTypes(args),
                         createFunction(args),
                         createConstraints(constraints),
-                        convertMapToJson(formatUtil.getArgumentsFormatMap(args)),
+                        JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
                         resultFormat,
-                        formatUtil.getFormatString(FeedbackResponse.class),
+                        BuildFormatUtil.getFormatString(FeedbackResponse.class),
                         resultValidatorChain.peekValidators(functionName)
                 );
                 promptManager.initPromptContext(functionName, prompt);
             } else promptManager.initPromptContext(functionName);
         }
-        promptManager.addMessage(functionName, ROLE.USER, ContextType.PROMPT, createValuesString(args));
-        ChatCompletionResult response = promptManager.exchangeMessages(functionName, model, ContextType.PROMPT, true);
+        promptManager.addMessage(functionName, ROLE.USER, createValuesString(args));
+        ChatCompletionResult response = promptManager.exchangeMessages(functionName, model, true);
         return parseResponseWithValidate(response);
     }
 
@@ -127,11 +125,6 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         }
 
         return value;
-    }
-
-
-    protected boolean isBaseSupportType(Class<?> type) {
-        return type.getSuperclass().equals(BaseSupportType.class);
     }
 
     protected String convertMapToJson(Map<String, Object> inputDescMap) {
