@@ -1,6 +1,7 @@
 package io.github.zezeg2.aisupport.ai.validator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPT3Model;
@@ -10,8 +11,8 @@ import java.util.List;
 
 public class DefaultExceptionValidator extends ExceptionValidator {
 
-    public DefaultExceptionValidator(PromptManager promptManager) {
-        super(promptManager);
+    public DefaultExceptionValidator(PromptManager promptManager, ObjectMapper mapper) {
+        super(promptManager, mapper);
     }
 
     @Override

@@ -51,7 +51,7 @@ public class AISupportAutoConfiguration {
 
     @Bean(name = "defaultExceptionValidator")
     public ExceptionValidator exceptionValidator(PromptManager promptManager) {
-        return new DefaultExceptionValidator(promptManager);
+        return new DefaultExceptionValidator(promptManager, mapper());
     }
 
     @Bean
