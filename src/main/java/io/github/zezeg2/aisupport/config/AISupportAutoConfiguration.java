@@ -11,7 +11,7 @@ import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
-import io.github.zezeg2.aisupport.context.*;
+import io.github.zezeg2.aisupport.context.servlet.*;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.resolver.JAVAConstructResolver;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -35,7 +35,7 @@ public class AISupportAutoConfiguration {
     }
 
     @Bean
-    public AISupporter aiSupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, BuildFormatUtil formatUtil, ResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator) {
+    public AISupporter aiSupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator) {
         return new AISupporter(service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
     }
 

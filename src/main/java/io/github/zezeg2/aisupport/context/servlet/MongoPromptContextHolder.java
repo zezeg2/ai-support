@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.context;
+package io.github.zezeg2.aisupport.context.servlet;
 
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
 import org.springframework.data.mongodb.core.MongoTemplate;

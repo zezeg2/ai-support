@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.context;
+package io.github.zezeg2.aisupport.context.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;

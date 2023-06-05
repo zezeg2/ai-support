@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.context;
+package io.github.zezeg2.aisupport.context.servlet;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.context;
+package io.github.zezeg2.aisupport.context.servlet;
 
 public class ThreadNameIdentifierProvider implements ContextIdentifierProvider {
     @Override
