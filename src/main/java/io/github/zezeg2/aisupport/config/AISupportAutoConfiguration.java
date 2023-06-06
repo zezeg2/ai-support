@@ -4,16 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.AISupporter;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
+import io.github.zezeg2.aisupport.ai.function.prompt.ReactiveSecurityContextPromptManager;
+import io.github.zezeg2.aisupport.ai.function.prompt.ReactiveSessionContextPromptManager;
 import io.github.zezeg2.aisupport.ai.validator.DefaultExceptionValidator;
 import io.github.zezeg2.aisupport.ai.validator.ExceptionValidator;
 import io.github.zezeg2.aisupport.ai.validator.ResultValidator;
 import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
-import io.github.zezeg2.aisupport.context.reactive.ReactiveMongoPromptContextHolder;
-import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
-import io.github.zezeg2.aisupport.context.reactive.ReactiveRedisPromptContextHolder;
-import io.github.zezeg2.aisupport.context.reactive.ReactiveSessionContextIdentifierProvider;
+import io.github.zezeg2.aisupport.context.reactive.*;
 import io.github.zezeg2.aisupport.context.servlet.*;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.resolver.JAVAConstructResolver;
@@ -136,7 +135,20 @@ public class AISupportAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "SERVLET")
     public PromptManager promptManager(OpenAiService service, PromptContextHolder promptContextHolder, ContextIdentifierProvider contextIdentifierProvider, ContextProperties contextProperties) {
         return new PromptManager(service, promptContextHolder, contextIdentifierProvider, contextProperties);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
+    public ReactiveSessionContextPromptManager promptManager(OpenAiService service, ReactivePromptContextHolder promptContextHolder, ReactiveSessionContextIdentifierProvider contextIdentifierProvider, ContextProperties contextProperties) {
+        return new ReactiveSessionContextPromptManager(service, promptContextHolder, contextIdentifierProvider, contextProperties);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
+    public ReactiveSecurityContextPromptManager promptManager(OpenAiService service, ReactivePromptContextHolder promptContextHolder, ReactiveSecurityContextIdentifierProvider contextIdentifierProvider, ContextProperties contextProperties) {
+        return new ReactiveSecurityContextPromptManager(service, promptContextHolder, contextIdentifierProvider, contextProperties);
     }
 }
