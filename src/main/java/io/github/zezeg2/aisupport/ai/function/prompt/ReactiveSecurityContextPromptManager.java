@@ -9,12 +9,11 @@ import io.github.zezeg2.aisupport.common.JsonUtils;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.exceptions.NotInitiatedContextException;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
-import io.github.zezeg2.aisupport.context.reactive.ReactiveContextIdentifierProvider;
 import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
+import io.github.zezeg2.aisupport.context.reactive.ReactiveSecurityContextIdentifierProvider;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -24,11 +23,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @RequiredArgsConstructor
 @Getter
-public class ReactivePromptManager {
-
+public class ReactiveSecurityContextPromptManager {
     private final OpenAiService service;
     private final ReactivePromptContextHolder context;
-    private final ReactiveContextIdentifierProvider identifierProvider;
+    private final ReactiveSecurityContextIdentifierProvider identifierProvider;
     private final ContextProperties contextProperties;
 
 
@@ -104,8 +102,8 @@ public class ReactivePromptManager {
     public Mono<Void> exchangeMessages(String functionName, AIModel model, boolean save) {
         getIdentifier()
                 .flatMap(identifier -> context.getPrompt(functionName)
-                .map(prompt -> prompt.getPromptMessageContext().get(identifier))
-                .doOnNext(contextMessages -> getChatCompletionResult(functionName, model, save, contextMessages)));
+                        .map(prompt -> prompt.getPromptMessageContext().get(identifier))
+                        .doOnNext(contextMessages -> getChatCompletionResult(functionName, model, save, contextMessages)));
         return Mono.empty();
     }
 
@@ -139,8 +137,6 @@ public class ReactivePromptManager {
     public Mono<String> getIdentifier() {
         return identifierProvider.getId();
     }
-
-    public Mono<String> getIdentifier(ServerWebExchange exchange) {
-        return identifierProvider.getId(exchange);
-    }
 }
+
+

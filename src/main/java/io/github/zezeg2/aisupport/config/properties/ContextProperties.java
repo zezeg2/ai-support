@@ -8,6 +8,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ContextProperties {
     private CONTEXT context = CONTEXT.LOCAL;
     private IDENTIFIER identifier = IDENTIFIER.THREAD;
+    private ENVIRONMENT environment = ENVIRONMENT.SERVLET;
+
+    public enum ENVIRONMENT {
+        SERVLET,
+        EVENTLOOP
+    }
 
     public enum CONTEXT {
         LOCAL,
@@ -18,6 +24,6 @@ public class ContextProperties {
     public enum IDENTIFIER {
         THREAD,
         SESSION,
-        AUTHENTICATION
+        SECURITY
     }
 }

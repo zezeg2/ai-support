@@ -8,12 +8,10 @@ import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.model.gpt.GPT3Model;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
-import io.github.zezeg2.aisupport.common.exceptions.NotInitiatedContextException;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class ResultValidator implements Validatable {
     protected final PromptManager promptManager;
@@ -30,6 +28,7 @@ public abstract class ResultValidator implements Validatable {
     public void initFeedbackMessageContext(String functionName) {
         promptManager.initMessageContext(functionName, buildTemplate(functionName), feedbackMessageContext);
     }
+
     private String buildTemplate(String functionName) {
         String FEEDBACK_FRAME = """
                 You are tasked with inspecting the provided Json and please provide feedback according to the given `Feedback Format`
@@ -74,7 +73,7 @@ public abstract class ResultValidator implements Validatable {
     }
 
     private String getResponseContent(String functionName, String message, ContextType contextType) {
-        Map<String, List<ChatMessage>> messageContext = switch (contextType){
+        Map<String, List<ChatMessage>> messageContext = switch (contextType) {
             case PROMPT -> promptManager.getPrompt(functionName).getPromptMessageContext();
             case FEEDBACK -> feedbackMessageContext;
         };
@@ -82,9 +81,11 @@ public abstract class ResultValidator implements Validatable {
         ChatMessage responseMessage = promptManager.exchangeMessages(functionName, messageContext, GPT3Model.GPT_3_5_TURBO, true).getChoices().get(0).getMessage();
         return responseMessage.getContent();
     }
+
     private String getLastPromptResponseContent(String functionName) {
         List<ChatMessage> promptMessageList = promptManager.getPrompt(functionName).getPromptMessageContext().get(promptManager.getIdentifier());
         return promptMessageList.get(promptMessageList.size() - 1).getContent();
     }
+
     protected abstract String addContents(String functionName);
 }

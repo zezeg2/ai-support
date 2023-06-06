@@ -8,18 +8,24 @@ import io.github.zezeg2.aisupport.ai.validator.DefaultExceptionValidator;
 import io.github.zezeg2.aisupport.ai.validator.ExceptionValidator;
 import io.github.zezeg2.aisupport.ai.validator.ResultValidator;
 import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
-import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
+import io.github.zezeg2.aisupport.context.reactive.ReactiveMongoPromptContextHolder;
+import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
+import io.github.zezeg2.aisupport.context.reactive.ReactiveRedisPromptContextHolder;
+import io.github.zezeg2.aisupport.context.reactive.ReactiveSessionContextIdentifierProvider;
 import io.github.zezeg2.aisupport.context.servlet.*;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.resolver.JAVAConstructResolver;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Duration;
@@ -55,16 +61,31 @@ public class AISupportAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "ai-supporter.context.context", havingValue = "REDIS")
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'REDIS' && '${ai-supporter.context.environment}' == 'SERVLET'")
     public PromptContextHolder redisPromptContextHolder(RedisTemplate<String, String> redisTemplate,
                                                         ObjectMapper mapper) {
         return new RedisPromptContextHolder(redisTemplate, mapper);
     }
 
     @Bean
-    @ConditionalOnProperty(name = "ai-supporter.context.context", havingValue = "MONGO")
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'MONGO' && '${ai-supporter.context.environment}' == 'SERVLET'")
     public PromptContextHolder mongoPromptContextHolder(MongoTemplate mongoTemplate) {
         return new MongoPromptContextHolder(mongoTemplate);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.context", havingValue = "REDIS")
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'REDIS' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
+    public ReactivePromptContextHolder reactiveRedisPromptContextHolder(ReactiveRedisTemplate<String, String> redisTemplate,
+                                                                        ObjectMapper mapper) {
+        return new ReactiveRedisPromptContextHolder(redisTemplate, mapper);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.context", havingValue = "MONGO")
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'MONGO' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
+    public ReactivePromptContextHolder reactiveMongoPromptContextHolder(ReactiveMongoTemplate mongoTemplate) {
+        return new ReactiveMongoPromptContextHolder(mongoTemplate);
     }
 
     @Bean
@@ -75,15 +96,27 @@ public class AISupportAutoConfiguration {
 
 
     @Bean
-    @ConditionalOnProperty(name = "ai-supporter.context.identifier", havingValue = "SESSION")
+    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'SESSION' && '${ai-supporter.context.environment}' == 'SERVLET'")
     public ContextIdentifierProvider sessionIdentifierProvider() {
         return new SessionContextIdentifierProvider();
     }
 
     @Bean
-    @ConditionalOnProperty(name = "ai-supporter.context.identifier", havingValue = "AUTHENTICATION")
-    public ContextIdentifierProvider authenticationIdentifierProvider() {
-        return new AuthenticationContextIdentifierProvider();
+    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'SECURITY' && '${ai-supporter.context.environment}' == 'SERVLET'")
+    public ContextIdentifierProvider securityIdentifierProvider() {
+        return new SecurityContextIdentifierProvider();
+    }
+
+    @Bean
+    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'SESSION' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
+    public ReactiveSessionContextIdentifierProvider reactiveSessionIdentifierProvider() {
+        return new ReactiveSessionContextIdentifierProvider();
+    }
+
+    @Bean
+    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'SECURITY' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
+    public ReactiveSessionContextIdentifierProvider reactiveSecurityIdentifierProvider() {
+        return new ReactiveSessionContextIdentifierProvider();
     }
 
     @Bean
@@ -95,11 +128,6 @@ public class AISupportAutoConfiguration {
     @Bean
     public static ObjectMapper mapper() {
         return new ObjectMapper();
-    }
-
-    @Bean
-    public BuildFormatUtil formatUtil() {
-        return new BuildFormatUtil();
     }
 
     @Bean

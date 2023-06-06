@@ -5,5 +5,6 @@ import reactor.core.publisher.Mono;
 
 public interface ReactiveContextIdentifierProvider {
     Mono<String> getId();
+
     Mono<String> getId(ServerWebExchange exchange);
 }
