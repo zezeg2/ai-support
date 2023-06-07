@@ -1,7 +1,7 @@
 package io.github.zezeg2.aisupport.context.reactive;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.zezeg2.aisupport.ai.function.prompt.Prompt;
+import io.github.zezeg2.aisupport.ai.function.prompt.ReactivePrompt;
 import org.springframework.data.redis.core.ReactiveHashOperations;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import reactor.core.publisher.Mono;
@@ -23,7 +23,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Void> savePromptToContext(String functionName, Prompt prompt) {
+    public Mono<Void> savePromptToContext(String functionName, ReactivePrompt prompt) {
         try {
             String promptData = mapper.writeValueAsString(prompt);
             return hashOperations.put("prompts", functionName, promptData)
@@ -34,11 +34,11 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Prompt> getPrompt(String functionName) {
+    public Mono<ReactivePrompt> getPrompt(String functionName) {
         return hashOperations.get("prompts", functionName)
                 .map(promptData -> {
                     try {
-                        return mapper.readValue(promptData, Prompt.class);
+                        return mapper.readValue(promptData, ReactivePrompt.class);
                     } catch (IOException e) {
                         throw new RuntimeException("Error deserializing prompt", e);
                     }

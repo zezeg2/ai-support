@@ -3,12 +3,15 @@ package io.github.zezeg2.aisupport.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.AISupporter;
+import io.github.zezeg2.aisupport.ai.ReactiveAISupporter;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.ai.function.prompt.ReactiveSecurityContextPromptManager;
 import io.github.zezeg2.aisupport.ai.function.prompt.ReactiveSessionContextPromptManager;
 import io.github.zezeg2.aisupport.ai.validator.DefaultExceptionValidator;
 import io.github.zezeg2.aisupport.ai.validator.ExceptionValidator;
+import io.github.zezeg2.aisupport.ai.validator.ReactiveResultValidator;
 import io.github.zezeg2.aisupport.ai.validator.ResultValidator;
+import io.github.zezeg2.aisupport.ai.validator.chain.ReactiveResultValidatorChain;
 import io.github.zezeg2.aisupport.ai.validator.chain.ResultValidatorChain;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
@@ -45,6 +48,12 @@ public class AISupportAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
+    public ReactiveAISupporter reactiveAISupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, ReactiveSessionContextPromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator) {
+        return new ReactiveAISupporter(service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
+    }
+
+    @Bean
     public OpenAiService openAiService() {
         return new OpenAiService(openAIProperties.getToken(), Duration.ofSeconds(openAIProperties.getTimeout()));
     }
@@ -52,6 +61,12 @@ public class AISupportAutoConfiguration {
     @Bean
     public ResultValidatorChain resultValidatorChain(List<ResultValidator> validatorList) {
         return new ResultValidatorChain(validatorList);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
+    public ReactiveResultValidatorChain reactiveResultValidatorChain(List<ReactiveResultValidator> validatorList) {
+        return new ReactiveResultValidatorChain(validatorList);
     }
 
     @Bean(name = "defaultExceptionValidator")
@@ -114,8 +129,8 @@ public class AISupportAutoConfiguration {
 
     @Bean
     @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'SECURITY' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
-    public ReactiveSessionContextIdentifierProvider reactiveSecurityIdentifierProvider() {
-        return new ReactiveSessionContextIdentifierProvider();
+    public ReactiveSecurityContextIdentifierProvider reactiveSecurityIdentifierProvider() {
+        return new ReactiveSecurityContextIdentifierProvider();
     }
 
     @Bean

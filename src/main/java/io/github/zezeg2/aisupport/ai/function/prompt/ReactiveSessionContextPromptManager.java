@@ -31,7 +31,7 @@ public class ReactiveSessionContextPromptManager {
     private final ContextProperties contextProperties;
 
     @Transactional
-    public Mono<Void> initPromptContext(ServerWebExchange exchange, String functionName, Prompt prompt) {
+    public Mono<Void> initPromptContext(ServerWebExchange exchange, String functionName, ReactivePrompt prompt) {
         return context.containsPrompt(functionName).flatMap(exist -> {
             if (!exist) {
                 context.savePromptToContext(functionName, prompt);
@@ -99,20 +99,18 @@ public class ReactiveSessionContextPromptManager {
     }
 
 
-    public Mono<Void> exchangeMessages(ServerWebExchange exchange, String functionName, AIModel model, boolean save) {
-        getIdentifier(exchange)
+    public Mono<ChatCompletionResult> exchangeMessages(ServerWebExchange exchange, String functionName, AIModel model, boolean save) {
+        return getIdentifier(exchange)
                 .flatMap(identifier -> context.getPrompt(functionName)
                         .map(prompt -> prompt.getPromptMessageContext().get(identifier))
-                        .doOnNext(contextMessages -> getChatCompletionResult(functionName, model, save, contextMessages)));
-        return Mono.empty();
+                        .flatMap(contextMessages -> getChatCompletionResult(functionName, model, save, contextMessages)));
     }
 
-    public Mono<Void> exchangeMessages(ServerWebExchange exchange, String functionName, Map<String, List<ChatMessage>> messageContext, AIModel model, boolean save) {
-        getIdentifier(exchange).flatMap(identifier -> {
+    public Mono<ChatCompletionResult> exchangeMessages(ServerWebExchange exchange, String functionName, Map<String, List<ChatMessage>> messageContext, AIModel model, boolean save) {
+        return getIdentifier(exchange).flatMap(identifier -> {
             List<ChatMessage> contextMessages = messageContext.get(identifier);
             return getChatCompletionResult(functionName, model, save, contextMessages);
         });
-        return Mono.empty();
     }
 
     private Mono<ChatCompletionResult> getChatCompletionResult(String functionName, AIModel model, boolean save, List<ChatMessage> contextMessages) {

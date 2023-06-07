@@ -17,7 +17,6 @@ import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.JsonUtils;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.STRUCTURE;
-import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import lombok.RequiredArgsConstructor;
@@ -81,20 +80,19 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
                         }
                         """.formatted(resultFormat);
             }
-            if (!promptManager.getContext().containsPrompt(functionName)) {
-                Prompt prompt = new Prompt(
-                        purpose,
-                        resolveRefTypes(args),
-                        createFunction(args),
-                        createConstraints(constraints),
-                        JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
-                        resultFormat,
-                        BuildFormatUtil.getFormatString(FeedbackResponse.class),
-                        resultValidatorChain.peekValidators(functionName)
-                );
-                promptManager.initPromptContext(functionName, prompt);
-            } else promptManager.initPromptContext(functionName);
-        }
+            Prompt prompt = new Prompt(
+                    purpose,
+                    resolveRefTypes(args),
+                    createFunction(args),
+                    createConstraints(constraints),
+                    JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
+                    resultFormat,
+                    BuildFormatUtil.getFormatString(FeedbackResponse.class),
+                    resultValidatorChain.peekValidators(functionName)
+            );
+            promptManager.initPromptContext(functionName, prompt);
+
+        } else promptManager.initPromptContext(functionName);
         promptManager.addMessage(functionName, ROLE.USER, createValuesString(args));
         ChatCompletionResult response = promptManager.exchangeMessages(functionName, model, true);
         return parseResponseWithValidate(response);
@@ -125,14 +123,6 @@ public abstract class BaseAIFunction<T> implements AIFunction<T> {
         }
 
         return value;
-    }
-
-    protected String convertMapToJson(Map<String, Object> inputDescMap) {
-        try {
-            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(inputDescMap);
-        } catch (Exception e) {
-            throw new CustomJsonException("Failed to convert map to JSON", e);
-        }
     }
 
     protected String createValuesString(List<Argument<?>> args) throws JsonProcessingException {

@@ -31,7 +31,7 @@ public class ReactiveSecurityContextPromptManager {
 
 
     @Transactional
-    public Mono<Void> initPromptContext(String functionName, Prompt prompt) {
+    public Mono<Void> initPromptContext(String functionName, ReactivePrompt prompt) {
         return context.containsPrompt(functionName).flatMap(exist -> {
             if (!exist) {
                 context.savePromptToContext(functionName, prompt);
