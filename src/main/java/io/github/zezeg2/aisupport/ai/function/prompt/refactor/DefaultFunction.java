@@ -7,15 +7,15 @@ import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
-import io.github.zezeg2.aisupport.ai.validator.ExceptionValidator;
+import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 
 import java.util.List;
 
 public class DefaultFunction<T> extends BaseFunction<T, DefaultPromptManager, DefaultResultValidatorChain> {
-    public DefaultFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, DefaultPromptManager promptManager, DefaultResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator, OpenAIProperties openAIProperties) {
-        super(functionName, purpose, constraints, returnType, service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
+    public DefaultFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, DefaultPromptManager promptManager, DefaultResultValidatorChain resultValidatorChain, OpenAIProperties openAIProperties) {
+        super(functionName, purpose, constraints, returnType, service, mapper, resolver, promptManager, resultValidatorChain, openAIProperties);
     }
 
     @Override
@@ -27,6 +27,11 @@ public class DefaultFunction<T> extends BaseFunction<T, DefaultPromptManager, De
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public String buildResultFormat() {
+        return BuildFormatUtil.getFormatString(returnType);
     }
 
     @Override

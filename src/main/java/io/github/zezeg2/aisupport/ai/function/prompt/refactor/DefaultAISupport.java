@@ -13,16 +13,15 @@ import java.util.List;
 
 
 @RequiredArgsConstructor
-public class AISupport {
+public class DefaultAISupport {
     private final OpenAiService service;
     private final ObjectMapper mapper;
     private final ConstructResolver resolver;
     private final DefaultPromptManager promptManager;
     protected final DefaultResultValidatorChain resultValidatorChain;
-    protected final ExceptionValidator exceptionValidator;
     private final OpenAIProperties openAIProperties;
 
     public <T> DefaultFunction<T> createFunction(Class<T> returnType, String functionName, String purpose, List<Constraint> constraintList) {
-        return new DefaultFunction<>(functionName, purpose, constraintList, returnType, service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
+        return new DefaultFunction<>(functionName, purpose, constraintList, returnType, service, mapper, resolver, promptManager, resultValidatorChain, openAIProperties);
     }
 }

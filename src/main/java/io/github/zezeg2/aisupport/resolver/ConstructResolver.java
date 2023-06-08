@@ -1,5 +1,8 @@
 package io.github.zezeg2.aisupport.resolver;
 
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -30,7 +33,9 @@ public interface ConstructResolver {
                     clazz.getSuperclass().equals(HashMap.class) ||
                     clazz.getSuperclass().equals(Set.class) ||
                     clazz.getSuperclass().equals(HashSet.class) ||
-                    clazz.getSuperclass().equals(List.class)
+                    clazz.getSuperclass().equals(List.class) ||
+                    clazz.getSuperclass().equals(Mono.class) ||
+                    clazz.getSuperclass().equals(Flux.class)
             ) continue;
 
             Map<String, List<String>> fieldsMap = new HashMap<>();

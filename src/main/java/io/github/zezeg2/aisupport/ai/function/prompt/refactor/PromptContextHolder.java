@@ -15,7 +15,7 @@ public interface PromptContextHolder {
 
     Map<String, List<ChatMessage>> getPromptMessagesContext(String functionName);
 
-    Map<String, List<ChatMessage>> getFeedbackMessagesContext(String functionName, String validatorName);
+    Map<String, List<ChatMessage>> getFeedbackMessagesContext(String validatorName);
 
     List<ChatMessage> getPromptChatMessages(String functionName, String identifier);
 

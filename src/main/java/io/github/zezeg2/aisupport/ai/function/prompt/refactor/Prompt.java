@@ -1,9 +1,13 @@
 package io.github.zezeg2.aisupport.ai.function.prompt.refactor;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
+import java.io.Serializable;
+
 @Getter
-public class Prompt {
+public class Prompt implements Serializable {
     protected static final String PROMPT_TEMPLATE = """
             You are a function execution delegate. When I present an input, you generate and return the result. If you perform your role well, the `Lambda Function` below will finally run in action.
                         
@@ -49,7 +53,16 @@ public class Prompt {
     private final String resultFormat;
     private final String feedbackFormat;
 
-    public Prompt(String purpose, String refTypes, String function, String constraints, String inputFormat, String resultFormat, String feedbackFormat) {
+    @JsonCreator
+    public Prompt(
+            @JsonProperty("purpose") String purpose,
+            @JsonProperty("refTypes") String refTypes,
+            @JsonProperty("function") String function,
+            @JsonProperty("constraints") String constraints,
+            @JsonProperty("inputFormat") String inputFormat,
+            @JsonProperty("resultFormat") String resultFormat,
+            @JsonProperty("feedbackFormat") String feedbackFormat) {
+
         this.purpose = purpose;
         this.refTypes = refTypes;
         this.function = function;

@@ -41,7 +41,7 @@ public abstract class PromptManager<T> {
 
     public abstract T exchangeFeedbackMessages(String validatorName, AIModel model, boolean save);
 
-    protected abstract T getChatCompletionResult(AIModel model, boolean save, List<ChatMessage> contextMessages);
+    protected abstract T getChatCompletionResult(String functionName, AIModel model, boolean save, List<ChatMessage> contextMessages, ContextType contextType);
 
     protected abstract T createChatCompletion(AIModel model, List<ChatMessage> messages);
 }

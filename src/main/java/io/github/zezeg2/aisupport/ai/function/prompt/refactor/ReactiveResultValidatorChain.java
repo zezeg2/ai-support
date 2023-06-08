@@ -14,6 +14,10 @@ public class ReactiveResultValidatorChain extends ResultValidatorChain<Mono<Stri
 
     @Override
     public Mono<String> validate(String functionName, String target) {
+        if (validators.isEmpty()) {
+            return Mono.just(target);
+        }
+
         return Flux.fromIterable(validators)
                 .filter(validator -> {
                     ValidateTarget targetFunction = validator.getClass().getAnnotation(ValidateTarget.class);

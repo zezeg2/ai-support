@@ -7,7 +7,7 @@ import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
-import io.github.zezeg2.aisupport.ai.validator.ExceptionValidator;
+import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import reactor.core.publisher.Mono;
@@ -17,8 +17,8 @@ import java.util.List;
 public class ReactiveFunction<T> extends BaseFunction<Mono<T>, ReactivePromptManager, ReactiveResultValidatorChain> {
     private final Class<T> wrappedType;
 
-    public ReactiveFunction(String functionName, String purpose, List<Constraint> constraints, Class<Mono<T>> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator, OpenAIProperties openAIProperties, Class<T> wrappedType) {
-        super(functionName, purpose, constraints, returnType, service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
+    public ReactiveFunction(String functionName, String purpose, List<Constraint> constraints, Class<Mono<T>> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain, OpenAIProperties openAIProperties, Class<T> wrappedType) {
+        super(functionName, purpose, constraints, returnType, service, mapper, resolver, promptManager, resultValidatorChain, openAIProperties);
         this.wrappedType = wrappedType;
     }
 
@@ -28,12 +28,17 @@ public class ReactiveFunction<T> extends BaseFunction<Mono<T>, ReactivePromptMan
             String content = response.getChoices().get(0).getMessage().getContent();
             return resultValidatorChain.validate(functionName, content).flatMap((stringResult) -> {
                 try {
-                    return mapper.readValue(stringResult, returnType);
+                    return Mono.just(mapper.readValue(stringResult, wrappedType));
                 } catch (JsonProcessingException e) {
                     return Mono.error(new RuntimeException(e));
                 }
             });
         }).onErrorResume(Mono::error);
+    }
+
+    @Override
+    public String buildResultFormat() {
+        return BuildFormatUtil.getFormatString(wrappedType);
     }
 
     @Override

@@ -11,7 +11,6 @@ import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.ai.model.gpt.ModelMapper;
-import io.github.zezeg2.aisupport.ai.validator.ExceptionValidator;
 import io.github.zezeg2.aisupport.ai.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.JsonUtils;
@@ -52,7 +51,6 @@ public abstract class BaseFunction<T, M extends PromptManager<?>, V extends Resu
     protected final ConstructResolver resolver;
     protected final M promptManager;
     protected final V resultValidatorChain;
-    protected final ExceptionValidator exceptionValidator;
 
     private final OpenAIProperties openAIProperties;
 
@@ -73,13 +71,13 @@ public abstract class BaseFunction<T, M extends PromptManager<?>, V extends Resu
             );
             promptManager.getContext().savePrompt(functionName, prompt);
             promptManager.addMessage(functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT);
-        } else {
-            try {
-                promptManager.addMessage(functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
         }
+        try {
+            promptManager.addMessage(functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     protected abstract T parseResponseWithValidate(ChatCompletionResult response);
@@ -104,9 +102,7 @@ public abstract class BaseFunction<T, M extends PromptManager<?>, V extends Resu
                 .collect(Collectors.joining("\n- ", "- ", "\n")) : "";
     }
 
-    public String buildResultFormat() {
-        return BuildFormatUtil.getFormatString(returnType);
-    }
+    public abstract String buildResultFormat();
 
     public String createFunction(List<Argument<?>> args) {
         String fieldsString = args.stream().map(Argument::getFieldName).collect(Collectors.joining(", "));

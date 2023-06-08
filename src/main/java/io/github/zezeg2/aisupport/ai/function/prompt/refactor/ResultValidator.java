@@ -23,7 +23,7 @@ public abstract class ResultValidator<S, M extends PromptManager<?>> implements 
     }
 
     protected String getName(String functionName) {
-        return String.join(".", List.of(functionName, this.getClass().getSimpleName().toLowerCase()));
+        return String.join(":", List.of(functionName, this.getClass().getSimpleName().toLowerCase()));
     }
 
     protected void init(String functionName) {

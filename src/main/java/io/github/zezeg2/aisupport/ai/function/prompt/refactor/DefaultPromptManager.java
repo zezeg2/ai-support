@@ -4,6 +4,7 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
+import io.github.zezeg2.aisupport.ai.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.common.JsonUtils;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
@@ -21,17 +22,17 @@ public class DefaultPromptManager extends PromptManager<ChatCompletionResult> {
     @Override
     public ChatCompletionResult exchangePromptMessages(String functionName, AIModel model, boolean save) {
         List<ChatMessage> contextMessages = context.getPromptChatMessages(functionName, getIdentifier());
-        return getChatCompletionResult(model, save, contextMessages);
+        return getChatCompletionResult(functionName, model, save, contextMessages, ContextType.PROMPT);
     }
 
     @Override
     public ChatCompletionResult exchangeFeedbackMessages(String validatorName, AIModel model, boolean save) {
         List<ChatMessage> contextMessages = context.getFeedbackChatMessages(validatorName, getIdentifier());
-        return getChatCompletionResult(model, save, contextMessages);
+        return getChatCompletionResult(validatorName, model, save, contextMessages, ContextType.FEEDBACK);
     }
 
     @Override
-    protected ChatCompletionResult getChatCompletionResult(AIModel model, boolean save, List<ChatMessage> contextMessages) {
+    protected ChatCompletionResult getChatCompletionResult(String functionName, AIModel model, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
         ChatCompletionResult response = createChatCompletion(model, contextMessages);
         ChatMessage responseMessage = response.getChoices().get(0).getMessage();
         responseMessage.setContent(JsonUtils.extractJsonFromMessage(responseMessage.getContent()));
