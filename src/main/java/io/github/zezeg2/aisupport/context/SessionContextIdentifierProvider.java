@@ -15,7 +15,7 @@ public class SessionContextIdentifierProvider implements ContextIdentifierProvid
         }
     }
 
-    public String getId(HttpServletRequest request) {
+    public String getId(HttpServletRequest request, String s) {
         return request.getSession().getId();
     }
 }

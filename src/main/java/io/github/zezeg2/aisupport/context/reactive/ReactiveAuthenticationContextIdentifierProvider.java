@@ -10,7 +10,7 @@ public class ReactiveAuthenticationContextIdentifierProvider implements Reactive
         return Mono.empty();
     }
 
-    public Mono<String> getId(ServerWebExchange exchange) {
+    public Mono<String> getId(ServerWebExchange exchange, String s) {
         return exchange.getPrincipal()
                 .cast(Authentication.class)
                 .map(Authentication::getName)

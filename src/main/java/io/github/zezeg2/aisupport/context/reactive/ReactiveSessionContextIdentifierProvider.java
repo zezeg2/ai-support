@@ -10,7 +10,7 @@ public class ReactiveSessionContextIdentifierProvider implements ReactiveContext
         return null;
     }
 
-    public Mono<String> getId(ServerWebExchange exchange) {
+    public Mono<String> getId(ServerWebExchange exchange, String s) {
         return exchange.getSession().map(WebSession::getId);
     }
 }

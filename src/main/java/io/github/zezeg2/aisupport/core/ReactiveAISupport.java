@@ -9,7 +9,7 @@ import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.reactive.function.ReactiveAIFunction;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
-import io.github.zezeg2.aisupport.core.validator.ReactiveResultValidatorChain;
+import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidatorChain;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 

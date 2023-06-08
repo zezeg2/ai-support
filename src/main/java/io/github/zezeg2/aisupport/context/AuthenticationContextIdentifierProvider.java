@@ -15,7 +15,7 @@ public class AuthenticationContextIdentifierProvider implements ContextIdentifie
         }
     }
 
-    public String getId(HttpServletRequest request) {
+    public String getId(HttpServletRequest request, String s) {
         return request.getUserPrincipal().getName() == null ? "anonymous" : request.getUserPrincipal().getName();
     }
 }
