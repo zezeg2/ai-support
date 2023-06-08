@@ -21,24 +21,21 @@ public class DefaultPromptManager extends PromptManager<ChatCompletionResult> {
     @Override
     public ChatCompletionResult exchangePromptMessages(String functionName, AIModel model, boolean save) {
         List<ChatMessage> contextMessages = context.getPromptChatMessages(functionName, getIdentifier());
-        return getChatCompletionResult(functionName, model, save, contextMessages);
+        return getChatCompletionResult(model, save, contextMessages);
     }
 
     @Override
-    public ChatCompletionResult exchangeFeedbackMessages(String functionName, String validatorName, AIModel model, boolean save) {
-        List<ChatMessage> contextMessages = context.getFeedbackChatMessages(functionName, validatorName, getIdentifier());
-        return getChatCompletionResult(functionName, model, save, contextMessages);
+    public ChatCompletionResult exchangeFeedbackMessages(String validatorName, AIModel model, boolean save) {
+        List<ChatMessage> contextMessages = context.getFeedbackChatMessages(validatorName, getIdentifier());
+        return getChatCompletionResult(model, save, contextMessages);
     }
 
     @Override
-    protected ChatCompletionResult getChatCompletionResult(String functionName, AIModel model, boolean save, List<ChatMessage> contextMessages) {
+    protected ChatCompletionResult getChatCompletionResult(AIModel model, boolean save, List<ChatMessage> contextMessages) {
         ChatCompletionResult response = createChatCompletion(model, contextMessages);
         ChatMessage responseMessage = response.getChoices().get(0).getMessage();
         responseMessage.setContent(JsonUtils.extractJsonFromMessage(responseMessage.getContent()));
-        if (save) {
-            contextMessages.add(responseMessage);
-            redisPersistenceSupport(functionName);
-        }
+        if (save) contextMessages.add(responseMessage);
         return response;
     }
 

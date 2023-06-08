@@ -8,6 +8,7 @@ import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.AIFunction;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
+import io.github.zezeg2.aisupport.ai.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.ai.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.ai.validator.ExceptionValidator;
@@ -70,11 +71,11 @@ public abstract class BaseFunction<T, M extends PromptManager<?>, V extends Resu
                     buildResultFormat(),
                     BuildFormatUtil.getFormatString(FeedbackResponse.class)
             );
-            promptManager.getContext().save(functionName, prompt);
-            promptManager.addMessage(functionName, ROLE.SYSTEM, prompt.toString());
+            promptManager.getContext().savePrompt(functionName, prompt);
+            promptManager.addMessage(functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT);
         } else {
             try {
-                promptManager.addMessage(functionName, ROLE.USER, createValuesString(args));
+                promptManager.addMessage(functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }

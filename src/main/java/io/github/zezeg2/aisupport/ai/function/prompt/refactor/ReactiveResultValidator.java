@@ -52,17 +52,12 @@ public abstract class ReactiveResultValidator extends ResultValidator<Mono<Strin
 
     @Override
     protected Mono<String> getResponseContent(String functionName, String message, ContextType contextType) {
-        Map<String, List<ChatMessage>> messageContext = switch (contextType) {
-            case PROMPT -> promptManager.getContext().getPromptMessagesContext(functionName);
-            case FEEDBACK ->
-                    promptManager.getContext().getFeedbackMessagesContext(functionName, this.getClass().getSimpleName());
-        };
-        promptManager.addMessage(functionName, ROLE.USER, message, messageContext);
+        promptManager.addMessage(functionName, ROLE.USER, message, contextType);
         return switch (contextType) {
             case PROMPT ->
                     promptManager.exchangePromptMessages(functionName, GPT3Model.GPT_3_5_TURBO, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
             case FEEDBACK ->
-                    promptManager.exchangeFeedbackMessages(functionName, this.getClass().getSimpleName(), GPT3Model.GPT_3_5_TURBO, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
+                    promptManager.exchangeFeedbackMessages(getName(functionName), GPT3Model.GPT_3_5_TURBO, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
         };
     }
 

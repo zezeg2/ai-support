@@ -28,7 +28,7 @@ public abstract class DefaultResultValidator extends ResultValidator<String, Def
             System.out.println("Try Count : " + count + "--------------------------------------------------------------");
             System.out.println(lastPromptMessage);
 
-            feedbackContent = getResponseContent(functionName, lastPromptMessage, ContextType.FEEDBACK);
+            feedbackContent = getResponseContent(getName(functionName), lastPromptMessage, ContextType.FEEDBACK);
             FeedbackResponse feedbackResult = mapper.readValue(feedbackContent, FeedbackResponse.class);
 
             System.out.println(feedbackResult);
@@ -36,7 +36,7 @@ public abstract class DefaultResultValidator extends ResultValidator<String, Def
                 return lastPromptMessage;
             }
 
-            lastPromptMessage = getResponseContent(functionName, lastPromptMessage, ContextType.PROMPT);
+            lastPromptMessage = getResponseContent(functionName, feedbackContent, ContextType.PROMPT);
         }
 
         throw new RuntimeException("Maximum Validate count over");
@@ -44,18 +44,12 @@ public abstract class DefaultResultValidator extends ResultValidator<String, Def
 
     @Override
     protected String getResponseContent(String functionName, String message, ContextType contextType) {
-
-        Map<String, List<ChatMessage>> messageContext = switch (contextType) {
-            case PROMPT -> promptManager.getContext().getPromptMessagesContext(functionName);
-            case FEEDBACK ->
-                    promptManager.getContext().getFeedbackMessagesContext(functionName, this.getClass().getSimpleName());
-        };
-        promptManager.addMessage(functionName, ROLE.USER, message, messageContext);
+        promptManager.addMessage(functionName, ROLE.USER, message, contextType);
         ChatMessage responseMessage = switch (contextType) {
             case PROMPT ->
                     promptManager.exchangePromptMessages(functionName, GPT3Model.GPT_3_5_TURBO, true).getChoices().get(0).getMessage();
             case FEEDBACK ->
-                    promptManager.exchangeFeedbackMessages(functionName, this.getClass().getSimpleName(), GPT3Model.GPT_3_5_TURBO, true).getChoices().get(0).getMessage();
+                    promptManager.exchangeFeedbackMessages(getName(functionName), GPT3Model.GPT_3_5_TURBO, true).getChoices().get(0).getMessage();
         };
         return responseMessage.getContent();
     }

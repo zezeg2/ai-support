@@ -22,11 +22,14 @@ public abstract class ResultValidator<S, M extends PromptManager<?>> implements 
         this.mapper = mapper;
     }
 
-    public void init(String functionName) {
-        List<ChatMessage> feedbackChatMessages = promptManager.getContext().getFeedbackChatMessages(functionName, this.getClass().getSimpleName(), promptManager.getIdentifier());
-        Map<String, List<ChatMessage>> feedbackMessagesContext = promptManager.getContext().getFeedbackMessagesContext(functionName, this.getClass().getSimpleName());
+    protected String getName(String functionName) {
+        return String.join(".", List.of(functionName, this.getClass().getSimpleName().toLowerCase()));
+    }
+
+    protected void init(String functionName) {
+        List<ChatMessage> feedbackChatMessages = promptManager.getContext().getFeedbackChatMessages(getName(functionName), promptManager.getIdentifier());
         if (feedbackChatMessages.isEmpty()) {
-            promptManager.addMessage(functionName, ROLE.SYSTEM, buildTemplate(functionName), feedbackMessagesContext);
+            promptManager.addMessage(functionName, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
         }
     }
 

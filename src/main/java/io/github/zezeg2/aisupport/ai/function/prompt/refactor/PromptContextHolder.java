@@ -9,7 +9,7 @@ public interface PromptContextHolder {
 
     boolean contains(String functionName);
 
-    void save(String functionName, Prompt prompt);
+    void savePrompt(String functionName, Prompt prompt);
 
     Prompt get(String functionName);
 
@@ -19,5 +19,9 @@ public interface PromptContextHolder {
 
     List<ChatMessage> getPromptChatMessages(String functionName, String identifier);
 
-    List<ChatMessage> getFeedbackChatMessages(String functionName, String validatorName, String identifier);
+    List<ChatMessage> getFeedbackChatMessages(String validatorName, String identifier);
+
+    void savePromptMessagesContext(String functionName, String identifier, ChatMessage message);
+
+    void saveFeedbackMessagesContext(String validatorName, String identifier, ChatMessage message);
 }

@@ -21,25 +21,22 @@ public class ReactivePromptManager extends PromptManager<Mono<ChatCompletionResu
     @Override
     public Mono<ChatCompletionResult> exchangePromptMessages(String functionName, AIModel model, boolean save) {
         List<ChatMessage> contextMessages = context.getPromptChatMessages(functionName, getIdentifier());
-        return getChatCompletionResult(functionName, model, save, contextMessages);
+        return getChatCompletionResult(model, save, contextMessages);
     }
 
     @Override
-    public Mono<ChatCompletionResult> exchangeFeedbackMessages(String functionName, String validatorName, AIModel model, boolean save) {
-        List<ChatMessage> contextMessages = context.getFeedbackChatMessages(functionName, validatorName, getIdentifier());
-        return getChatCompletionResult(functionName, model, save, contextMessages);
+    public Mono<ChatCompletionResult> exchangeFeedbackMessages(String validatorName, AIModel model, boolean save) {
+        List<ChatMessage> contextMessages = context.getFeedbackChatMessages(validatorName, getIdentifier());
+        return getChatCompletionResult(model, save, contextMessages);
     }
 
     @Override
-    protected Mono<ChatCompletionResult> getChatCompletionResult(String functionName, AIModel model, boolean save, List<ChatMessage> contextMessages) {
+    protected Mono<ChatCompletionResult> getChatCompletionResult(AIModel model, boolean save, List<ChatMessage> contextMessages) {
         return createChatCompletion(model, contextMessages)
                 .flatMap(response -> {
                     ChatMessage responseMessage = response.getChoices().get(0).getMessage();
                     responseMessage.setContent(JsonUtils.extractJsonFromMessage(responseMessage.getContent()));
-                    if (save) {
-                        contextMessages.add(responseMessage);
-                        redisPersistenceSupport(functionName);
-                    }
+                    if (save) contextMessages.add(responseMessage);
                     return Mono.just(response);
                 });
     }
