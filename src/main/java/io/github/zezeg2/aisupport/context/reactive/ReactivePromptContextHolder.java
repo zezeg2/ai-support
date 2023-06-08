@@ -1,13 +1,29 @@
 package io.github.zezeg2.aisupport.context.reactive;
 
-import io.github.zezeg2.aisupport.ai.function.prompt.ReactivePrompt;
+import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import reactor.core.publisher.Mono;
 
-public interface ReactivePromptContextHolder<S> {
+import java.util.List;
+import java.util.Map;
 
-    Mono<Boolean> containsPrompt(String functionName);
+public interface ReactivePromptContextHolder {
 
-    Mono<Void> savePromptToContext(String functionName, ReactivePrompt<S> prompt);
+    Mono<Boolean> contains(String functionName);
 
-    Mono<ReactivePrompt<S>> getPrompt(String functionName);
+    Mono<Void> savePrompt(String functionName, Prompt prompt);
+
+    Mono<Prompt> get(String functionName);
+
+    Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String functionName);
+
+    Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String validatorName);
+
+    Mono<List<ChatMessage>> getPromptChatMessages(String functionName, String identifier);
+
+    Mono<List<ChatMessage>> getFeedbackChatMessages(String validatorName, String identifier);
+
+    Mono<Void> savePromptMessagesContext(String functionName, String identifier, ChatMessage message);
+
+    Mono<Void> saveFeedbackMessagesContext(String validatorName, String identifier, ChatMessage message);
 }

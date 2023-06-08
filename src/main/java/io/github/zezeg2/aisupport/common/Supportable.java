@@ -1,7 +1,6 @@
 package io.github.zezeg2.aisupport.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.github.zezeg2.aisupport.context.servlet.SupportableFormatRegistry;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;

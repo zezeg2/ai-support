@@ -1,7 +1,7 @@
 package io.github.zezeg2.aisupport.common;
 
-import io.github.zezeg2.aisupport.ai.function.argument.Argument;
-import io.github.zezeg2.aisupport.ai.function.argument.MapArgument;
+import io.github.zezeg2.aisupport.common.argument.Argument;
+import io.github.zezeg2.aisupport.common.argument.MapArgument;
 import io.github.zezeg2.aisupport.common.enums.STRUCTURE;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportedConstructException;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportedTypeException;

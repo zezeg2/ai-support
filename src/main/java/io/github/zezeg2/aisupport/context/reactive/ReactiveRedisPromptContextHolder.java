@@ -1,47 +1,163 @@
 package io.github.zezeg2.aisupport.context.reactive;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.zezeg2.aisupport.ai.function.prompt.ReactivePrompt;
+import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ReactiveHashOperations;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-public class ReactiveRedisPromptContextHolder<S> implements ReactivePromptContextHolder<S> {
+@Slf4j
+public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHolder {
+
     private final ReactiveHashOperations<String, String, String> hashOperations;
     private final ObjectMapper mapper;
 
-    public ReactiveRedisPromptContextHolder(ReactiveRedisTemplate<String, String> template, ObjectMapper mapper) {
-        this.hashOperations = template.opsForHash();
+    public ReactiveRedisPromptContextHolder(ReactiveHashOperations<String, String, String> hashOperations, ObjectMapper mapper) {
+        this.hashOperations = hashOperations;
         this.mapper = mapper;
     }
 
     @Override
-    public Mono<Boolean> containsPrompt(String functionName) {
-        return hashOperations.hasKey("prompts", functionName);
+    public Mono<Boolean> contains(String functionName) {
+        return hashOperations.hasKey(functionName, "prompt");
+
     }
 
     @Override
-    public Mono<Void> savePromptToContext(String functionName, ReactivePrompt<S> prompt) {
+    public Mono<Void> savePrompt(String functionName, Prompt prompt) {
+        String promptJson;
         try {
-            String promptData = mapper.writeValueAsString(prompt);
-            return hashOperations.put("prompts", functionName, promptData).then();
-        } catch (IOException e) {
-            return Mono.error(new RuntimeException("Error serializing prompt", e));
+            promptJson = mapper.writeValueAsString(prompt);
+        } catch (Exception e) {
+            return Mono.error(handleException("savePrompt", e));
         }
+
+        return hashOperations.put(functionName, "prompt", promptJson)
+                .then();
+
     }
 
     @Override
-    public Mono<ReactivePrompt<S>> getPrompt(String functionName) {
-        return hashOperations.get("prompts", functionName)
-                .log().map(promptData -> {
+    public Mono<Prompt> get(String functionName) {
+        return hashOperations.get(functionName, "prompt")
+                .flatMap(promptJson -> {
                     try {
-                        ReactivePrompt reactivePrompt = mapper.readValue(promptData, ReactivePrompt.class);
-                        return (ReactivePrompt<S>) reactivePrompt;
-                    } catch (IOException e) {
-                        throw new RuntimeException("Error deserializing prompt", e);
+                        return Mono.just(mapper.readValue(promptJson, Prompt.class));
+                    } catch (Exception e) {
+                        return Mono.error(handleException("get", e));
                     }
-                }).log();
+                });
+
+    }
+
+    @Override
+    public Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String functionName) {
+        return hashOperations.get(functionName, "promptMessagesContext")
+                .flatMap(contextJson -> {
+                    try {
+                        return Mono.just(mapper.readValue(contextJson, new TypeReference<>() {
+                        }));
+                    } catch (Exception e) {
+                        return Mono.error(handleException("getPromptMessagesContext", e));
+                    }
+                });
+    }
+
+    @Override
+    public Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String validatorName) {
+        return hashOperations.get(validatorName, "feedbackMessagesContext")
+                .flatMap(contextJson -> {
+                    try {
+                        return Mono.just(mapper.readValue(contextJson, new TypeReference<>() {
+                        }));
+                    } catch (Exception e) {
+                        return Mono.error(handleException("getFeedbackMessagesContext", e));
+                    }
+                });
+
+    }
+
+    @Override
+    public Mono<List<ChatMessage>> getPromptChatMessages(String functionName, String identifier) {
+        return hashOperations.get(functionName + ":" + identifier, "promptChatMessages")
+                .flatMap(messagesJson -> {
+                    try {
+                        return Mono.just(mapper.readValue(messagesJson, new TypeReference<>() {
+                        }));
+                    } catch (Exception e) {
+                        return Mono.error(handleException("getPromptChatMessages", e));
+                    }
+                });
+
+    }
+
+    @Override
+    public Mono<List<ChatMessage>> getFeedbackChatMessages(String validatorName, String identifier) {
+        return hashOperations.get(validatorName + ":" + identifier, "feedbackChatMessages")
+                .flatMap(messagesJson -> {
+                    try {
+                        return Mono.just(mapper.readValue(messagesJson, new TypeReference<>() {
+                        }));
+                    } catch (Exception e) {
+                        return Mono.error(handleException("getFeedbackChatMessages", e));
+                    }
+                });
+
+    }
+
+    @Override
+    public Mono<Void> savePromptMessagesContext(String functionName, String identifier, ChatMessage message) {
+        return hashOperations.get(functionName + ":" + identifier, "promptChatMessages")
+                .flatMap(messagesJson -> {
+                    try {
+                        List<ChatMessage> messages;
+                        if (messagesJson != null) {
+                            messages = mapper.readValue(messagesJson, new TypeReference<>() {
+                            });
+                        } else {
+                            messages = new ArrayList<>();
+                        }
+                        messages.add(message);
+                        return hashOperations.put(functionName + ":" + identifier, "promptChatMessages", mapper.writeValueAsString(messages));
+                    } catch (Exception e) {
+                        return Mono.error(handleException("savePromptMessagesContext", e));
+                    }
+                })
+                .then();
+
+    }
+
+    @Override
+    public Mono<Void> saveFeedbackMessagesContext(String validatorName, String identifier, ChatMessage message) {
+        return hashOperations.get(validatorName + ":" + identifier, "feedbackChatMessages")
+                .flatMap(messagesJson -> {
+                    try {
+                        List<ChatMessage> messages;
+                        if (messagesJson != null) {
+                            messages = mapper.readValue(messagesJson, new TypeReference<>() {
+                            });
+                        } else {
+                            messages = new ArrayList<>();
+                        }
+                        messages.add(message);
+                        return hashOperations.put(validatorName + ":" + identifier, "feedbackChatMessages", mapper.writeValueAsString(messages));
+                    } catch (Exception e) {
+                        return Mono.error(handleException("saveFeedbackMessagesContext", e));
+                    }
+                })
+                .then();
+
+    }
+
+    private RuntimeException handleException(String methodName, Exception exception) {
+        log.info("Exception Occurred \n- name : {}\n-message: {}", exception.getClass().getSimpleName(), exception.getMessage());
+        return new RuntimeException("Error occurred in method: " + methodName, exception);
     }
 }
+
