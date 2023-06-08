@@ -48,7 +48,7 @@ public abstract class ResultValidator implements Validatable {
     }
 
     @Override
-    public String validate(String functionName) throws JsonProcessingException {
+    public String validate(String functionName) {
         initFeedbackMessageContext(functionName);
         String lastPromptMessage;
         String feedbackContent;
@@ -59,13 +59,17 @@ public abstract class ResultValidator implements Validatable {
             System.out.println(lastPromptMessage);
 
             feedbackContent = getResponseContent(functionName, lastPromptMessage, ContextType.FEEDBACK);
-            FeedbackResponse feedbackResult = mapper.readValue(feedbackContent, FeedbackResponse.class);
+            FeedbackResponse feedbackResult;
+            try {
+                feedbackResult = mapper.readValue(feedbackContent, FeedbackResponse.class);
+            } catch (JsonProcessingException e) {
+                continue;
+            }
 
             System.out.println(feedbackResult);
             if (feedbackResult.isValid()) {
                 return lastPromptMessage;
             }
-
             lastPromptMessage = getResponseContent(functionName, lastPromptMessage, ContextType.PROMPT);
         }
 

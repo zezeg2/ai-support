@@ -1,17 +1,9 @@
-package io.github.zezeg2.aisupport.ai.function.prompt;
+package io.github.zezeg2.aisupport.ai.function.prompt.refactor;
 
-import com.theokanning.openai.completion.chat.ChatMessage;
-import io.github.zezeg2.aisupport.ai.validator.ReactiveResultValidator;
 import lombok.Getter;
-import org.springframework.data.annotation.Transient;
-
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
-public class ReactivePrompt<S> {
-    @Transient
+public class Prompt {
     protected static final String PROMPT_TEMPLATE = """
             You are a function execution delegate. When I present an input, you generate and return the result. If you perform your role well, the `Lambda Function` below will finally run in action.
                         
@@ -56,10 +48,8 @@ public class ReactivePrompt<S> {
     private final String inputFormat;
     private final String resultFormat;
     private final String feedbackFormat;
-    private final Map<String, List<ChatMessage>> promptMessageContext;
-    private final List<ReactiveResultValidator<S>> resultValidators;
 
-    public ReactivePrompt(String purpose, String refTypes, String function, String constraints, String inputFormat, String resultFormat, String feedbackFormat, List<ReactiveResultValidator<S>> resultValidators) {
+    public Prompt(String purpose, String refTypes, String function, String constraints, String inputFormat, String resultFormat, String feedbackFormat) {
         this.purpose = purpose;
         this.refTypes = refTypes;
         this.function = function;
@@ -67,8 +57,6 @@ public class ReactivePrompt<S> {
         this.inputFormat = inputFormat;
         this.resultFormat = resultFormat;
         this.feedbackFormat = feedbackFormat;
-        this.promptMessageContext = new ConcurrentHashMap<>();
-        this.resultValidators = resultValidators;
     }
 
     @Override

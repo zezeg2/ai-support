@@ -5,6 +5,7 @@ import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.AISupporter;
 import io.github.zezeg2.aisupport.ai.ReactiveAISupporter;
 import io.github.zezeg2.aisupport.ai.function.prompt.PromptManager;
+import io.github.zezeg2.aisupport.ai.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.ai.function.prompt.ReactiveSecurityContextPromptManager;
 import io.github.zezeg2.aisupport.ai.function.prompt.ReactiveSessionContextPromptManager;
 import io.github.zezeg2.aisupport.ai.validator.DefaultExceptionValidator;
@@ -29,6 +30,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.server.ServerWebExchange;
 
 import java.time.Duration;
 import java.util.List;
@@ -43,14 +46,21 @@ public class AISupportAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "SERVLET")
     public AISupporter aiSupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator) {
         return new AISupporter(service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
     }
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
-    public ReactiveAISupporter reactiveAISupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, ReactiveSessionContextPromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator) {
-        return new ReactiveAISupporter(service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
+    public ReactiveAISupporter<ServerWebExchange> reactiveSessionContextAISupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager<ServerWebExchange> promptManager, ReactiveResultValidatorChain<ServerWebExchange> resultValidatorChain, ExceptionValidator exceptionValidator) {
+        return new ReactiveAISupporter<>(service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
+    public ReactiveAISupporter<Authentication> reactiveSecurityContextAISupporter(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager<Authentication> promptManager, ReactiveResultValidatorChain<Authentication> resultValidatorChain, ExceptionValidator exceptionValidator) {
+        return new ReactiveAISupporter<>(service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
     }
 
     @Bean
@@ -65,8 +75,14 @@ public class AISupportAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
-    public ReactiveResultValidatorChain reactiveResultValidatorChain(List<ReactiveResultValidator> validatorList) {
-        return new ReactiveResultValidatorChain(validatorList);
+    public ReactiveResultValidatorChain<ServerWebExchange> reactiveSessionContextResultValidatorChain(List<ReactiveResultValidator<ServerWebExchange>> validatorList) {
+        return new ReactiveResultValidatorChain<>(validatorList);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
+    public ReactiveResultValidatorChain<Authentication> reactiveSecurityContextResultValidatorChain(List<ReactiveResultValidator<Authentication>> validatorList) {
+        return new ReactiveResultValidatorChain<>(validatorList);
     }
 
     @Bean(name = "defaultExceptionValidator")
@@ -88,18 +104,29 @@ public class AISupportAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "ai-supporter.context.context", havingValue = "REDIS")
-    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'REDIS' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
-    public ReactivePromptContextHolder reactiveRedisPromptContextHolder(ReactiveRedisTemplate<String, String> redisTemplate,
-                                                                        ObjectMapper mapper) {
-        return new ReactiveRedisPromptContextHolder(redisTemplate, mapper);
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
+    public ReactivePromptContextHolder<ServerWebExchange> reactiveSessionContextRedisPromptContextHolder(ReactiveRedisTemplate<String, String> redisTemplate,
+                                                                                                         ObjectMapper mapper) {
+        return new ReactiveRedisPromptContextHolder<>(redisTemplate, mapper);
     }
 
     @Bean
-    @ConditionalOnProperty(name = "ai-supporter.context.context", havingValue = "MONGO")
-    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'MONGO' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
-    public ReactivePromptContextHolder reactiveMongoPromptContextHolder(ReactiveMongoTemplate mongoTemplate) {
-        return new ReactiveMongoPromptContextHolder(mongoTemplate);
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
+    public ReactivePromptContextHolder<ServerWebExchange> reactiveSessionContextMongoPromptContextHolder(ReactiveMongoTemplate mongoTemplate) {
+        return new ReactiveMongoPromptContextHolder<>(mongoTemplate);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
+    public ReactivePromptContextHolder<Authentication> reactiveSecurityContextRedisPromptContextHolder(ReactiveRedisTemplate<String, String> redisTemplate,
+                                                                                                       ObjectMapper mapper) {
+        return new ReactiveRedisPromptContextHolder<>(redisTemplate, mapper);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
+    public ReactivePromptContextHolder<Authentication> reactiveSecurityContextMongoPromptContextHolder(ReactiveMongoTemplate mongoTemplate) {
+        return new ReactiveMongoPromptContextHolder<>(mongoTemplate);
     }
 
     @Bean
@@ -122,14 +149,14 @@ public class AISupportAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'SESSION' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
-    public ReactiveSessionContextIdentifierProvider reactiveSessionIdentifierProvider() {
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
+    public ReactiveContextIdentifierProvider<ServerWebExchange> reactiveSessionIdentifierProvider() {
         return new ReactiveSessionContextIdentifierProvider();
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'SECURITY' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
-    public ReactiveSecurityContextIdentifierProvider reactiveSecurityIdentifierProvider() {
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
+    public ReactiveContextIdentifierProvider<Authentication> reactiveSecurityIdentifierProvider() {
         return new ReactiveSecurityContextIdentifierProvider();
     }
 
@@ -157,13 +184,13 @@ public class AISupportAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
-    public ReactiveSessionContextPromptManager promptManager(OpenAiService service, ReactivePromptContextHolder promptContextHolder, ReactiveSessionContextIdentifierProvider contextIdentifierProvider, ContextProperties contextProperties) {
+    public ReactivePromptManager<ServerWebExchange> reactiveSessionContextPromptManager(OpenAiService service, ReactivePromptContextHolder<ServerWebExchange> promptContextHolder, ReactiveSessionContextIdentifierProvider contextIdentifierProvider, ContextProperties contextProperties) {
         return new ReactiveSessionContextPromptManager(service, promptContextHolder, contextIdentifierProvider, contextProperties);
     }
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", value = "EVENTLOOP")
-    public ReactiveSecurityContextPromptManager promptManager(OpenAiService service, ReactivePromptContextHolder promptContextHolder, ReactiveSecurityContextIdentifierProvider contextIdentifierProvider, ContextProperties contextProperties) {
+    public ReactivePromptManager<Authentication> reactiveSecurityContextPromptManager(OpenAiService service, ReactivePromptContextHolder<Authentication> promptContextHolder, ReactiveSecurityContextIdentifierProvider contextIdentifierProvider, ContextProperties contextProperties) {
         return new ReactiveSecurityContextPromptManager(service, promptContextHolder, contextIdentifierProvider, contextProperties);
     }
 }

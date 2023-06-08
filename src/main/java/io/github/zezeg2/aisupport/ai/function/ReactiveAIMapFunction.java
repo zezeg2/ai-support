@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
-import io.github.zezeg2.aisupport.ai.function.prompt.ReactiveSessionContextPromptManager;
+import io.github.zezeg2.aisupport.ai.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.ai.validator.ExceptionValidator;
 import io.github.zezeg2.aisupport.ai.validator.chain.ReactiveResultValidatorChain;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
@@ -15,10 +15,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class ReactiveAIMapFunction<T> extends ReactiveBaseAIFunction<Map<String, T>> {
+public class ReactiveAIMapFunction<T, S> extends ReactiveBaseAIFunction<Map<String, T>, S> {
     private final Class<T> wrappedType;
 
-    public ReactiveAIMapFunction(String functionName, String purpose, List<Constraint> constraints, Class<Map<String, T>> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, ReactiveSessionContextPromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain, ExceptionValidator exceptionValidator, OpenAIProperties openAIProperties, Class<T> wrappedType) {
+    public ReactiveAIMapFunction(String functionName, String purpose, List<Constraint> constraints, Class<Map<String, T>> returnType, OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager<S> promptManager, ReactiveResultValidatorChain<S> resultValidatorChain, ExceptionValidator exceptionValidator, OpenAIProperties openAIProperties, Class<T> wrappedType) {
         super(functionName, purpose, constraints, returnType, service, mapper, resolver, promptManager, resultValidatorChain, exceptionValidator, openAIProperties);
         this.wrappedType = wrappedType;
     }

@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 
-public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHolder {
+public class ReactiveRedisPromptContextHolder<S> implements ReactivePromptContextHolder<S> {
     private final ReactiveHashOperations<String, String, String> hashOperations;
     private final ObjectMapper mapper;
 
@@ -23,25 +23,25 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Void> savePromptToContext(String functionName, ReactivePrompt prompt) {
+    public Mono<Void> savePromptToContext(String functionName, ReactivePrompt<S> prompt) {
         try {
             String promptData = mapper.writeValueAsString(prompt);
-            return hashOperations.put("prompts", functionName, promptData)
-                    .then();
+            return hashOperations.put("prompts", functionName, promptData).then();
         } catch (IOException e) {
             return Mono.error(new RuntimeException("Error serializing prompt", e));
         }
     }
 
     @Override
-    public Mono<ReactivePrompt> getPrompt(String functionName) {
+    public Mono<ReactivePrompt<S>> getPrompt(String functionName) {
         return hashOperations.get("prompts", functionName)
-                .map(promptData -> {
+                .log().map(promptData -> {
                     try {
-                        return mapper.readValue(promptData, ReactivePrompt.class);
+                        ReactivePrompt reactivePrompt = mapper.readValue(promptData, ReactivePrompt.class);
+                        return (ReactivePrompt<S>) reactivePrompt;
                     } catch (IOException e) {
                         throw new RuntimeException("Error deserializing prompt", e);
                     }
-                });
+                }).log();
     }
 }

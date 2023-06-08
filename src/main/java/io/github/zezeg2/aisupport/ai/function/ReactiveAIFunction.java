@@ -2,16 +2,15 @@ package io.github.zezeg2.aisupport.ai.function;
 
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
-import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-public interface ReactiveAIFunction<T> {
+public interface ReactiveAIFunction<T, S> {
 
-    Mono<T> execute(ServerWebExchange exchange, List<Argument<?>> args) throws Exception;
+    Mono<T> execute(S idSource, List<Argument<?>> args);
 
-    Mono<T> execute(ServerWebExchange exchange, List<Argument<?>> args, AIModel model) throws Exception;
+    Mono<T> execute(S idSource, List<Argument<?>> args, AIModel model);
 
     String buildResultFormat();
 

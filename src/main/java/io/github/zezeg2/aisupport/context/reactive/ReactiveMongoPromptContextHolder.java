@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import reactor.core.publisher.Mono;
 
-public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHolder {
+public class ReactiveMongoPromptContextHolder<S> implements ReactivePromptContextHolder<S> {
     private final ReactiveMongoTemplate reactiveMongoTemplate;
 
     public ReactiveMongoPromptContextHolder(ReactiveMongoTemplate reactiveMongoTemplate) {
@@ -19,13 +19,13 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Void> savePromptToContext(String functionName, ReactivePrompt prompt) {
+    public Mono<Void> savePromptToContext(String functionName, ReactivePrompt<S> prompt) {
         return reactiveMongoTemplate.save(prompt, functionName)
                 .then();
     }
 
     @Override
-    public Mono<ReactivePrompt> getPrompt(String functionName) {
-        return reactiveMongoTemplate.findOne(Query.query(Criteria.where("functionName").is(functionName)), ReactivePrompt.class);
+    public Mono<ReactivePrompt<S>> getPrompt(String functionName) {
+        return reactiveMongoTemplate.findOne(Query.query(Criteria.where("functionName").is(functionName)), ReactivePrompt.class).map(reactivePrompt -> (ReactivePrompt<S>) reactivePrompt);
     }
 }

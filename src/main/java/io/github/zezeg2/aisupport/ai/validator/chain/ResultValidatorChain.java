@@ -14,7 +14,7 @@ public class ResultValidatorChain extends ValidatorChain<ResultValidator> {
     }
 
     @Override
-    public String validate(String functionName, String target) throws Exception {
+    public String validate(String functionName, String target) {
         String result = target;
         for (ResultValidator validator : validators) {
             ValidateTarget targetFunction = validator.getClass().getAnnotation(ValidateTarget.class);

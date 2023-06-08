@@ -7,7 +7,7 @@ import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.ai.function.argument.Argument;
 import io.github.zezeg2.aisupport.ai.function.constraint.Constraint;
 import io.github.zezeg2.aisupport.ai.function.prompt.ReactivePrompt;
-import io.github.zezeg2.aisupport.ai.function.prompt.ReactiveSessionContextPromptManager;
+import io.github.zezeg2.aisupport.ai.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.ai.model.AIModel;
 import io.github.zezeg2.aisupport.ai.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.ai.validator.ExceptionValidator;
@@ -20,7 +20,6 @@ import io.github.zezeg2.aisupport.common.enums.STRUCTURE;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.resolver.ConstructResolver;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.LinkedHashMap;
@@ -30,7 +29,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
-public abstract class ReactiveBaseAIFunction<T> implements ReactiveAIFunction<T> {
+public abstract class ReactiveBaseAIFunction<T, S> implements ReactiveAIFunction<T, S> {
     protected final String functionName;
     protected final String purpose;
     protected final List<Constraint> constraints;
@@ -52,23 +51,23 @@ public abstract class ReactiveBaseAIFunction<T> implements ReactiveAIFunction<T>
                 }
             }
             """;
-    protected final ReactiveSessionContextPromptManager promptManager;
-    protected final ReactiveResultValidatorChain resultValidatorChain;
+    protected final ReactivePromptManager<S> promptManager;
+    protected final ReactiveResultValidatorChain<S> resultValidatorChain;
     protected final ExceptionValidator exceptionValidator;
 
     private final OpenAIProperties openAIProperties;
 
 
     @Override
-    public Mono<T> execute(ServerWebExchange exchange, List<Argument<?>> args) throws Exception {
+    public Mono<T> execute(S idSource, List<Argument<?>> args) {
         AIModel model = getDefaultModel();
-        return execute(exchange, args, model);
+        return execute(idSource, args, model);
     }
 
     @Override
-    public Mono<T> execute(ServerWebExchange exchange, List<Argument<?>> args, AIModel model) {
-        return promptManager.getContext().containsPrompt(functionName).hasElement()
-                .flatMap(containsPrompt -> {
+    public Mono<T> execute(S idSource, List<Argument<?>> args, AIModel model) {
+        return promptManager.getContext().containsPrompt(functionName)
+                .log().flatMap(containsPrompt -> {
                     if (!containsPrompt) {
                         String resultFormat = buildResultFormat();
                         if (returnType.equals(STRUCTURE.LIST.getValue())) {
@@ -87,31 +86,31 @@ public abstract class ReactiveBaseAIFunction<T> implements ReactiveAIFunction<T>
                                 BuildFormatUtil.getFormatString(FeedbackResponse.class),
                                 resultValidatorChain.peekValidators(functionName)
                         );
-                        promptManager.initPromptContext(exchange, functionName, prompt);
+                        promptManager.initPromptContext(idSource, functionName, prompt);
                     } else {
-                        promptManager.initPromptContext(exchange, functionName);
+                        promptManager.initPromptContext(idSource, functionName);
                     }
 
                     return Mono.just(args);
                 })
-                .flatMap(transferredArgs -> {
+                .log().flatMap(transferredArgs -> {
                     try {
-                        promptManager.addMessage(exchange, functionName, ROLE.USER, createValuesString(transferredArgs));
+                        promptManager.addMessage(idSource, functionName, ROLE.USER, createValuesString(transferredArgs));
                         return Mono.just(true);
                     } catch (JsonProcessingException e) {
                         return Mono.error(e);
                     }
                 })
-                .flatMap(ignored ->
-                        promptManager.exchangeMessages(exchange, functionName, model, true)
+                .log().flatMap(ignored ->
+                        promptManager.exchangeMessages(idSource, functionName, model, true)
                                 .flatMap(response -> {
                                     try {
-                                        return parseResponseWithValidate(exchange, response);
+                                        return parseResponseWithValidate(idSource, response);
                                     } catch (Exception e) {
                                         return Mono.error(e);
                                     }
                                 }))
-                .onErrorResume(e -> Mono.error(new RuntimeException(e)));
+                .log().onErrorResume(e -> Mono.error(new RuntimeException(e)));
     }
 
 
@@ -125,20 +124,18 @@ public abstract class ReactiveBaseAIFunction<T> implements ReactiveAIFunction<T>
         return mapper.readValue(content, returnType);
     }
 
-    protected Mono<T> parseResponseWithValidate(ServerWebExchange exchange, ChatCompletionResult response) {
+    protected Mono<T> parseResponseWithValidate(S idSource, ChatCompletionResult response) {
         return Mono.defer(() -> {
             String content = response.getChoices().get(0).getMessage().getContent();
-            return resultValidatorChain.validate(exchange, functionName, content).last().<T>handle((stringResult, sink) -> {
+            return resultValidatorChain.validate(idSource, functionName, content).last().<T>handle((stringResult, sink) -> {
                 try {
                     sink.next(apply(stringResult));
                 } catch (JsonProcessingException e) {
                     sink.error(new RuntimeException(e));
                 }
             });
-        }).onErrorResume(Mono::error);
+        }).log().onErrorResume(Mono::error);
     }
-
-    //위에 검토
 
     protected String createValuesString(List<Argument<?>> args) throws JsonProcessingException {
         Map<String, Object> valueMap = new LinkedHashMap<>();
