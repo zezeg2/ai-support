@@ -6,11 +6,7 @@ import reactor.core.publisher.Mono;
 
 public class ReactiveAuthenticationContextIdentifierProvider implements ReactiveContextIdentifierProvider {
     @Override
-    public Mono<String> getId() {
-        return Mono.empty();
-    }
-
-    public Mono<String> getId(ServerWebExchange exchange, String s) {
+    public Mono<String> getId(ServerWebExchange exchange) {
         return exchange.getPrincipal()
                 .cast(Authentication.class)
                 .map(Authentication::getName)

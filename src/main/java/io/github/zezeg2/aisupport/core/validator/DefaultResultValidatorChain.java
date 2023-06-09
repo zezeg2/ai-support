@@ -2,6 +2,7 @@ package io.github.zezeg2.aisupport.core.validator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidator;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Arrays;
 import java.util.List;
@@ -14,14 +15,14 @@ public class DefaultResultValidatorChain {
         this.validators = validators;
     }
 
-    public String validate(String functionName, String target) {
+    public String validate(HttpServletRequest request, String functionName, String target) {
         String result = target;
         for (DefaultResultValidator validator : validators) {
             ValidateTarget targetFunction = validator.getClass().getAnnotation(ValidateTarget.class);
             List<String> targetFunctionList = Arrays.stream(targetFunction.names()).toList();
             if (targetFunction.global() || targetFunctionList.contains(functionName)) {
                 try {
-                    result = validator.validate(functionName);
+                    result = validator.validate(request, functionName);
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }

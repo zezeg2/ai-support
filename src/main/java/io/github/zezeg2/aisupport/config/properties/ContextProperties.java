@@ -17,13 +17,12 @@ public class ContextProperties {
 
     public enum CONTEXT {
         LOCAL,
-        REDIS,
-        MONGO
+        REDIS
     }
 
     public enum IDENTIFIER {
         THREAD,
         SESSION,
-        SECURITY
+        AUTHENTICATION
     }
 }

@@ -6,6 +6,7 @@ import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ReactiveHashOperations;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -18,8 +19,8 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     private final ReactiveHashOperations<String, String, String> hashOperations;
     private final ObjectMapper mapper;
 
-    public ReactiveRedisPromptContextHolder(ReactiveHashOperations<String, String, String> hashOperations, ObjectMapper mapper) {
-        this.hashOperations = hashOperations;
+    public ReactiveRedisPromptContextHolder(ReactiveStringRedisTemplate template, ObjectMapper mapper) {
+        this.hashOperations = template.opsForHash();
         this.mapper = mapper;
     }
 
@@ -114,37 +115,31 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     @Override
     public Mono<Void> savePromptMessagesContext(String functionName, String identifier, ChatMessage message) {
         return hashOperations.get(functionName + ":" + identifier, "promptChatMessages")
+                .defaultIfEmpty("[]")
                 .flatMap(messagesJson -> {
                     try {
                         List<ChatMessage> messages;
-                        if (messagesJson != null) {
-                            messages = mapper.readValue(messagesJson, new TypeReference<>() {
-                            });
-                        } else {
-                            messages = new ArrayList<>();
-                        }
+                        if (!messagesJson.isEmpty()) messages = mapper.readValue(messagesJson, new TypeReference<>() {
+                        });
+                        else messages = new ArrayList<>();
                         messages.add(message);
                         return hashOperations.put(functionName + ":" + identifier, "promptChatMessages", mapper.writeValueAsString(messages));
                     } catch (Exception e) {
                         return Mono.error(handleException("savePromptMessagesContext", e));
                     }
-                })
-                .then();
-
+                }).then();
     }
 
     @Override
     public Mono<Void> saveFeedbackMessagesContext(String validatorName, String identifier, ChatMessage message) {
         return hashOperations.get(validatorName + ":" + identifier, "feedbackChatMessages")
+                .defaultIfEmpty("[]")
                 .flatMap(messagesJson -> {
                     try {
                         List<ChatMessage> messages;
-                        if (messagesJson != null) {
-                            messages = mapper.readValue(messagesJson, new TypeReference<>() {
-                            });
-                        } else {
-                            messages = new ArrayList<>();
-                        }
+                        if (messagesJson != null) messages = mapper.readValue(messagesJson, new TypeReference<>() {
+                        });
+                        else messages = new ArrayList<>();
                         messages.add(message);
                         return hashOperations.put(validatorName + ":" + identifier, "feedbackChatMessages", mapper.writeValueAsString(messages));
                     } catch (Exception e) {

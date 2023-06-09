@@ -6,11 +6,7 @@ import reactor.core.publisher.Mono;
 
 public class ReactiveSessionContextIdentifierProvider implements ReactiveContextIdentifierProvider {
     @Override
-    public Mono<String> getId() {
-        return null;
-    }
-
-    public Mono<String> getId(ServerWebExchange exchange, String s) {
-        return exchange.getSession().map(WebSession::getId);
+    public Mono<String> getId(ServerWebExchange exchange) {
+        return exchange.getSession().map(WebSession::getId).log();
     }
 }

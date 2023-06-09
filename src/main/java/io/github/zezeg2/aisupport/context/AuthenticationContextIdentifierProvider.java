@@ -6,16 +6,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 public class AuthenticationContextIdentifierProvider implements ContextIdentifierProvider {
     @Override
-    public String getId() {
+    public String getId(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null) {
             return authentication.getName();
         } else {
             return null;
         }
-    }
-
-    public String getId(HttpServletRequest request, String s) {
-        return request.getUserPrincipal().getName() == null ? "anonymous" : request.getUserPrincipal().getName();
     }
 }

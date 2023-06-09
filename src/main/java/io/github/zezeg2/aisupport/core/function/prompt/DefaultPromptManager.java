@@ -10,6 +10,7 @@ import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.context.ContextIdentifierProvider;
 import io.github.zezeg2.aisupport.context.PromptContextHolder;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -24,12 +25,11 @@ public class DefaultPromptManager {
     protected final ContextIdentifierProvider identifierProvider;
     protected final ContextProperties contextProperties;
 
-    public void addMessage(String functionName, ROLE role, String message, ContextType contextType) {
-        addMessageToContext(functionName, role, message, contextType);
+    public void addMessage(String functionName, String identifier, ROLE role, String message, ContextType contextType) {
+        addMessageToContext(functionName, identifier, role, message, contextType);
     }
 
-    protected void addMessageToContext(String functionName, ROLE role, String message, ContextType contextType) {
-        String identifier = getIdentifier();
+    protected void addMessageToContext(String functionName, String identifier, ROLE role, String message, ContextType contextType) {
         switch (contextType) {
             case PROMPT ->
                     context.savePromptMessagesContext(functionName, identifier, new ChatMessage(role.getValue(), message));
@@ -38,25 +38,31 @@ public class DefaultPromptManager {
         }
     }
 
-    public String getIdentifier() {
-        return identifierProvider.getId();
+    public String getIdentifier(HttpServletRequest request) {
+        return identifierProvider.getId(request);
     }
 
-    public ChatCompletionResult exchangePromptMessages(String functionName, AIModel model, boolean save) {
-        List<ChatMessage> contextMessages = context.getPromptChatMessages(functionName, getIdentifier());
-        return getChatCompletionResult(functionName, model, save, contextMessages, ContextType.PROMPT);
+    public ChatCompletionResult exchangePromptMessages(String functionName, String identifier, AIModel model, boolean save) {
+        List<ChatMessage> contextMessages = context.getPromptChatMessages(functionName, identifier);
+        return getChatCompletionResult(functionName, identifier, model, save, contextMessages, ContextType.PROMPT);
     }
 
-    public ChatCompletionResult exchangeFeedbackMessages(String validatorName, AIModel model, boolean save) {
-        List<ChatMessage> contextMessages = context.getFeedbackChatMessages(validatorName, getIdentifier());
-        return getChatCompletionResult(validatorName, model, save, contextMessages, ContextType.FEEDBACK);
+    public ChatCompletionResult exchangeFeedbackMessages(String validatorName, String identifier, AIModel model, boolean save) {
+        List<ChatMessage> contextMessages = context.getFeedbackChatMessages(validatorName, identifier);
+        return getChatCompletionResult(validatorName, identifier, model, save, contextMessages, ContextType.FEEDBACK);
     }
 
-    protected ChatCompletionResult getChatCompletionResult(String functionName, AIModel model, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
+    protected ChatCompletionResult getChatCompletionResult(String functionName, String identifier, AIModel model, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
         ChatCompletionResult response = createChatCompletion(model, contextMessages);
         ChatMessage responseMessage = response.getChoices().get(0).getMessage();
         responseMessage.setContent(JsonUtils.extractJsonFromMessage(responseMessage.getContent()));
-        if (save) contextMessages.add(responseMessage);
+        if (save) {
+            switch (contextType) {
+                case PROMPT -> context.savePromptMessagesContext(functionName, identifier, responseMessage);
+                case FEEDBACK -> context.saveFeedbackMessagesContext(functionName, identifier, responseMessage);
+            }
+            contextMessages.add(responseMessage);
+        }
         return response;
     }
 

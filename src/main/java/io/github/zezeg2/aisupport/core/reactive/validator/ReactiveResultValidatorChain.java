@@ -1,6 +1,7 @@
 package io.github.zezeg2.aisupport.core.reactive.validator;
 
 import io.github.zezeg2.aisupport.core.validator.ValidateTarget;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -16,7 +17,7 @@ public class ReactiveResultValidatorChain {
         this.validators = validators;
     }
 
-    public Mono<String> validate(String functionName, String target) {
+    public Mono<String> validate(ServerWebExchange exchange, String functionName, String target) {
         if (validators.isEmpty()) {
             return Mono.just(target);
         }
@@ -27,7 +28,7 @@ public class ReactiveResultValidatorChain {
                     List<String> targetFunctionList = Arrays.stream(targetFunction.names()).toList();
                     return targetFunction.global() || targetFunctionList.contains(functionName);
                 })
-                .concatMap(validator -> validator.validate(functionName)).last();
+                .concatMap(validator -> validator.validate(exchange, functionName)).last();
     }
 
     public List<ReactiveResultValidator> peekValidators(String functionName) {

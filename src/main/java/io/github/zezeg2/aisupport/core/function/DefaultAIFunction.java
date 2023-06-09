@@ -6,6 +6,7 @@ import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.JsonUtils;
+import io.github.zezeg2.aisupport.common.TemplateConstants;
 import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
@@ -18,6 +19,7 @@ import io.github.zezeg2.aisupport.core.function.prompt.DefaultPromptManager;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.validator.DefaultResultValidatorChain;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 import java.util.LinkedHashMap;
@@ -28,21 +30,6 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class DefaultAIFunction<T> {
-    protected static final String FUNCTION_TEMPLATE = """
-            @FunctionalInterface
-            public interface FC {
-                String %s(%s);
-            }
-                        
-            public class Main {
-                public static void main(String[] args) {
-                    FC fc = (%s) -> {
-                        return [RESULT] //TODO: [RESULT] is JsonString of `%s`
-                    };
-                }
-            }
-            """;
-
     protected final String functionName;
     protected final String purpose;
     protected final List<Constraint> constraints;
@@ -58,7 +45,7 @@ public class DefaultAIFunction<T> {
         return ModelMapper.map(openAIProperties.getModel());
     }
 
-    protected void init(List<Argument<?>> args) {
+    protected void init(List<Argument<?>> args, String identifier) {
         if (promptManager.getContext().get(functionName) == null) {
             Prompt prompt = new Prompt(
                     purpose,
@@ -70,10 +57,10 @@ public class DefaultAIFunction<T> {
                     BuildFormatUtil.getFormatString(FeedbackResponse.class)
             );
             promptManager.getContext().savePrompt(functionName, prompt);
-            promptManager.addMessage(functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT);
+            promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT);
         }
         try {
-            promptManager.addMessage(functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT);
+            promptManager.addMessage(functionName, identifier, ROLE.USER, createValuesString(args), ContextType.PROMPT);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -107,12 +94,12 @@ public class DefaultAIFunction<T> {
                 .map(argument -> argument.getTypeName() + " " + argument.getFieldName())
                 .collect(Collectors.joining(", "));
 
-        return FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, setReturnType());
+        return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, setReturnType());
     }
 
-    protected T parseResponseWithValidate(ChatCompletionResult response) {
+    protected T parseResponseWithValidate(HttpServletRequest request, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
-        content = resultValidatorChain.validate(functionName, content);
+        content = resultValidatorChain.validate(request, functionName, content);
         try {
             return mapper.readValue(content, returnType);
         } catch (JsonProcessingException e) {
@@ -124,15 +111,16 @@ public class DefaultAIFunction<T> {
         return BuildFormatUtil.getFormatString(returnType);
     }
 
-    public T execute(List<Argument<?>> args) {
+    public T execute(HttpServletRequest request, List<Argument<?>> args) {
         AIModel model = getDefaultModel();
-        return execute(args, model);
+        return execute(request, args, model);
     }
 
-    public T execute(List<Argument<?>> args, AIModel model) {
-        init(args);
-        ChatCompletionResult response = promptManager.exchangePromptMessages(functionName, model, true);
-        return parseResponseWithValidate(response);
+    public T execute(HttpServletRequest request, List<Argument<?>> args, AIModel model) {
+        String identifier = promptManager.getIdentifier(request);
+        init(args, identifier);
+        ChatCompletionResult response = promptManager.exchangePromptMessages(functionName, identifier, model, true);
+        return parseResponseWithValidate(request, response);
     }
 
     protected String setReturnType() {

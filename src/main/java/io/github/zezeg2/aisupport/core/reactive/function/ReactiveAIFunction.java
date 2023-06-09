@@ -6,6 +6,7 @@ import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.JsonUtils;
+import io.github.zezeg2.aisupport.common.TemplateConstants;
 import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
@@ -19,6 +20,7 @@ import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptMa
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidatorChain;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.LinkedHashMap;
@@ -29,21 +31,6 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class ReactiveAIFunction<T> {
-    protected static final String FUNCTION_TEMPLATE = """
-            @FunctionalInterface
-            public interface FC {
-                String %s(%s);
-            }
-                        
-            public class Main {
-                public static void main(String[] args) {
-                    FC fc = (%s) -> {
-                        return [RESULT] //TODO: [RESULT] is JsonString of `%s`
-                    };
-                }
-            }
-            """;
-
     protected final String functionName;
     protected final String purpose;
     protected final List<Constraint> constraints;
@@ -54,35 +41,33 @@ public class ReactiveAIFunction<T> {
     protected final ReactivePromptManager promptManager;
     protected final ReactiveResultValidatorChain resultValidatorChain;
     private final OpenAIProperties openAIProperties;
-    private final Class<T> wrappedType;
 
     protected AIModel getDefaultModel() {
         return ModelMapper.map(openAIProperties.getModel());
     }
 
-    protected Mono<Void> init(List<Argument<?>> args) {
-        return promptManager.getContext().get(functionName)
-                .hasElement()
-                .flatMap(exists -> {
-                    if (!exists) {
-                        Prompt prompt = new Prompt(
-                                purpose,
-                                resolveRefTypes(args),
-                                createFunction(args),
-                                createConstraints(constraints),
-                                JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
-                                buildResultFormat(),
-                                BuildFormatUtil.getFormatString(FeedbackResponse.class)
-                        );
-                        return promptManager.getContext().savePrompt(functionName, prompt)
-                                .then(promptManager.addMessage(functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT));
-                    }
-                    try {
-                        return promptManager.addMessage(functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT);
-                    } catch (JsonProcessingException e) {
-                        return Mono.error(new RuntimeException(e));
-                    }
-                });
+    protected Mono<Void> init(ServerWebExchange exchange, List<Argument<?>> args) {
+        try {
+            return promptManager.getContext().get(functionName)
+                    .hasElement()
+                    .flatMap(exists -> {
+                        if (!exists) {
+                            Prompt prompt = new Prompt(
+                                    purpose,
+                                    resolveRefTypes(args),
+                                    createFunction(args),
+                                    createConstraints(constraints),
+                                    JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
+                                    buildResultFormat(),
+                                    BuildFormatUtil.getFormatString(FeedbackResponse.class)
+                            );
+                            return promptManager.getContext().savePrompt(functionName, prompt).then(promptManager.addMessage(exchange, functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT));
+                        }
+                        return Mono.empty();
+                    }).then(promptManager.addMessage(exchange, functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected String createValuesString(List<Argument<?>> args) throws JsonProcessingException {
@@ -112,15 +97,15 @@ public class ReactiveAIFunction<T> {
                 .map(argument -> argument.getTypeName() + " " + argument.getFieldName())
                 .collect(Collectors.joining(", "));
 
-        return FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, setReturnType());
+        return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, setReturnType());
     }
 
-    protected Mono<T> parseResponseWithValidate(ChatCompletionResult response) {
+    protected Mono<T> parseResponseWithValidate(ServerWebExchange exchange, ChatCompletionResult response) {
         return Mono.defer(() -> {
             String content = response.getChoices().get(0).getMessage().getContent();
-            return resultValidatorChain.validate(functionName, content).flatMap((stringResult) -> {
+            return resultValidatorChain.validate(exchange, functionName, content).flatMap((stringResult) -> {
                 try {
-                    return Mono.just(mapper.readValue(stringResult, wrappedType));
+                    return Mono.just(mapper.readValue(stringResult, returnType));
                 } catch (JsonProcessingException e) {
                     return Mono.error(new RuntimeException(e));
                 }
@@ -129,21 +114,21 @@ public class ReactiveAIFunction<T> {
     }
 
     public String buildResultFormat() {
-        return BuildFormatUtil.getFormatString(wrappedType);
+        return BuildFormatUtil.getFormatString(returnType);
     }
 
-    public Mono<T> execute(List<Argument<?>> args) {
+    public Mono<T> execute(ServerWebExchange exchange, List<Argument<?>> args) {
         AIModel model = getDefaultModel();
-        return execute(args, model);
+        return execute(exchange, args, model);
     }
 
-    public Mono<T> execute(List<Argument<?>> args, AIModel model) {
-        return init(args).then(promptManager
-                .exchangePromptMessages(functionName, model, true)
-                .flatMap(this::parseResponseWithValidate));
+    public Mono<T> execute(ServerWebExchange exchange, List<Argument<?>> args, AIModel model) {
+        return init(exchange, args).then(promptManager
+                .exchangePromptMessages(exchange, functionName, model, true)
+                .flatMap(chatCompletionResult -> parseResponseWithValidate(exchange, chatCompletionResult)));
     }
 
     protected String setReturnType() {
-        return wrappedType.getSimpleName();
+        return returnType.getSimpleName();
     }
 }
