@@ -25,8 +25,6 @@ public class Prompt implements Serializable {
     private String inputFormat;
     private String resultFormat;
     private String feedbackFormat;
-    private Map<String, List<ChatMessage>> promptMessagesContext;
-    private Map<String, Map<String, List<ChatMessage>>> feedbackMessagesContext;
 
     @JsonCreator
     public Prompt(
@@ -47,8 +45,6 @@ public class Prompt implements Serializable {
         this.inputFormat = inputFormat;
         this.resultFormat = resultFormat;
         this.feedbackFormat = feedbackFormat;
-        this.promptMessagesContext = new ConcurrentHashMap<>();
-        this.feedbackMessagesContext = new ConcurrentHashMap<>();
     }
 
     @Override

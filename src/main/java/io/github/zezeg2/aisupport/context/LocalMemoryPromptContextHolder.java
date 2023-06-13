@@ -1,17 +1,19 @@
 package io.github.zezeg2.aisupport.context;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptMessages;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class LocalMemoryPromptContextHolder implements PromptContextHolder {
     private static final Map<String, Prompt> promptRegistry = new ConcurrentHashMap<>();
-    private static final Map<String, Map<String, List<ChatMessage>>> promptMessagesRegistry = new ConcurrentHashMap<>();
-    private static final Map<String, Map<String, List<ChatMessage>>> feedbackMessagesRegistry = new ConcurrentHashMap<>();
+    private static final Map<String, List<PromptMessages>> promptMessagesRegistry = new ConcurrentHashMap<>();
+    private static final Map<String, List<FeedbackMessages>> feedbackMessagesRegistry = new ConcurrentHashMap<>();
 
     @Override
     public boolean contains(String namespace) {
@@ -29,40 +31,44 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public Map<String, List<ChatMessage>> getPromptMessagesContext(String namespace) {
-        return promptMessagesRegistry.get(namespace);
+    public PromptMessages getPromptChatMessages(String namespace, String identifier) {
+        return promptMessagesRegistry.get(namespace).stream()
+                .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst()
+                .orElse(PromptMessages.builder().identifier(identifier).content(new CopyOnWriteArrayList<>()).build());
     }
 
     @Override
-    public Map<String, List<ChatMessage>> getFeedbackMessagesContext(String namespace) {
-        return feedbackMessagesRegistry.get(namespace);
+    public FeedbackMessages getFeedbackChatMessages(String namespace, String identifier) {
+        return feedbackMessagesRegistry.get(namespace).stream()
+                .filter(feedbackMessages -> feedbackMessages.getIdentifier().equals(identifier)).findFirst()
+                .orElse(FeedbackMessages.builder().identifier(identifier).content(new CopyOnWriteArrayList<>()).build());
     }
 
     @Override
-    public List<ChatMessage> getPromptChatMessages(String namespace, String identifier) {
-        return promptMessagesRegistry.get(namespace).get(identifier);
+    public void savePromptMessages(String namespace, String identifier, ChatMessage message) {
+        if (!promptMessagesRegistry.containsKey(namespace)) {
+            promptMessagesRegistry.put(namespace, new CopyOnWriteArrayList<>());
+        }
+        PromptMessages promptChatMessages = getPromptChatMessages(namespace, identifier);
+        promptChatMessages.getContent().add(message);
+
+        if (promptMessagesRegistry.get(namespace).stream()
+                .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst().isEmpty()) {
+            promptMessagesRegistry.get(namespace).add(promptChatMessages);
+        }
     }
 
     @Override
-    public List<ChatMessage> getFeedbackChatMessages(String namespace, String identifier) {
-        return feedbackMessagesRegistry.get(namespace).get(identifier);
-    }
+    public void saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
+        if (!feedbackMessagesRegistry.containsKey(namespace)) {
+            feedbackMessagesRegistry.put(namespace, new CopyOnWriteArrayList<>());
+        }
+        FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
+        feedbackMessages.getContent().add(message);
 
-    @Override
-    public void savePromptMessagesContext(String namespace, String identifier, ChatMessage message) {
-        Map<String, List<ChatMessage>> identifierMessages = promptMessagesRegistry.getOrDefault(namespace, new ConcurrentHashMap<>());
-        List<ChatMessage> messages = identifierMessages.getOrDefault(identifier, new ArrayList<>());
-        messages.add(message);
-        identifierMessages.put(identifier, messages);
-        promptMessagesRegistry.put(namespace, identifierMessages);
-    }
-
-    @Override
-    public void saveFeedbackMessagesContext(String namespace, String identifier, ChatMessage message) {
-        Map<String, List<ChatMessage>> identifierMessages = feedbackMessagesRegistry.getOrDefault(namespace, new ConcurrentHashMap<>());
-        List<ChatMessage> messages = identifierMessages.getOrDefault(identifier, new ArrayList<>());
-        messages.add(message);
-        identifierMessages.put(identifier, messages);
-        feedbackMessagesRegistry.put(namespace, identifierMessages);
+        if (feedbackMessagesRegistry.get(namespace).stream()
+                .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst().isEmpty()) {
+            feedbackMessagesRegistry.get(namespace).add(feedbackMessages);
+        }
     }
 }

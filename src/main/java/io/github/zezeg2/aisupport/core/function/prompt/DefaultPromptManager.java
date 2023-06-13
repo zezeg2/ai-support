@@ -32,9 +32,9 @@ public class DefaultPromptManager {
     protected void addMessageToContext(String namespace, String identifier, ROLE role, String message, ContextType contextType) {
         switch (contextType) {
             case PROMPT ->
-                    context.savePromptMessagesContext(namespace, identifier, new ChatMessage(role.getValue(), message));
+                    context.savePromptMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
             case FEEDBACK ->
-                    context.saveFeedbackMessagesContext(namespace, identifier, new ChatMessage(role.getValue(), message));
+                    context.saveFeedbackMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
         }
     }
 
@@ -43,12 +43,12 @@ public class DefaultPromptManager {
     }
 
     public ChatCompletionResult exchangePromptMessages(String namespace, String identifier, AIModel model, boolean save) {
-        List<ChatMessage> contextMessages = context.getPromptChatMessages(namespace, identifier);
+        List<ChatMessage> contextMessages = context.getPromptChatMessages(namespace, identifier).getContent();
         return getChatCompletionResult(namespace, identifier, model, save, contextMessages, ContextType.PROMPT);
     }
 
     public ChatCompletionResult exchangeFeedbackMessages(String namespace, String identifier, AIModel model, boolean save) {
-        List<ChatMessage> contextMessages = context.getFeedbackChatMessages(namespace, identifier);
+        List<ChatMessage> contextMessages = context.getFeedbackChatMessages(namespace, identifier).getContent();
         return getChatCompletionResult(namespace, identifier, model, save, contextMessages, ContextType.FEEDBACK);
     }
 
@@ -58,8 +58,8 @@ public class DefaultPromptManager {
         responseMessage.setContent(JsonUtils.extractJsonFromMessage(responseMessage.getContent()));
         if (save) {
             switch (contextType) {
-                case PROMPT -> context.savePromptMessagesContext(namespace, identifier, responseMessage);
-                case FEEDBACK -> context.saveFeedbackMessagesContext(namespace, identifier, responseMessage);
+                case PROMPT -> context.savePromptMessages(namespace, identifier, responseMessage);
+                case FEEDBACK -> context.saveFeedbackMessages(namespace, identifier, responseMessage);
             }
             contextMessages.add(responseMessage);
         }

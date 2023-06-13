@@ -1,18 +1,19 @@
 package io.github.zezeg2.aisupport.context.reactive;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptMessages;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ReactiveHashOperations;
-import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import reactor.core.publisher.Mono;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
 public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHolder {
@@ -20,7 +21,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     private final ReactiveHashOperations<String, String, String> hashOperations;
     private final ObjectMapper mapper;
 
-    public ReactiveRedisPromptContextHolder(ReactiveStringRedisTemplate template, ObjectMapper mapper) {
+    public ReactiveRedisPromptContextHolder(ReactiveRedisTemplate<String, String> template, ObjectMapper mapper) {
         this.hashOperations = template.opsForHash();
         this.mapper = mapper;
     }
@@ -32,129 +33,100 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
 
     @Override
     public Mono<Void> savePrompt(String namespace, Prompt prompt) {
-        String promptJson;
         try {
-            promptJson = mapper.writeValueAsString(prompt);
-        } catch (Exception e) {
-            return Mono.error(handleException("savePrompt", e));
+            String serializedPrompt = mapper.writeValueAsString(prompt);
+            return hashOperations.put(namespace, "prompt", serializedPrompt).then();
+        } catch (JsonProcessingException e) {
+            return Mono.error(new RuntimeException("Error serializing the prompt", e));
         }
-
-        return hashOperations.put(namespace, "prompt", promptJson)
-                .then();
-
     }
 
     @Override
     public Mono<Prompt> get(String namespace) {
         return hashOperations.get(namespace, "prompt")
-                .flatMap(promptJson -> {
+                .handle((serializedPrompt, sink) -> {
                     try {
-                        return Mono.just(mapper.readValue(promptJson, Prompt.class));
-                    } catch (Exception e) {
-                        return Mono.error(handleException("get", e));
+                        sink.next(mapper.readValue(serializedPrompt, Prompt.class));
+                    } catch (IOException e) {
+                        sink.error(new RuntimeException("Error deserializing the prompt", e));
                     }
                 });
-
     }
 
     @Override
-    public Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String namespace) {
-        return hashOperations.get(namespace, "promptMessagesContext")
-                .flatMap(contextJson -> {
+    public Mono<PromptMessages> getPromptChatMessages(String namespace, String identifier) {
+        return hashOperations.get(namespace, identifier)
+                .flatMap(serializedPromptMessages -> {
                     try {
-                        return Mono.just(mapper.readValue(contextJson, new TypeReference<Map<String, List<ChatMessage>>>() {
-                        }));
-                    } catch (Exception e) {
-                        return Mono.error(handleException("getPromptMessagesContext", e));
-                    }
-                }).switchIfEmpty(Mono.<Map<String, List<ChatMessage>>>just(new ConcurrentHashMap<>()));
-    }
-
-    @Override
-    public Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String namespace) {
-        return hashOperations.get(namespace, "feedbackMessagesContext")
-                .flatMap(contextJson -> {
-                    try {
-                        return Mono.just(mapper.readValue(contextJson, new TypeReference<Map<String, List<ChatMessage>>>() {
-                        }));
-                    } catch (Exception e) {
-                        return Mono.error(handleException("getFeedbackMessagesContext", e));
-                    }
-                }).switchIfEmpty(Mono.<Map<String, List<ChatMessage>>>just(new ConcurrentHashMap<>()));
-
-    }
-
-    @Override
-    public Mono<List<ChatMessage>> getPromptChatMessages(String namespace, String identifier) {
-        return hashOperations.get(namespace, "promptChatMessages:" + identifier)
-                .flatMap(messagesJson -> {
-                    try {
-                        return Mono.just(mapper.readValue(messagesJson, new TypeReference<List<ChatMessage>>() {
-                        }));
-                    } catch (Exception e) {
-                        return Mono.error(handleException("getPromptChatMessages", e));
+                        return Mono.just(mapper.readValue(serializedPromptMessages, PromptMessages.class));
+                    } catch (IOException e) {
+                        return Mono.error(new RuntimeException("Error deserializing the prompt messages", e));
                     }
                 })
-                .switchIfEmpty(Mono.<List<ChatMessage>>just(new ArrayList<>()));
-
+                .switchIfEmpty(Mono.defer(() -> {
+                    PromptMessages promptMessages = PromptMessages.builder()
+                            .identifier(identifier)
+                            .functionName(namespace)
+                            .content(new ArrayList<>()).build();
+                    try {
+                        hashOperations.put(namespace, identifier, mapper.writeValueAsString(promptMessages));
+                        return Mono.just(promptMessages);
+                    } catch (JsonProcessingException e) {
+                        return Mono.error(new RuntimeException("Error serializing the prompt messages", e));
+                    }
+                }));
     }
 
     @Override
-    public Mono<List<ChatMessage>> getFeedbackChatMessages(String namespace, String identifier) {
-        return hashOperations.get(namespace, "feedbackChatMessages:" + identifier)
-                .flatMap(messagesJson -> {
+    public Mono<FeedbackMessages> getFeedbackChatMessages(String namespace, String identifier) {
+        String[] split = namespace.split(":");
+        return hashOperations.get(namespace, identifier)
+                .flatMap(serializedFeedbackMessages -> {
                     try {
-                        return Mono.just(mapper.readValue(messagesJson, new TypeReference<List<ChatMessage>>() {
-                        }));
-                    } catch (Exception e) {
-                        return Mono.error(handleException("getFeedbackChatMessages", e));
+                        return Mono.just(mapper.readValue(serializedFeedbackMessages, FeedbackMessages.class));
+                    } catch (IOException e) {
+                        return Mono.error(new RuntimeException("Error deserializing the feedback messages", e));
                     }
                 })
-                .switchIfEmpty(Mono.<List<ChatMessage>>just(new ArrayList<>()));
-
+                .switchIfEmpty(Mono.defer(() -> {
+                    FeedbackMessages feedbackMessages = FeedbackMessages.builder()
+                            .identifier(identifier)
+                            .functionName(split[0])
+                            .validatorName(split[1])
+                            .content(new ArrayList<>()).build();
+                    try {
+                        hashOperations.put(namespace, identifier, mapper.writeValueAsString(feedbackMessages));
+                        return Mono.just(feedbackMessages);
+                    } catch (JsonProcessingException e) {
+                        return Mono.error(new RuntimeException("Error serializing the feedback messages", e));
+                    }
+                }));
     }
 
     @Override
-    public Mono<Void> savePromptMessagesContext(String namespace, String identifier, ChatMessage message) {
-        return hashOperations.get(namespace, "promptChatMessages:" + identifier)
-                .defaultIfEmpty("[]")
-                .flatMap(messagesJson -> {
+    public Mono<Void> savePromptMessages(String namespace, String identifier, ChatMessage message) {
+        return getPromptChatMessages(namespace, identifier)
+                .doOnNext(promptMessages -> promptMessages.getContent().add(message))
+                .flatMap(promptMessages -> {
                     try {
-                        List<ChatMessage> messages;
-                        if (!messagesJson.isEmpty()) messages = mapper.readValue(messagesJson, new TypeReference<>() {
-                        });
-                        else messages = new ArrayList<>();
-                        messages.add(message);
-                        return hashOperations.put(namespace, "promptChatMessages:" + identifier, mapper.writeValueAsString(messages));
-                    } catch (Exception e) {
-                        return Mono.error(handleException("savePromptMessagesContext", e));
+                        return hashOperations.put(namespace, identifier, mapper.writeValueAsString(promptMessages)).then();
+                    } catch (JsonProcessingException e) {
+                        return Mono.error(new RuntimeException("Error serializing the prompt messages", e));
                     }
-                }).then();
+                });
     }
 
     @Override
-    public Mono<Void> saveFeedbackMessagesContext(String namespace, String identifier, ChatMessage message) {
-        return hashOperations.get(namespace, "feedbackChatMessages:" + identifier)
-                .defaultIfEmpty("[]")
-                .flatMap(messagesJson -> {
+    public Mono<Void> saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
+        return getFeedbackChatMessages(namespace, identifier)
+                .doOnNext(feedbackMessages -> feedbackMessages.getContent().add(message))
+                .flatMap(feedbackMessages -> {
                     try {
-                        List<ChatMessage> messages;
-                        if (messagesJson != null) messages = mapper.readValue(messagesJson, new TypeReference<>() {
-                        });
-                        else messages = new ArrayList<>();
-                        messages.add(message);
-                        return hashOperations.put(namespace, "feedbackChatMessages:" + identifier, mapper.writeValueAsString(messages));
-                    } catch (Exception e) {
-                        return Mono.error(handleException("saveFeedbackMessagesContext", e));
+                        return hashOperations.put(namespace, identifier, mapper.writeValueAsString(feedbackMessages)).then();
+                    } catch (JsonProcessingException e) {
+                        return Mono.error(new RuntimeException("Error serializing the feedback messages", e));
                     }
-                })
-                .then();
-
-    }
-
-    private RuntimeException handleException(String methodName, Exception exception) {
-        log.info("Exception Occurred \n- name : {}\n-message: {}", exception.getClass().getSimpleName(), exception.getMessage());
-        return new RuntimeException("Error occurred in method: " + methodName, exception);
+                });
     }
 }
 

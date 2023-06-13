@@ -35,7 +35,7 @@ public abstract class ReactiveResultValidator {
         return promptManager.getIdentifier(exchange)
                 .flatMap(identifier -> promptManager.getContext().getFeedbackChatMessages(getName(functionName), identifier)
                         .flatMap(feedbackChatMessages -> {
-                            if (feedbackChatMessages.isEmpty()) {
+                            if (feedbackChatMessages.getContent().isEmpty()) {
                                 return buildTemplate(functionName)
                                         .flatMap(template -> promptManager.addMessage(exchange, getName(functionName), ROLE.SYSTEM, template, ContextType.FEEDBACK));
                             }
@@ -92,7 +92,7 @@ public abstract class ReactiveResultValidator {
     protected Mono<String> getLastPromptResponseContent(ServerWebExchange exchange, String functionName) {
         return promptManager.getIdentifier(exchange)
                 .flatMap(identifier -> promptManager.getContext().getPromptChatMessages(functionName, identifier))
-                .flatMap(promptMessageList -> Mono.just(promptMessageList.get(promptMessageList.size() - 1).getContent()));
+                .flatMap(promptMessageList -> Mono.just(promptMessageList.getContent().get(promptMessageList.getContent().size() - 1).getContent()));
     }
 
     protected abstract Mono<String> addContents(String functionName);

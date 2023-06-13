@@ -9,6 +9,7 @@ import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.GPT3Model;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.core.function.prompt.DefaultPromptManager;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
@@ -32,8 +33,8 @@ public abstract class DefaultResultValidator {
 
     protected void init(String functionName, HttpServletRequest request) {
         String identifier = promptManager.getIdentifier(request);
-        List<ChatMessage> feedbackChatMessages = promptManager.getContext().getFeedbackChatMessages(getName(functionName), identifier);
-        if (feedbackChatMessages.isEmpty()) {
+        FeedbackMessages feedbackChatMessages = promptManager.getContext().getFeedbackChatMessages(getName(functionName), identifier);
+        if (feedbackChatMessages.getContent().isEmpty()) {
             promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
         }
     }
@@ -79,7 +80,7 @@ public abstract class DefaultResultValidator {
     }
 
     protected String getLastPromptResponseContent(String functionName, String identifier) {
-        List<ChatMessage> promptMessageList = promptManager.getContext().getPromptChatMessages(functionName, identifier);
+        List<ChatMessage> promptMessageList = promptManager.getContext().getPromptChatMessages(functionName, identifier).getContent();
         return promptMessageList.get(promptMessageList.size() - 1).getContent();
     }
 

@@ -37,9 +37,9 @@ public class ReactivePromptManager {
     protected Mono<Void> addMessageToContext(ServerWebExchange exchange, String namespace, ROLE role, String message, ContextType contextType) {
         return getIdentifier(exchange).flatMap(identifier -> switch (contextType) {
             case PROMPT ->
-                    context.savePromptMessagesContext(namespace, identifier, new ChatMessage(role.getValue(), message));
+                    context.savePromptMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
             case FEEDBACK ->
-                    context.saveFeedbackMessagesContext(namespace, identifier, new ChatMessage(role.getValue(), message));
+                    context.saveFeedbackMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
         });
 
     }
@@ -47,13 +47,13 @@ public class ReactivePromptManager {
     public Mono<ChatCompletionResult> exchangePromptMessages(ServerWebExchange exchange, String namespace, AIModel model, boolean save) {
         return getIdentifier(exchange)
                 .flatMap(identifier -> context.getPromptChatMessages(namespace, identifier))
-                .flatMap(contextMessages -> getChatCompletionResult(exchange, namespace, model, save, contextMessages, ContextType.PROMPT));
+                .flatMap(contextMessages -> getChatCompletionResult(exchange, namespace, model, save, contextMessages.getContent(), ContextType.PROMPT));
     }
 
     public Mono<ChatCompletionResult> exchangeFeedbackMessages(ServerWebExchange exchange, String namespace, AIModel model, boolean save) {
         return getIdentifier(exchange)
                 .flatMap(identifier -> context.getFeedbackChatMessages(namespace, identifier))
-                .flatMap(contextMessages -> getChatCompletionResult(exchange, namespace, model, save, contextMessages, ContextType.FEEDBACK));
+                .flatMap(contextMessages -> getChatCompletionResult(exchange, namespace, model, save, contextMessages.getContent(), ContextType.FEEDBACK));
     }
 
     protected Mono<ChatCompletionResult> getChatCompletionResult(ServerWebExchange exchange, String namespace, AIModel model, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
@@ -68,9 +68,9 @@ public class ReactivePromptManager {
                         return getIdentifier(exchange)
                                 .flatMap(identifier -> switch (contextType) {
                                     case PROMPT ->
-                                            context.savePromptMessagesContext(namespace, identifier, response.getChoices().get(0).getMessage());
+                                            context.savePromptMessages(namespace, identifier, response.getChoices().get(0).getMessage());
                                     case FEEDBACK ->
-                                            context.saveFeedbackMessagesContext(namespace, identifier, response.getChoices().get(0).getMessage());
+                                            context.saveFeedbackMessages(namespace, identifier, response.getChoices().get(0).getMessage());
                                 })
                                 .thenReturn(response);
                     }
