@@ -28,7 +28,7 @@ public abstract class DefaultResultValidator {
 
 
     protected String getName(String functionName) {
-        return String.join(":", List.of(functionName, this.getClass().getSimpleName().toLowerCase()));
+        return String.join(":", List.of(functionName, this.getClass().getSimpleName()));
     }
 
     protected void init(String functionName, HttpServletRequest request) {

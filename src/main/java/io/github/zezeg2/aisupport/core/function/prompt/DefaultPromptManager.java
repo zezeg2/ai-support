@@ -31,8 +31,7 @@ public class DefaultPromptManager {
 
     protected void addMessageToContext(String namespace, String identifier, ROLE role, String message, ContextType contextType) {
         switch (contextType) {
-            case PROMPT ->
-                    context.savePromptMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
+            case PROMPT -> context.savePromptMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
             case FEEDBACK ->
                     context.saveFeedbackMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
         }

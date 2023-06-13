@@ -13,7 +13,6 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
 public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHolder {

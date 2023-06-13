@@ -2,16 +2,12 @@ package io.github.zezeg2.aisupport.core.function.prompt;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.TemplateConstants;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Data
 @Document

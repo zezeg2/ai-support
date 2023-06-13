@@ -36,8 +36,7 @@ public class ReactivePromptManager {
 
     protected Mono<Void> addMessageToContext(ServerWebExchange exchange, String namespace, ROLE role, String message, ContextType contextType) {
         return getIdentifier(exchange).flatMap(identifier -> switch (contextType) {
-            case PROMPT ->
-                    context.savePromptMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
+            case PROMPT -> context.savePromptMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
             case FEEDBACK ->
                     context.saveFeedbackMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
         });

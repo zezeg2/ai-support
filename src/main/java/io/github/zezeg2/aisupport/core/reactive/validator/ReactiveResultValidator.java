@@ -28,7 +28,7 @@ public abstract class ReactiveResultValidator {
     }
 
     protected String getName(String functionName) {
-        return String.join(":", List.of(functionName, this.getClass().getSimpleName().toLowerCase()));
+        return String.join(":", List.of(functionName, this.getClass().getSimpleName()));
     }
 
     protected Mono<Void> init(ServerWebExchange exchange, String functionName) {
