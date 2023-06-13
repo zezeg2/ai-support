@@ -2,23 +2,35 @@ package io.github.zezeg2.aisupport.core.function.prompt;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.TemplateConstants;
-import lombok.Getter;
+import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-@Getter
+@Data
+@Document
 public class Prompt implements Serializable {
-    private final String purpose;
-    private final String refTypes;
-    private final String function;
-    private final String constraints;
-    private final String inputFormat;
-    private final String resultFormat;
-    private final String feedbackFormat;
+    @Id
+    private String functionName;
+    private String purpose;
+    private String refTypes;
+    private String function;
+    private String constraints;
+    private String inputFormat;
+    private String resultFormat;
+    private String feedbackFormat;
+    private Map<String, List<ChatMessage>> promptMessagesContext;
+    private Map<String, Map<String, List<ChatMessage>>> feedbackMessagesContext;
 
     @JsonCreator
     public Prompt(
+            @JsonProperty("functionName") String functionName,
             @JsonProperty("purpose") String purpose,
             @JsonProperty("refTypes") String refTypes,
             @JsonProperty("function") String function,
@@ -27,6 +39,7 @@ public class Prompt implements Serializable {
             @JsonProperty("resultFormat") String resultFormat,
             @JsonProperty("feedbackFormat") String feedbackFormat) {
 
+        this.functionName = functionName;
         this.purpose = purpose;
         this.refTypes = refTypes;
         this.function = function;
@@ -34,6 +47,8 @@ public class Prompt implements Serializable {
         this.inputFormat = inputFormat;
         this.resultFormat = resultFormat;
         this.feedbackFormat = feedbackFormat;
+        this.promptMessagesContext = new ConcurrentHashMap<>();
+        this.feedbackMessagesContext = new ConcurrentHashMap<>();
     }
 
     @Override

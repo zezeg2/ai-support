@@ -76,7 +76,7 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     @Override
     public List<ChatMessage> getPromptChatMessages(String namespace, String identifier) {
         try {
-            String messagesJson = hashOperations.get(namespace + ":" + identifier, "promptChatMessages");
+            String messagesJson = hashOperations.get(namespace, "promptChatMessages:" + identifier);
             return mapper.readValue(messagesJson, new TypeReference<>() {
             });
         } catch (Exception e) {
@@ -88,7 +88,7 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     @Override
     public List<ChatMessage> getFeedbackChatMessages(String namespace, String identifier) {
         try {
-            String messagesJson = hashOperations.get(namespace + ":" + identifier, "feedbackChatMessages");
+            String messagesJson = hashOperations.get(namespace, "feedbackChatMessages:" + identifier);
             return mapper.readValue(messagesJson, new TypeReference<>() {
             });
         } catch (Exception e) {
@@ -100,14 +100,14 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     @Override
     public void savePromptMessagesContext(String namespace, String identifier, ChatMessage message) {
         try {
-            String messagesJson = hashOperations.get(namespace + ":" + identifier, "promptChatMessages");
+            String messagesJson = hashOperations.get(namespace, "promptChatMessages:" + identifier);
             List<ChatMessage> messages;
             if (messagesJson != null) {
                 messages = this.mapper.readValue(messagesJson, new TypeReference<>() {
                 });
             } else messages = new ArrayList<>();
             messages.add(message);
-            hashOperations.put(namespace + ":" + identifier, "promptChatMessages", mapper.writeValueAsString(messages));
+            hashOperations.put(namespace, "promptChatMessages:" + identifier, mapper.writeValueAsString(messages));
         } catch (Exception e) {
             log.info("Exception Occurred \n- name : {}\n- message: {}", e.getClass().getSimpleName(), e.getMessage());
         }
@@ -116,14 +116,14 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     @Override
     public void saveFeedbackMessagesContext(String namespace, String identifier, ChatMessage message) {
         try {
-            String messagesJson = hashOperations.get(namespace + ":" + identifier, "feedbackChatMessages");
+            String messagesJson = hashOperations.get(namespace, "feedbackChatMessages:" + identifier);
             List<ChatMessage> messages;
             if (messagesJson != null) {
                 messages = this.mapper.readValue(messagesJson, new TypeReference<>() {
                 });
             } else messages = new ArrayList<>();
             messages.add(message);
-            hashOperations.put(namespace + ":" + identifier, "feedbackChatMessages", mapper.writeValueAsString(messages));
+            hashOperations.put(namespace, "feedbackChatMessages:" + identifier, mapper.writeValueAsString(messages));
         } catch (Exception e) {
             log.info("Exception Occurred \n- name : {}\n- message: {}", e.getClass().getSimpleName(), e.getMessage());
         }

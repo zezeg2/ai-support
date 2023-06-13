@@ -48,6 +48,7 @@ public class DefaultAIFunction<T> {
     protected void init(List<Argument<?>> args, String identifier) {
         if (promptManager.getContext().get(functionName) == null) {
             Prompt prompt = new Prompt(
+                    functionName,
                     purpose,
                     resolveRefTypes(args),
                     createFunction(args),

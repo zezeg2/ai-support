@@ -53,6 +53,7 @@ public class ReactiveAIFunction<T> {
                     .flatMap(exists -> {
                         if (!exists) {
                             Prompt prompt = new Prompt(
+                                    functionName,
                                     purpose,
                                     resolveRefTypes(args),
                                     createFunction(args),
