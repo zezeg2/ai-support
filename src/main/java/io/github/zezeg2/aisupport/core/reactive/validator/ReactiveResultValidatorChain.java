@@ -6,7 +6,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class ReactiveResultValidatorChain {
@@ -14,7 +16,9 @@ public class ReactiveResultValidatorChain {
     protected final List<ReactiveResultValidator> validators;
 
     public ReactiveResultValidatorChain(List<ReactiveResultValidator> validators) {
-        this.validators = validators;
+        this.validators = validators.stream()
+                .sorted(Comparator.comparingInt(v -> v.getClass().getAnnotation(ValidateTarget.class).order()))
+                .collect(Collectors.toList());
     }
 
     public Mono<String> validate(ServerWebExchange exchange, String functionName, String target) {
