@@ -3,7 +3,6 @@ package io.github.zezeg2.aisupport.core.validator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.TemplateConstants;
 import io.github.zezeg2.aisupport.core.function.prompt.DefaultPromptManager;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component

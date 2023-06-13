@@ -17,8 +17,8 @@ import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
-import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidatorChain;
+import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -61,10 +61,13 @@ public class ReactiveAIFunction<T> {
                                     buildResultFormat(),
                                     BuildFormatUtil.getFormatString(FeedbackResponse.class)
                             );
-                            return promptManager.getContext().savePrompt(functionName, prompt).then(promptManager.addMessage(exchange, functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT));
+                            return Mono.just(prompt);
                         }
-                        return Mono.empty();
-                    }).then(promptManager.addMessage(exchange, functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT));
+                        return promptManager.getContext().get(functionName);
+                    })
+                    .flatMap(prompt -> promptManager.getContext().savePrompt(functionName, prompt)
+                            .then(promptManager.addMessage(exchange, functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT)))
+                    .then(promptManager.addMessage(exchange, functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -101,15 +104,13 @@ public class ReactiveAIFunction<T> {
     }
 
     protected Mono<T> parseResponseWithValidate(ServerWebExchange exchange, ChatCompletionResult response) {
-        return Mono.defer(() -> {
-            String content = response.getChoices().get(0).getMessage().getContent();
-            return resultValidatorChain.validate(exchange, functionName, content).flatMap((stringResult) -> {
-                try {
-                    return Mono.just(mapper.readValue(stringResult, returnType));
-                } catch (JsonProcessingException e) {
-                    return Mono.error(new RuntimeException(e));
-                }
-            });
+        String content = response.getChoices().get(0).getMessage().getContent();
+        return resultValidatorChain.validate(exchange, functionName, content).flatMap((stringResult) -> {
+            try {
+                return Mono.just(mapper.readValue(stringResult, returnType));
+            } catch (JsonProcessingException e) {
+                return Mono.error(new RuntimeException(e));
+            }
         }).onErrorResume(Mono::error);
     }
 
@@ -123,9 +124,9 @@ public class ReactiveAIFunction<T> {
     }
 
     public Mono<T> execute(ServerWebExchange exchange, List<Argument<?>> args, AIModel model) {
-        return init(exchange, args).then(promptManager
-                .exchangePromptMessages(exchange, functionName, model, true)
-                .flatMap(chatCompletionResult -> parseResponseWithValidate(exchange, chatCompletionResult)));
+        return init(exchange, args)
+                .then(promptManager.exchangePromptMessages(exchange, functionName, model, true)
+                        .flatMap(chatCompletionResult -> parseResponseWithValidate(exchange, chatCompletionResult)));
     }
 
     protected String setReturnType() {

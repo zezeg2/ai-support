@@ -8,21 +8,21 @@ import java.util.Map;
 
 public interface PromptContextHolder {
 
-    boolean contains(String functionName);
+    boolean contains(String namespace);
 
-    void savePrompt(String functionName, Prompt prompt);
+    void savePrompt(String namespace, Prompt prompt);
 
-    Prompt get(String functionName);
+    Prompt get(String namespace);
 
-    Map<String, List<ChatMessage>> getPromptMessagesContext(String functionName);
+    Map<String, List<ChatMessage>> getPromptMessagesContext(String namespace);
 
-    Map<String, List<ChatMessage>> getFeedbackMessagesContext(String validatorName);
+    Map<String, List<ChatMessage>> getFeedbackMessagesContext(String namespace);
 
-    List<ChatMessage> getPromptChatMessages(String functionName, String identifier);
+    List<ChatMessage> getPromptChatMessages(String namespace, String identifier);
 
-    List<ChatMessage> getFeedbackChatMessages(String validatorName, String identifier);
+    List<ChatMessage> getFeedbackChatMessages(String namespace, String identifier);
 
-    void savePromptMessagesContext(String functionName, String identifier, ChatMessage message);
+    void savePromptMessagesContext(String namespace, String identifier, ChatMessage message);
 
-    void saveFeedbackMessagesContext(String validatorName, String identifier, ChatMessage message);
+    void saveFeedbackMessagesContext(String namespace, String identifier, ChatMessage message);
 }

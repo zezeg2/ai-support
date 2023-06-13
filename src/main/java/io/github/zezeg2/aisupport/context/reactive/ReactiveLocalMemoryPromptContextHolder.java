@@ -15,47 +15,47 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
 
 
     @Override
-    public Mono<Boolean> contains(String functionName) {
+    public Mono<Boolean> contains(String namespace) {
         return null;
     }
 
     @Override
-    public Mono<Void> savePrompt(String functionName, Prompt prompt) {
+    public Mono<Void> savePrompt(String namespace, Prompt prompt) {
         return null;
     }
 
     @Override
-    public Mono<Prompt> get(String functionName) {
+    public Mono<Prompt> get(String namespace) {
         return null;
     }
 
     @Override
-    public Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String functionName) {
+    public Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String namespace, String identifier) {
         return null;
     }
 
     @Override
-    public Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String validatorName) {
+    public Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String namespace, String identifier) {
         return null;
     }
 
     @Override
-    public Mono<List<ChatMessage>> getPromptChatMessages(String functionName, String identifier) {
+    public Mono<List<ChatMessage>> getPromptChatMessages(String namespace, String identifier) {
         return null;
     }
 
     @Override
-    public Mono<List<ChatMessage>> getFeedbackChatMessages(String validatorName, String identifier) {
+    public Mono<List<ChatMessage>> getFeedbackChatMessages(String namespace, String identifier) {
         return null;
     }
 
     @Override
-    public Mono<Void> savePromptMessagesContext(String functionName, String identifier, ChatMessage message) {
+    public Mono<Void> savePromptMessagesContext(String namespace, String identifier, ChatMessage message) {
         return null;
     }
 
     @Override
-    public Mono<Void> saveFeedbackMessagesContext(String validatorName, String identifier, ChatMessage message) {
+    public Mono<Void> saveFeedbackMessagesContext(String namespace, String identifier, ChatMessage message) {
         return null;
     }
 }

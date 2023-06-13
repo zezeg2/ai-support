@@ -53,7 +53,7 @@ public abstract class DefaultResultValidator {
             System.out.println("Try Count : " + count + "--------------------------------------------------------------");
             System.out.println(lastPromptMessage);
 
-            feedbackContent = getResponseContent(getName(functionName), identifier, lastPromptMessage, ContextType.FEEDBACK);
+            feedbackContent = exchangeMessages(getName(functionName), identifier, lastPromptMessage, ContextType.FEEDBACK);
             FeedbackResponse feedbackResult = mapper.readValue(feedbackContent, FeedbackResponse.class);
 
             System.out.println(feedbackResult);
@@ -61,13 +61,13 @@ public abstract class DefaultResultValidator {
                 return lastPromptMessage;
             }
 
-            lastPromptMessage = getResponseContent(functionName, identifier, feedbackContent, ContextType.PROMPT);
+            lastPromptMessage = exchangeMessages(functionName, identifier, feedbackContent, ContextType.PROMPT);
         }
 
         throw new RuntimeException("Maximum Validate count over");
     }
 
-    protected String getResponseContent(String functionName, String identifier, String message, ContextType contextType) {
+    protected String exchangeMessages(String functionName, String identifier, String message, ContextType contextType) {
         promptManager.addMessage(functionName, identifier, ROLE.USER, message, contextType);
         ChatMessage responseMessage = switch (contextType) {
             case PROMPT ->

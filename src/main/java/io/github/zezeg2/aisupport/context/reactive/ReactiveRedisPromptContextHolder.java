@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHolder {
@@ -25,13 +26,13 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Boolean> contains(String functionName) {
-        return hashOperations.hasKey(functionName, "prompt");
+    public Mono<Boolean> contains(String namespace) {
+        return hashOperations.hasKey(namespace, "prompt");
 
     }
 
     @Override
-    public Mono<Void> savePrompt(String functionName, Prompt prompt) {
+    public Mono<Void> savePrompt(String namespace, Prompt prompt) {
         String promptJson;
         try {
             promptJson = mapper.writeValueAsString(prompt);
@@ -39,14 +40,14 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
             return Mono.error(handleException("savePrompt", e));
         }
 
-        return hashOperations.put(functionName, "prompt", promptJson)
+        return hashOperations.put(namespace, "prompt", promptJson)
                 .then();
 
     }
 
     @Override
-    public Mono<Prompt> get(String functionName) {
-        return hashOperations.get(functionName, "prompt")
+    public Mono<Prompt> get(String namespace) {
+        return hashOperations.get(namespace, "prompt")
                 .flatMap(promptJson -> {
                     try {
                         return Mono.just(mapper.readValue(promptJson, Prompt.class));
@@ -58,63 +59,65 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String functionName) {
-        return hashOperations.get(functionName, "promptMessagesContext")
+    public Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String namespace, String identifier) {
+        return hashOperations.get(namespace, "promptMessagesContext")
                 .flatMap(contextJson -> {
                     try {
-                        return Mono.just(mapper.readValue(contextJson, new TypeReference<>() {
+                        return Mono.just(mapper.readValue(contextJson, new TypeReference<Map<String, List<ChatMessage>>>() {
                         }));
                     } catch (Exception e) {
                         return Mono.error(handleException("getPromptMessagesContext", e));
                     }
-                });
+                }).switchIfEmpty(Mono.<Map<String, List<ChatMessage>>>just(new ConcurrentHashMap<>()));
     }
 
     @Override
-    public Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String validatorName) {
-        return hashOperations.get(validatorName, "feedbackMessagesContext")
+    public Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String namespace, String identifier) {
+        return hashOperations.get(namespace, "feedbackMessagesContext")
                 .flatMap(contextJson -> {
                     try {
-                        return Mono.just(mapper.readValue(contextJson, new TypeReference<>() {
+                        return Mono.just(mapper.readValue(contextJson, new TypeReference<Map<String, List<ChatMessage>>>() {
                         }));
                     } catch (Exception e) {
                         return Mono.error(handleException("getFeedbackMessagesContext", e));
                     }
-                });
+                }).switchIfEmpty(Mono.<Map<String, List<ChatMessage>>>just(new ConcurrentHashMap<>()));
 
     }
 
     @Override
-    public Mono<List<ChatMessage>> getPromptChatMessages(String functionName, String identifier) {
-        return hashOperations.get(functionName + ":" + identifier, "promptChatMessages")
+    public Mono<List<ChatMessage>> getPromptChatMessages(String namespace, String identifier) {
+        return hashOperations.get(namespace + ":" + identifier, "promptChatMessages")
                 .flatMap(messagesJson -> {
                     try {
-                        return Mono.just(mapper.readValue(messagesJson, new TypeReference<>() {
+                        return Mono.just(mapper.readValue(messagesJson, new TypeReference<List<ChatMessage>>() {
                         }));
                     } catch (Exception e) {
                         return Mono.error(handleException("getPromptChatMessages", e));
                     }
-                });
+                })
+                .switchIfEmpty(Mono.<List<ChatMessage>>just(new ArrayList<>()));
 
     }
 
     @Override
-    public Mono<List<ChatMessage>> getFeedbackChatMessages(String validatorName, String identifier) {
-        return hashOperations.get(validatorName + ":" + identifier, "feedbackChatMessages")
+    public Mono<List<ChatMessage>> getFeedbackChatMessages(String namespace, String identifier) {
+        return hashOperations.get(namespace + ":" + identifier, "feedbackChatMessages")
                 .flatMap(messagesJson -> {
                     try {
-                        return Mono.just(mapper.readValue(messagesJson, new TypeReference<>() {
+                        return Mono.just(mapper.readValue(messagesJson, new TypeReference<List<ChatMessage>>() {
                         }));
                     } catch (Exception e) {
                         return Mono.error(handleException("getFeedbackChatMessages", e));
                     }
-                });
+                })
+                .switchIfEmpty(Mono.<List<ChatMessage>>just(new ArrayList<>()));
 
     }
 
     @Override
-    public Mono<Void> savePromptMessagesContext(String functionName, String identifier, ChatMessage message) {
-        return hashOperations.get(functionName + ":" + identifier, "promptChatMessages")
+    public Mono<Void> savePromptMessagesContext(String namespace, String identifier, ChatMessage message) {
+        return hashOperations.get(namespace + ":" + identifier, "promptChatMessages")
                 .defaultIfEmpty("[]")
                 .flatMap(messagesJson -> {
                     try {
@@ -123,7 +126,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
                         });
                         else messages = new ArrayList<>();
                         messages.add(message);
-                        return hashOperations.put(functionName + ":" + identifier, "promptChatMessages", mapper.writeValueAsString(messages));
+                        return hashOperations.put(namespace + ":" + identifier, "promptChatMessages", mapper.writeValueAsString(messages));
                     } catch (Exception e) {
                         return Mono.error(handleException("savePromptMessagesContext", e));
                     }
@@ -131,8 +134,8 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Void> saveFeedbackMessagesContext(String validatorName, String identifier, ChatMessage message) {
-        return hashOperations.get(validatorName + ":" + identifier, "feedbackChatMessages")
+    public Mono<Void> saveFeedbackMessagesContext(String namespace, String identifier, ChatMessage message) {
+        return hashOperations.get(namespace + ":" + identifier, "feedbackChatMessages")
                 .defaultIfEmpty("[]")
                 .flatMap(messagesJson -> {
                     try {
@@ -141,7 +144,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
                         });
                         else messages = new ArrayList<>();
                         messages.add(message);
-                        return hashOperations.put(validatorName + ":" + identifier, "feedbackChatMessages", mapper.writeValueAsString(messages));
+                        return hashOperations.put(namespace + ":" + identifier, "feedbackChatMessages", mapper.writeValueAsString(messages));
                     } catch (Exception e) {
                         return Mono.error(handleException("saveFeedbackMessagesContext", e));
                     }

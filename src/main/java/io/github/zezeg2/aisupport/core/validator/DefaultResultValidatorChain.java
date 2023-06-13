@@ -1,7 +1,6 @@
 package io.github.zezeg2.aisupport.core.validator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidator;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Arrays;

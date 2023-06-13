@@ -9,21 +9,21 @@ import java.util.Map;
 
 public interface ReactivePromptContextHolder {
 
-    Mono<Boolean> contains(String functionName);
+    Mono<Boolean> contains(String namespace);
 
-    Mono<Void> savePrompt(String functionName, Prompt prompt);
+    Mono<Void> savePrompt(String namespace, Prompt prompt);
 
-    Mono<Prompt> get(String functionName);
+    Mono<Prompt> get(String namespace);
 
-    Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String functionName);
+    Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String namespace, String identifier);
 
-    Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String validatorName);
+    Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String namespace, String identifier);
 
-    Mono<List<ChatMessage>> getPromptChatMessages(String functionName, String identifier);
+    Mono<List<ChatMessage>> getPromptChatMessages(String namespace, String identifier);
 
-    Mono<List<ChatMessage>> getFeedbackChatMessages(String validatorName, String identifier);
+    Mono<List<ChatMessage>> getFeedbackChatMessages(String namespace, String identifier);
 
-    Mono<Void> savePromptMessagesContext(String functionName, String identifier, ChatMessage message);
+    Mono<Void> savePromptMessagesContext(String namespace, String identifier, ChatMessage message);
 
-    Mono<Void> saveFeedbackMessagesContext(String validatorName, String identifier, ChatMessage message);
+    Mono<Void> saveFeedbackMessagesContext(String namespace, String identifier, ChatMessage message);
 }

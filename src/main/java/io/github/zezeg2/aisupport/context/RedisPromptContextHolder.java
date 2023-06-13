@@ -24,24 +24,24 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public boolean contains(String functionName) {
-        return hashOperations.hasKey(functionName, "prompt");
+    public boolean contains(String namespace) {
+        return hashOperations.hasKey(namespace, "prompt");
     }
 
     @Override
-    public void savePrompt(String functionName, Prompt prompt) {
+    public void savePrompt(String namespace, Prompt prompt) {
         try {
             String promptJson = mapper.writeValueAsString(prompt);
-            hashOperations.put(functionName, "prompt", promptJson);
+            hashOperations.put(namespace, "prompt", promptJson);
         } catch (Exception e) {
             log.info("Exception Occurred \n- name : {}\n- message: {}", e.getClass().getSimpleName(), e.getMessage());
         }
     }
 
     @Override
-    public Prompt get(String functionName) {
+    public Prompt get(String namespace) {
         try {
-            String promptJson = hashOperations.get(functionName, "prompt");
+            String promptJson = hashOperations.get(namespace, "prompt");
             return mapper.readValue(promptJson, Prompt.class);
         } catch (Exception e) {
             log.info("Exception Occurred \n- name : {}\n- message: {}", e.getClass().getSimpleName(), e.getMessage());
@@ -50,9 +50,9 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public Map<String, List<ChatMessage>> getPromptMessagesContext(String functionName) {
+    public Map<String, List<ChatMessage>> getPromptMessagesContext(String namespace) {
         try {
-            String contextJson = hashOperations.get(functionName, "promptMessagesContext");
+            String contextJson = hashOperations.get(namespace, "promptMessagesContext");
             return mapper.readValue(contextJson, new TypeReference<>() {
             });
         } catch (Exception e) {
@@ -62,9 +62,9 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public Map<String, List<ChatMessage>> getFeedbackMessagesContext(String validatorName) {
+    public Map<String, List<ChatMessage>> getFeedbackMessagesContext(String namespace) {
         try {
-            String contextJson = hashOperations.get(validatorName, "feedbackMessagesContext");
+            String contextJson = hashOperations.get(namespace, "feedbackMessagesContext");
             return mapper.readValue(contextJson, new TypeReference<>() {
             });
         } catch (Exception e) {
@@ -74,9 +74,9 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public List<ChatMessage> getPromptChatMessages(String functionName, String identifier) {
+    public List<ChatMessage> getPromptChatMessages(String namespace, String identifier) {
         try {
-            String messagesJson = hashOperations.get(functionName + ":" + identifier, "promptChatMessages");
+            String messagesJson = hashOperations.get(namespace + ":" + identifier, "promptChatMessages");
             return mapper.readValue(messagesJson, new TypeReference<>() {
             });
         } catch (Exception e) {
@@ -86,9 +86,9 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public List<ChatMessage> getFeedbackChatMessages(String validatorName, String identifier) {
+    public List<ChatMessage> getFeedbackChatMessages(String namespace, String identifier) {
         try {
-            String messagesJson = hashOperations.get(validatorName + ":" + identifier, "feedbackChatMessages");
+            String messagesJson = hashOperations.get(namespace + ":" + identifier, "feedbackChatMessages");
             return mapper.readValue(messagesJson, new TypeReference<>() {
             });
         } catch (Exception e) {
@@ -98,32 +98,32 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public void savePromptMessagesContext(String functionName, String identifier, ChatMessage message) {
+    public void savePromptMessagesContext(String namespace, String identifier, ChatMessage message) {
         try {
-            String messagesJson = hashOperations.get(functionName + ":" + identifier, "promptChatMessages");
+            String messagesJson = hashOperations.get(namespace + ":" + identifier, "promptChatMessages");
             List<ChatMessage> messages;
             if (messagesJson != null) {
                 messages = this.mapper.readValue(messagesJson, new TypeReference<>() {
                 });
             } else messages = new ArrayList<>();
             messages.add(message);
-            hashOperations.put(functionName + ":" + identifier, "promptChatMessages", mapper.writeValueAsString(messages));
+            hashOperations.put(namespace + ":" + identifier, "promptChatMessages", mapper.writeValueAsString(messages));
         } catch (Exception e) {
             log.info("Exception Occurred \n- name : {}\n- message: {}", e.getClass().getSimpleName(), e.getMessage());
         }
     }
 
     @Override
-    public void saveFeedbackMessagesContext(String validatorName, String identifier, ChatMessage message) {
+    public void saveFeedbackMessagesContext(String namespace, String identifier, ChatMessage message) {
         try {
-            String messagesJson = hashOperations.get(validatorName + ":" + identifier, "feedbackChatMessages");
+            String messagesJson = hashOperations.get(namespace + ":" + identifier, "feedbackChatMessages");
             List<ChatMessage> messages;
             if (messagesJson != null) {
                 messages = this.mapper.readValue(messagesJson, new TypeReference<>() {
                 });
             } else messages = new ArrayList<>();
             messages.add(message);
-            hashOperations.put(validatorName + ":" + identifier, "feedbackChatMessages", mapper.writeValueAsString(messages));
+            hashOperations.put(namespace + ":" + identifier, "feedbackChatMessages", mapper.writeValueAsString(messages));
         } catch (Exception e) {
             log.info("Exception Occurred \n- name : {}\n- message: {}", e.getClass().getSimpleName(), e.getMessage());
         }

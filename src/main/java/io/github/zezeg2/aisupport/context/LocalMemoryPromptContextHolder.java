@@ -14,55 +14,55 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
     private static final Map<String, Map<String, List<ChatMessage>>> feedbackMessagesRegistry = new ConcurrentHashMap<>();
 
     @Override
-    public boolean contains(String functionName) {
-        return promptRegistry.containsKey(functionName);
+    public boolean contains(String namespace) {
+        return promptRegistry.containsKey(namespace);
     }
 
     @Override
-    public void savePrompt(String functionName, Prompt prompt) {
-        promptRegistry.put(functionName, prompt);
+    public void savePrompt(String namespace, Prompt prompt) {
+        promptRegistry.put(namespace, prompt);
     }
 
     @Override
-    public Prompt get(String functionName) {
-        return promptRegistry.get(functionName);
+    public Prompt get(String namespace) {
+        return promptRegistry.get(namespace);
     }
 
     @Override
-    public Map<String, List<ChatMessage>> getPromptMessagesContext(String functionName) {
-        return promptMessagesRegistry.get(functionName);
+    public Map<String, List<ChatMessage>> getPromptMessagesContext(String namespace) {
+        return promptMessagesRegistry.get(namespace);
     }
 
     @Override
-    public Map<String, List<ChatMessage>> getFeedbackMessagesContext(String validatorName) {
-        return feedbackMessagesRegistry.get(validatorName);
+    public Map<String, List<ChatMessage>> getFeedbackMessagesContext(String namespace) {
+        return feedbackMessagesRegistry.get(namespace);
     }
 
     @Override
-    public List<ChatMessage> getPromptChatMessages(String functionName, String identifier) {
-        return promptMessagesRegistry.get(functionName).get(identifier);
+    public List<ChatMessage> getPromptChatMessages(String namespace, String identifier) {
+        return promptMessagesRegistry.get(namespace).get(identifier);
     }
 
     @Override
-    public List<ChatMessage> getFeedbackChatMessages(String validatorName, String identifier) {
-        return feedbackMessagesRegistry.get(validatorName).get(identifier);
+    public List<ChatMessage> getFeedbackChatMessages(String namespace, String identifier) {
+        return feedbackMessagesRegistry.get(namespace).get(identifier);
     }
 
     @Override
-    public void savePromptMessagesContext(String functionName, String identifier, ChatMessage message) {
-        Map<String, List<ChatMessage>> identifierMessages = promptMessagesRegistry.getOrDefault(functionName, new ConcurrentHashMap<>());
+    public void savePromptMessagesContext(String namespace, String identifier, ChatMessage message) {
+        Map<String, List<ChatMessage>> identifierMessages = promptMessagesRegistry.getOrDefault(namespace, new ConcurrentHashMap<>());
         List<ChatMessage> messages = identifierMessages.getOrDefault(identifier, new ArrayList<>());
         messages.add(message);
         identifierMessages.put(identifier, messages);
-        promptMessagesRegistry.put(functionName, identifierMessages);
+        promptMessagesRegistry.put(namespace, identifierMessages);
     }
 
     @Override
-    public void saveFeedbackMessagesContext(String validatorName, String identifier, ChatMessage message) {
-        Map<String, List<ChatMessage>> identifierMessages = feedbackMessagesRegistry.getOrDefault(validatorName, new ConcurrentHashMap<>());
+    public void saveFeedbackMessagesContext(String namespace, String identifier, ChatMessage message) {
+        Map<String, List<ChatMessage>> identifierMessages = feedbackMessagesRegistry.getOrDefault(namespace, new ConcurrentHashMap<>());
         List<ChatMessage> messages = identifierMessages.getOrDefault(identifier, new ArrayList<>());
         messages.add(message);
         identifierMessages.put(identifier, messages);
-        feedbackMessagesRegistry.put(validatorName, identifierMessages);
+        feedbackMessagesRegistry.put(namespace, identifierMessages);
     }
 }

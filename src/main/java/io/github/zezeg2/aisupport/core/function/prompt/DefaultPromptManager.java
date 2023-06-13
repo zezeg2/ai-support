@@ -25,16 +25,16 @@ public class DefaultPromptManager {
     protected final ContextIdentifierProvider identifierProvider;
     protected final ContextProperties contextProperties;
 
-    public void addMessage(String functionName, String identifier, ROLE role, String message, ContextType contextType) {
-        addMessageToContext(functionName, identifier, role, message, contextType);
+    public void addMessage(String namespace, String identifier, ROLE role, String message, ContextType contextType) {
+        addMessageToContext(namespace, identifier, role, message, contextType);
     }
 
-    protected void addMessageToContext(String functionName, String identifier, ROLE role, String message, ContextType contextType) {
+    protected void addMessageToContext(String namespace, String identifier, ROLE role, String message, ContextType contextType) {
         switch (contextType) {
             case PROMPT ->
-                    context.savePromptMessagesContext(functionName, identifier, new ChatMessage(role.getValue(), message));
+                    context.savePromptMessagesContext(namespace, identifier, new ChatMessage(role.getValue(), message));
             case FEEDBACK ->
-                    context.saveFeedbackMessagesContext(functionName, identifier, new ChatMessage(role.getValue(), message));
+                    context.saveFeedbackMessagesContext(namespace, identifier, new ChatMessage(role.getValue(), message));
         }
     }
 
@@ -42,24 +42,24 @@ public class DefaultPromptManager {
         return identifierProvider.getId(request);
     }
 
-    public ChatCompletionResult exchangePromptMessages(String functionName, String identifier, AIModel model, boolean save) {
-        List<ChatMessage> contextMessages = context.getPromptChatMessages(functionName, identifier);
-        return getChatCompletionResult(functionName, identifier, model, save, contextMessages, ContextType.PROMPT);
+    public ChatCompletionResult exchangePromptMessages(String namespace, String identifier, AIModel model, boolean save) {
+        List<ChatMessage> contextMessages = context.getPromptChatMessages(namespace, identifier);
+        return getChatCompletionResult(namespace, identifier, model, save, contextMessages, ContextType.PROMPT);
     }
 
-    public ChatCompletionResult exchangeFeedbackMessages(String validatorName, String identifier, AIModel model, boolean save) {
-        List<ChatMessage> contextMessages = context.getFeedbackChatMessages(validatorName, identifier);
-        return getChatCompletionResult(validatorName, identifier, model, save, contextMessages, ContextType.FEEDBACK);
+    public ChatCompletionResult exchangeFeedbackMessages(String namespace, String identifier, AIModel model, boolean save) {
+        List<ChatMessage> contextMessages = context.getFeedbackChatMessages(namespace, identifier);
+        return getChatCompletionResult(namespace, identifier, model, save, contextMessages, ContextType.FEEDBACK);
     }
 
-    protected ChatCompletionResult getChatCompletionResult(String functionName, String identifier, AIModel model, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
+    protected ChatCompletionResult getChatCompletionResult(String namespace, String identifier, AIModel model, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
         ChatCompletionResult response = createChatCompletion(model, contextMessages);
         ChatMessage responseMessage = response.getChoices().get(0).getMessage();
         responseMessage.setContent(JsonUtils.extractJsonFromMessage(responseMessage.getContent()));
         if (save) {
             switch (contextType) {
-                case PROMPT -> context.savePromptMessagesContext(functionName, identifier, responseMessage);
-                case FEEDBACK -> context.saveFeedbackMessagesContext(functionName, identifier, responseMessage);
+                case PROMPT -> context.savePromptMessagesContext(namespace, identifier, responseMessage);
+                case FEEDBACK -> context.saveFeedbackMessagesContext(namespace, identifier, responseMessage);
             }
             contextMessages.add(responseMessage);
         }
