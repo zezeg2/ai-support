@@ -3,7 +3,7 @@ package io.github.zezeg2.aisupport.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
-import io.github.zezeg2.aisupport.common.resolver.JAVAConstructResolver;
+import io.github.zezeg2.aisupport.common.resolver.JavaConstructResolver;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.context.*;
@@ -51,7 +51,7 @@ public class AISupportConfiguration {
 
     @Bean
     public ConstructResolver resolver() {
-        return new JAVAConstructResolver();
+        return new JavaConstructResolver();
     }
 
     //SERVLET

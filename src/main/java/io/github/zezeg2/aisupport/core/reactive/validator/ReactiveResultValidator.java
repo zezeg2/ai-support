@@ -12,6 +12,7 @@ import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,69 +47,6 @@ public abstract class ReactiveResultValidator {
     private Mono<String> buildTemplate(String functionName) {
         return addContents(functionName).map(content -> TemplateConstants.FEEDBACK_FRAME.formatted(BuildFormatUtil.getFormatString(FeedbackResponse.class), content));
     }
-
-//    public Mono<String> validate(ServerWebExchange exchange, String functionName) {
-//        AtomicInteger counter = new AtomicInteger(0);
-//        return init(exchange, functionName)
-//                .then(Flux.from(getLastPromptResponseContent(exchange, functionName))
-//                        .expand(lastResponseContent -> Mono.from(exchangeMessages(exchange, functionName, lastResponseContent, ContextType.FEEDBACK))
-//                                .flatMap(lastFeedbackContent -> {
-//                                    FeedbackResponse feedbackResult;
-//                                    try {
-//                                        feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
-//                                    } catch (JsonProcessingException e) {
-//                                        return Mono.error(new RuntimeException(e));
-//                                    }
-//
-//                                    if (feedbackResult.isValid()) return Mono.empty();
-//                                    else {
-//                                        if (counter.incrementAndGet() >= MAX_ATTEMPTS) {
-//                                            return Mono.error(new RuntimeException("Exceeded maximum attempts"));
-//                                        }
-//                                        return Mono.just(lastFeedbackContent);
-//                                    }
-//                                })
-//                                .flatMap(lastFeedbackContent -> Mono.from(exchangeMessages(exchange, functionName, lastFeedbackContent, ContextType.PROMPT)))
-//                                .switchIfEmpty(Mono.from(getLastPromptResponseContent(exchange, functionName)))
-//                                .repeat(MAX_ATTEMPTS - 1)
-//                        )
-//                        .onErrorResume(e -> Mono.just(e.getMessage()))
-//                        .last());
-//
-//
-//    }
-
-//    public Mono<String> validate(ServerWebExchange exchange, String functionName) {
-//        AtomicInteger counter = new AtomicInteger(0);
-//        AtomicBoolean shouldRepeat = new AtomicBoolean(true);
-//
-//        return init(exchange, functionName)
-//                .then(Flux.defer(() -> getLastPromptResponseContent(exchange, functionName))
-//                        .expand(lastResponseContent -> Mono.defer(() -> exchangeMessages(exchange, functionName, lastResponseContent, ContextType.FEEDBACK))
-//                                .flatMap(lastFeedbackContent -> {
-//                                    if (counter.incrementAndGet() > MAX_ATTEMPTS) {
-//                                        shouldRepeat.set(false);
-//                                    }
-//
-//                                    FeedbackResponse feedbackResult;
-//                                    try {
-//                                        feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
-//                                    } catch (JsonProcessingException e) {
-//                                        return Mono.error(new RuntimeException(e));
-//                                    }
-//
-//                                    if (feedbackResult.isValid()) {
-//                                        shouldRepeat.set(false);
-//                                        return Mono.empty();
-//                                    } else {
-//                                        return Mono.just(lastFeedbackContent);
-//                                    }
-//                                })
-//                                .flatMap(lastFeedbackContent -> Mono.defer(() -> exchangeMessages(exchange, functionName, lastFeedbackContent, ContextType.PROMPT)))
-//                                .switchIfEmpty(Mono.defer(() -> getLastPromptResponseContent(exchange, functionName).log()))
-//                        ).last());
-//    }
-
 
     public Mono<String> validate(ServerWebExchange exchange, String functionName) {
         AtomicInteger counter = new AtomicInteger(0);

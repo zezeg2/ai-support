@@ -3,7 +3,7 @@ package io.github.zezeg2.aisupport.common.resolver;
 import java.util.List;
 import java.util.Map;
 
-public class JAVAConstructResolver implements ConstructResolver {
+public class JavaConstructResolver implements ConstructResolver {
 
     @Override
     public String toString(Map<String, Map<String, List<String>>> classMap) {

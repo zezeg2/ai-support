@@ -28,7 +28,6 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     @Override
     public Mono<Boolean> contains(String namespace) {
         return hashOperations.hasKey(namespace, "prompt");
-
     }
 
     @Override
@@ -59,7 +58,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String namespace, String identifier) {
+    public Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String namespace) {
         return hashOperations.get(namespace, "promptMessagesContext")
                 .flatMap(contextJson -> {
                     try {
@@ -72,7 +71,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String namespace, String identifier) {
+    public Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String namespace) {
         return hashOperations.get(namespace, "feedbackMessagesContext")
                 .flatMap(contextJson -> {
                     try {
@@ -87,7 +86,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
 
     @Override
     public Mono<List<ChatMessage>> getPromptChatMessages(String namespace, String identifier) {
-        return hashOperations.get(namespace + ":" + identifier, "promptChatMessages")
+        return hashOperations.get(namespace, "promptChatMessages:" + identifier)
                 .flatMap(messagesJson -> {
                     try {
                         return Mono.just(mapper.readValue(messagesJson, new TypeReference<List<ChatMessage>>() {
@@ -102,7 +101,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
 
     @Override
     public Mono<List<ChatMessage>> getFeedbackChatMessages(String namespace, String identifier) {
-        return hashOperations.get(namespace + ":" + identifier, "feedbackChatMessages")
+        return hashOperations.get(namespace, "feedbackChatMessages:" + identifier)
                 .flatMap(messagesJson -> {
                     try {
                         return Mono.just(mapper.readValue(messagesJson, new TypeReference<List<ChatMessage>>() {
@@ -117,7 +116,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
 
     @Override
     public Mono<Void> savePromptMessagesContext(String namespace, String identifier, ChatMessage message) {
-        return hashOperations.get(namespace + ":" + identifier, "promptChatMessages")
+        return hashOperations.get(namespace, "promptChatMessages:" + identifier)
                 .defaultIfEmpty("[]")
                 .flatMap(messagesJson -> {
                     try {
@@ -126,7 +125,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
                         });
                         else messages = new ArrayList<>();
                         messages.add(message);
-                        return hashOperations.put(namespace + ":" + identifier, "promptChatMessages", mapper.writeValueAsString(messages));
+                        return hashOperations.put(namespace, "promptChatMessages:" + identifier, mapper.writeValueAsString(messages));
                     } catch (Exception e) {
                         return Mono.error(handleException("savePromptMessagesContext", e));
                     }
@@ -135,7 +134,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
 
     @Override
     public Mono<Void> saveFeedbackMessagesContext(String namespace, String identifier, ChatMessage message) {
-        return hashOperations.get(namespace + ":" + identifier, "feedbackChatMessages")
+        return hashOperations.get(namespace, "feedbackChatMessages:" + identifier)
                 .defaultIfEmpty("[]")
                 .flatMap(messagesJson -> {
                     try {
@@ -144,7 +143,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
                         });
                         else messages = new ArrayList<>();
                         messages.add(message);
-                        return hashOperations.put(namespace + ":" + identifier, "feedbackChatMessages", mapper.writeValueAsString(messages));
+                        return hashOperations.put(namespace, "feedbackChatMessages:" + identifier, mapper.writeValueAsString(messages));
                     } catch (Exception e) {
                         return Mono.error(handleException("saveFeedbackMessagesContext", e));
                     }

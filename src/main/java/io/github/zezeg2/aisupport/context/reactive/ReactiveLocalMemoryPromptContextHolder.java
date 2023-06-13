@@ -30,12 +30,12 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
     }
 
     @Override
-    public Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String namespace, String identifier) {
+    public Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String namespace) {
         return null;
     }
 
     @Override
-    public Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String namespace, String identifier) {
+    public Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String namespace) {
         return null;
     }
 

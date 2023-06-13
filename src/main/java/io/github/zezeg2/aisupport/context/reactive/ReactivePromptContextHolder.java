@@ -15,9 +15,9 @@ public interface ReactivePromptContextHolder {
 
     Mono<Prompt> get(String namespace);
 
-    Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String namespace, String identifier);
+    Mono<Map<String, List<ChatMessage>>> getPromptMessagesContext(String namespace);
 
-    Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String namespace, String identifier);
+    Mono<Map<String, List<ChatMessage>>> getFeedbackMessagesContext(String namespace);
 
     Mono<List<ChatMessage>> getPromptChatMessages(String namespace, String identifier);
 
