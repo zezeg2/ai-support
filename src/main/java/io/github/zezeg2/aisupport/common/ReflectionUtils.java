@@ -21,16 +21,13 @@ public class ReflectionUtils {
     }
 
     private static void exploreTypes(Type type, Map<Integer, List<Class<?>>> map, int depth) {
-        if (type instanceof ParameterizedType) {
-            ParameterizedType parameterizedType = (ParameterizedType) type;
-
+        if (type instanceof ParameterizedType parameterizedType) {
             Class<?> rawType = (Class<?>) parameterizedType.getRawType();
             List<Class<?>> typeParameters = map.computeIfAbsent(depth, k -> new ArrayList<>());
             typeParameters.add(rawType);
 
             for (Type actualType : parameterizedType.getActualTypeArguments()) {
-                if (actualType instanceof Class) {
-                    Class<?> actualClass = (Class<?>) actualType;
+                if (actualType instanceof Class<?> actualClass) {
                     List<Class<?>> newTypeParameters = map.computeIfAbsent(depth + 1, k -> new ArrayList<>());
                     newTypeParameters.add(actualClass);
                 }

@@ -17,10 +17,13 @@ import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidato
 import io.github.zezeg2.aisupport.core.validator.DefaultResultValidator;
 import io.github.zezeg2.aisupport.core.validator.DefaultResultValidatorChain;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 
@@ -56,46 +59,55 @@ public class AISupportConfiguration {
 
     //SERVLET
     @Bean
-    public DefaultAISupport defaultAISupport(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, DefaultPromptManager promptManager, DefaultResultValidatorChain resultValdateChain) {
-        return new DefaultAISupport(service, mapper, resolver, promptManager, resultValdateChain, openAIProperties);
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "servlet")
+    public DefaultAISupport defaultAISupport(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, DefaultPromptManager promptManager, DefaultResultValidatorChain resultValidateChain) {
+        return new DefaultAISupport(service, mapper, resolver, promptManager, resultValidateChain, openAIProperties);
     }
 
     @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "servlet")
     public DefaultPromptManager defaultPromptManager(OpenAiService service, PromptContextHolder context, ContextIdentifierProvider identifierProvider) {
         return new DefaultPromptManager(service, context, identifierProvider, contextProperties);
     }
 
     @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "servlet")
     public DefaultResultValidatorChain defaultResultValidatorChain(List<DefaultResultValidator> validators) {
         return new DefaultResultValidatorChain(validators);
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'REDIS' && '${ai-supporter.context.environment}' == 'SERVLET'")
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'redis' && '${ai-supporter.context.environment}' == 'servlet'")
     public PromptContextHolder redisPromptContextHolder(RedisTemplate<String, String> redisTemplate, ObjectMapper mapper) {
         return new RedisPromptContextHolder(redisTemplate, mapper);
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'LOCAL' && '${ai-supporter.context.environment}' == 'SERVLET'")
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'mongo' && '${ai-supporter.context.environment}' == 'servlet'")
+    public MongoPromptContextHolder mongoPromptContextHolder(MongoTemplate mongoTemplate) {
+        return new MongoPromptContextHolder(mongoTemplate);
+    }
+
+    @Bean
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'local' && '${ai-supporter.context.environment}' == 'servlet'")
     public PromptContextHolder localMemoryPromptContextHolder() {
         return new LocalMemoryPromptContextHolder();
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'THREAD' && '${ai-supporter.context.environment}' == 'SERVLET'")
+    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'thread' && '${ai-supporter.context.environment}' == 'servlet'")
     public ContextIdentifierProvider threadContextIdentifierProvider() {
         return new ThreadContextIdentifierProvider();
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'SESSION' && '${ai-supporter.context.environment}' == 'SERVLET'")
+    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'session' && '${ai-supporter.context.environment}' == 'SERVLET'")
     public ContextIdentifierProvider sessionContextIdentifierProvider() {
         return new SessionContextIdentifierProvider();
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'AUTHENTICATION' && '${ai-supporter.context.environment}' == 'SERVLET'")
+    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'authentication' && '${ai-supporter.context.environment}' == 'SERVLET'")
     public ContextIdentifierProvider authenticationContextIdentifierProvider() {
         return new AuthenticationContextIdentifierProvider();
     }
@@ -103,41 +115,50 @@ public class AISupportConfiguration {
     //EVENTLOOP
 
     @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
     public ReactiveAISupport reactiveAISupport(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValdateChain) {
         return new ReactiveAISupport(service, mapper, resolver, promptManager, resultValdateChain, openAIProperties);
     }
 
     @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
     public ReactivePromptManager reactivePromptManager(OpenAiService service, ReactivePromptContextHolder context, ReactiveContextIdentifierProvider identifierProvider) {
         return new ReactivePromptManager(service, context, identifierProvider, contextProperties);
     }
 
     @Bean
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
     public ReactiveResultValidatorChain reactiveResultValidatorChain(List<ReactiveResultValidator> validators) {
         return new ReactiveResultValidatorChain(validators);
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'REDIS' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'redis' && '${ai-supporter.context.environment}' == 'eventloop'")
     public ReactivePromptContextHolder reactivePromptContextHolder(ReactiveStringRedisTemplate redisTemplate, ObjectMapper mapper) {
         return new ReactiveRedisPromptContextHolder(redisTemplate, mapper);
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'LOCAL' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'mongo' && '${ai-supporter.context.environment}' == 'eventloop'")
+    public ReactiveMongoPromptContextHolder reactiveMongoPromptContextHolder(ReactiveMongoTemplate mongoTemplate) {
+        return new ReactiveMongoPromptContextHolder(mongoTemplate);
+    }
+
+    @Bean
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'local' && '${ai-supporter.context.environment}' == 'eventloop'")
     public ReactivePromptContextHolder reactiveLocalMemoryPromptContextHolder() {
         return new ReactiveLocalMemoryPromptContextHolder();
     }
 
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'SESSION' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
+    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'session' && '${ai-supporter.context.environment}' == 'eventloop'")
     public ReactiveContextIdentifierProvider reactiveSessionContextIdentifierProvider() {
         return new ReactiveSessionContextIdentifierProvider();
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'AUTHENTICATION' && '${ai-supporter.context.environment}' == 'EVENTLOOP'")
+    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'authentication' && '${ai-supporter.context.environment}' == 'eventloop'")
     public ReactiveContextIdentifierProvider reactiveAuthenticationContextIdentifierProvider() {
         return new ReactiveAuthenticationContextIdentifierProvider();
     }

@@ -32,7 +32,7 @@ public class ReactiveResultValidatorChain {
                     List<String> targetFunctionList = Arrays.stream(targetFunction.names()).toList();
                     return targetFunction.global() || targetFunctionList.contains(functionName);
                 })
-                .concatMap(validator -> validator.validate(exchange, functionName).log()).last();
+                .concatMap(validator -> validator.validate(exchange, functionName)).last();
     }
 
     public List<ReactiveResultValidator> peekValidators(String functionName) {

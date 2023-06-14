@@ -17,7 +17,8 @@ public class ContextProperties {
 
     public enum CONTEXT {
         LOCAL,
-        REDIS
+        REDIS,
+        MONGO
     }
 
     public enum IDENTIFIER {

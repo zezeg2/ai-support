@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface ValidateTarget {
     boolean global() default false;
+
     String[] names() default {};
 
     int order() default Integer.MAX_VALUE;

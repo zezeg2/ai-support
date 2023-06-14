@@ -27,13 +27,13 @@ public abstract class DefaultResultValidator {
     }
 
 
-    protected String getName(String functionName) {
+    protected String getNamespace(String functionName) {
         return String.join(":", List.of(functionName, this.getClass().getSimpleName()));
     }
 
     protected void init(String functionName, HttpServletRequest request) {
         String identifier = promptManager.getIdentifier(request);
-        FeedbackMessages feedbackChatMessages = promptManager.getContext().getFeedbackChatMessages(getName(functionName), identifier);
+        FeedbackMessages feedbackChatMessages = promptManager.getContext().getFeedbackChatMessages(getNamespace(functionName), identifier);
         if (feedbackChatMessages.getContent().isEmpty()) {
             promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
         }
@@ -54,7 +54,7 @@ public abstract class DefaultResultValidator {
             System.out.println("Try Count : " + count + "--------------------------------------------------------------");
             System.out.println(lastPromptMessage);
 
-            feedbackContent = exchangeMessages(getName(functionName), identifier, lastPromptMessage, ContextType.FEEDBACK);
+            feedbackContent = exchangeMessages(getNamespace(functionName), identifier, lastPromptMessage, ContextType.FEEDBACK);
             FeedbackResponse feedbackResult = mapper.readValue(feedbackContent, FeedbackResponse.class);
 
             System.out.println(feedbackResult);
@@ -74,7 +74,7 @@ public abstract class DefaultResultValidator {
             case PROMPT ->
                     promptManager.exchangePromptMessages(functionName, identifier, GPT3Model.GPT_3_5_TURBO, true).getChoices().get(0).getMessage();
             case FEEDBACK ->
-                    promptManager.exchangeFeedbackMessages(getName(functionName), identifier, GPT3Model.GPT_3_5_TURBO, true).getChoices().get(0).getMessage();
+                    promptManager.exchangeFeedbackMessages(getNamespace(functionName), identifier, GPT3Model.GPT_3_5_TURBO, true).getChoices().get(0).getMessage();
         };
         return responseMessage.getContent();
     }

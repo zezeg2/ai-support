@@ -14,7 +14,6 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "EVENTLOOP")
 public abstract class ReactiveResultValidator {
@@ -27,17 +26,17 @@ public abstract class ReactiveResultValidator {
         this.mapper = mapper;
     }
 
-    protected String getName(String functionName) {
+    protected String getNamespace(String functionName) {
         return String.join(":", List.of(functionName, this.getClass().getSimpleName()));
     }
 
     protected Mono<Void> init(ServerWebExchange exchange, String functionName) {
         return promptManager.getIdentifier(exchange)
-                .flatMap(identifier -> promptManager.getContext().getFeedbackChatMessages(getName(functionName), identifier)
+                .flatMap(identifier -> promptManager.getContext().getFeedbackChatMessages(getNamespace(functionName), identifier)
                         .flatMap(feedbackChatMessages -> {
                             if (feedbackChatMessages.getContent().isEmpty()) {
                                 return buildTemplate(functionName)
-                                        .flatMap(template -> promptManager.addMessage(exchange, getName(functionName), ROLE.SYSTEM, template, ContextType.FEEDBACK));
+                                        .flatMap(template -> promptManager.addMessage(exchange, getNamespace(functionName), ROLE.SYSTEM, template, ContextType.FEEDBACK));
                             }
                             return Mono.empty();
                         }));
@@ -48,21 +47,15 @@ public abstract class ReactiveResultValidator {
     }
 
     public Mono<String> validate(ServerWebExchange exchange, String functionName) {
-        AtomicInteger counter = new AtomicInteger(0);
-
         return init(exchange, functionName)
                 .then(Mono.defer(() -> getLastPromptResponseContent(exchange, functionName))
                         .flatMap(lastResponseContent -> Mono.defer(() -> exchangeMessages(exchange, functionName, lastResponseContent, ContextType.FEEDBACK))
                                 .flatMap(lastFeedbackContent -> {
-                                    if (counter.incrementAndGet() > MAX_ATTEMPTS) {
-                                        return Mono.error(new RuntimeException("Exceeded maximum attempts"));
-                                    }
-
                                     FeedbackResponse feedbackResult;
                                     try {
                                         feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
                                     } catch (JsonProcessingException e) {
-                                        return Mono.error(new RuntimeException(e));
+                                        return exchangeMessages(exchange, functionName, lastResponseContent, ContextType.FEEDBACK).doOnNext(ignored -> Mono.error(new RuntimeException(e)));
                                     }
 
                                     if (feedbackResult.isValid()) {
@@ -70,22 +63,22 @@ public abstract class ReactiveResultValidator {
                                     } else {
                                         return Mono.defer(() -> {
                                             Mono<String> result = exchangeMessages(exchange, functionName, lastFeedbackContent, ContextType.PROMPT);
-                                            return result.flatMap(r -> Mono.<String>error(new RuntimeException()));
+                                            return result.flatMap(r -> Mono.error(new RuntimeException()));
                                         });
                                     }
                                 })
-                                .retry()
-                                .switchIfEmpty(Mono.defer(() -> getLastPromptResponseContent(exchange, functionName))).log()));
+                                .retry(MAX_ATTEMPTS - 1)
+                                .switchIfEmpty(Mono.defer(() -> getLastPromptResponseContent(exchange, functionName)))));
     }
 
 
     protected Mono<String> exchangeMessages(ServerWebExchange exchange, String functionName, String message, ContextType contextType) {
-        return promptManager.addMessage(exchange, contextType.equals(ContextType.PROMPT) ? functionName : getName(functionName), ROLE.USER, message, contextType)
+        return promptManager.addMessage(exchange, contextType.equals(ContextType.PROMPT) ? functionName : getNamespace(functionName), ROLE.USER, message, contextType)
                 .then(switch (contextType) {
                     case PROMPT ->
                             promptManager.exchangePromptMessages(exchange, functionName, GPT3Model.GPT_3_5_TURBO, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
                     case FEEDBACK ->
-                            promptManager.exchangeFeedbackMessages(exchange, getName(functionName), GPT3Model.GPT_3_5_TURBO, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
+                            promptManager.exchangeFeedbackMessages(exchange, getNamespace(functionName), GPT3Model.GPT_3_5_TURBO, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
                 });
     }
 
