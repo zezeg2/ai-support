@@ -1,5 +1,7 @@
 package io.github.zezeg2.aisupport.common.argument;
 
+import io.github.zezeg2.aisupport.common.BaseSupportType;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,10 @@ public class ArgumentsFactory {
         return this;
     }
 
+    public <T extends BaseSupportType> ArgumentsFactory addArgument(T value) {
+        return addArgument(value, null);
+    }
+
     public <T> ArgumentsFactory addArgument(List<T> value, String desc) {
         Objects.requireNonNull(value, "Value cannot be null");
         if (value.isEmpty()) {
@@ -37,6 +43,10 @@ public class ArgumentsFactory {
         Class<T> type = (Class<T>) value.get(0).getClass();
         arguments.add(new ListArgument<>(listType, buildFieldName(type), value, desc, type));
         return this;
+    }
+
+    public <T extends BaseSupportType> ArgumentsFactory addArgument(List<T> value) {
+        return addArgument(value, null);
     }
 
     public <T> ArgumentsFactory addArgument(Map<String, T> value, String desc) {
@@ -53,8 +63,8 @@ public class ArgumentsFactory {
         return this;
     }
 
-    public List<Argument<?>> build() {
-        return new ArrayList<>(arguments);
+    public <T extends BaseSupportType> ArgumentsFactory addArgument(Map<String, T> value) {
+        return addArgument(value, null);
     }
 
     public String buildFieldName(Class<?> clazz) {
@@ -63,6 +73,17 @@ public class ArgumentsFactory {
             return inputString;
         }
         return inputString.substring(0, 1).toLowerCase() + inputString.substring(1);
+    }
+
+    public ArgumentsFactory addArguments(Object... values) {
+        for (Object value : values) {
+            addArgument(value, null);
+        }
+        return this;
+    }
+
+    public List<Argument<?>> build() {
+        return new ArrayList<>(arguments);
     }
 }
 
