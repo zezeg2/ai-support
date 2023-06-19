@@ -70,8 +70,15 @@ public class BuildFormatUtil {
         }
     }
 
-    private static boolean isBaseSupportType(Class<?> type) {
-        return type.getSuperclass().equals(BaseSupportType.class);
+    public static boolean isBaseSupportType(Class<?> clazz) {
+        if (clazz.equals(BaseSupportType.class)) {
+            return true;
+        }
+        Class<?> superClass = clazz.getSuperclass();
+        if (superClass == null) {
+            return false;
+        }
+        return isBaseSupportType(superClass);
     }
 
     public static Map<String, Object> getFormatMap(Class<?> returnType) {

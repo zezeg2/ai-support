@@ -11,15 +11,25 @@ public interface Supportable {
     @JsonIgnore
     default Map<String, Object> getFormatMap() {
         Map<String, Object> format = SupportableFormatRegistry.getFormat(this.getClass());
-        if (format != null) return format;
-        Map<String, Object> fieldDescriptions = new HashMap<>();
-        for (Field field : this.getClass().getDeclaredFields()) {
-            field.setAccessible(true);
-            handleField(field, fieldDescriptions);
+        if (format != null) {
+            return format;
         }
+
+        Map<String, Object> fieldDescriptions = new HashMap<>();
+        Class<?> currentClass = this.getClass();
+        while (currentClass != null) {
+            for (Field field : currentClass.getDeclaredFields()) {
+                if (field.getName().equals("mapper")) continue;
+                field.setAccessible(true);
+                handleField(field, fieldDescriptions);
+            }
+            currentClass = currentClass.getSuperclass();
+        }
+
         SupportableFormatRegistry.save(this.getClass(), fieldDescriptions);
         return fieldDescriptions;
     }
+
 
     default void handleField(Field field, Map<String, Object> fieldDescriptions) {
         FieldDesc fieldDesc = field.getAnnotation(FieldDesc.class);
