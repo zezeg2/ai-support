@@ -8,9 +8,7 @@ import io.github.zezeg2.aisupport.common.JsonUtils;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
-import io.github.zezeg2.aisupport.context.ContextIdentifierProvider;
 import io.github.zezeg2.aisupport.context.PromptContextHolder;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -22,7 +20,6 @@ public class DefaultPromptManager {
 
     protected final OpenAiService service;
     protected final PromptContextHolder context;
-    protected final ContextIdentifierProvider identifierProvider;
     protected final ContextProperties contextProperties;
 
     public void addMessage(String namespace, String identifier, ROLE role, String message, ContextType contextType) {
@@ -35,10 +32,6 @@ public class DefaultPromptManager {
             case FEEDBACK ->
                     context.saveFeedbackMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
         }
-    }
-
-    public String getIdentifier(HttpServletRequest request) {
-        return identifierProvider.getId(request);
     }
 
     public ChatCompletionResult exchangePromptMessages(String namespace, String identifier, AIModel model, boolean save) {

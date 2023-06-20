@@ -10,7 +10,6 @@ import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -30,13 +29,13 @@ public abstract class ReactiveResultValidator {
         return String.join(":", List.of(functionName, this.getClass().getSimpleName()));
     }
 
-    protected Mono<Void> init(ServerWebExchange exchange, String functionName) {
-        return promptManager.getIdentifier(exchange)
-                .flatMap(identifier -> promptManager.getContext().getFeedbackChatMessages(getNamespace(functionName), identifier)
+    protected Mono<Void> init(String identifier, String functionName) {
+        return Mono.just(identifier)
+                .flatMap(id -> promptManager.getContext().getFeedbackChatMessages(getNamespace(functionName), id)
                         .flatMap(feedbackChatMessages -> {
                             if (feedbackChatMessages.getContent().isEmpty()) {
                                 return buildTemplate(functionName)
-                                        .flatMap(template -> promptManager.addMessage(exchange, getNamespace(functionName), ROLE.SYSTEM, template, ContextType.FEEDBACK));
+                                        .flatMap(template -> promptManager.addMessage(identifier, getNamespace(functionName), ROLE.SYSTEM, template, ContextType.FEEDBACK));
                             }
                             return Mono.empty();
                         }));
@@ -46,45 +45,45 @@ public abstract class ReactiveResultValidator {
         return addContents(functionName).map(content -> TemplateConstants.FEEDBACK_FRAME.formatted(BuildFormatUtil.getFormatString(FeedbackResponse.class), content));
     }
 
-    public Mono<String> validate(ServerWebExchange exchange, String functionName) {
-        return init(exchange, functionName)
-                .then(Mono.defer(() -> getLastPromptResponseContent(exchange, functionName))
-                        .flatMap(lastResponseContent -> Mono.defer(() -> exchangeMessages(exchange, functionName, lastResponseContent, ContextType.FEEDBACK))
+    public Mono<String> validate(String identifier, String functionName) {
+        return init(identifier, functionName)
+                .then(Mono.defer(() -> getLastPromptResponseContent(identifier, functionName))
+                        .flatMap(lastResponseContent -> Mono.defer(() -> exchangeMessages(identifier, functionName, lastResponseContent, ContextType.FEEDBACK))
                                 .flatMap(lastFeedbackContent -> {
                                     FeedbackResponse feedbackResult;
                                     try {
                                         feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
                                     } catch (JsonProcessingException e) {
-                                        return exchangeMessages(exchange, functionName, lastResponseContent, ContextType.FEEDBACK).doOnNext(ignored -> Mono.error(new RuntimeException(e)));
+                                        return exchangeMessages(identifier, functionName, lastResponseContent, ContextType.FEEDBACK).doOnNext(ignored -> Mono.error(new RuntimeException(e)));
                                     }
 
                                     if (feedbackResult.isValid()) {
                                         return Mono.empty();
                                     } else {
                                         return Mono.defer(() -> {
-                                            Mono<String> result = exchangeMessages(exchange, functionName, lastFeedbackContent, ContextType.PROMPT);
+                                            Mono<String> result = exchangeMessages(identifier, functionName, lastFeedbackContent, ContextType.PROMPT);
                                             return result.flatMap(r -> Mono.error(new RuntimeException()));
                                         });
                                     }
                                 })
                                 .retry(MAX_ATTEMPTS - 1)
-                                .switchIfEmpty(Mono.defer(() -> getLastPromptResponseContent(exchange, functionName)))));
+                                .switchIfEmpty(Mono.defer(() -> getLastPromptResponseContent(identifier, functionName)))));
     }
 
 
-    protected Mono<String> exchangeMessages(ServerWebExchange exchange, String functionName, String message, ContextType contextType) {
-        return promptManager.addMessage(exchange, contextType.equals(ContextType.PROMPT) ? functionName : getNamespace(functionName), ROLE.USER, message, contextType)
+    protected Mono<String> exchangeMessages(String identifier, String functionName, String message, ContextType contextType) {
+        return promptManager.addMessage(identifier, contextType.equals(ContextType.PROMPT) ? functionName : getNamespace(functionName), ROLE.USER, message, contextType)
                 .then(switch (contextType) {
                     case PROMPT ->
-                            promptManager.exchangePromptMessages(exchange, functionName, GPT3Model.GPT_3_5_TURBO, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
+                            promptManager.exchangePromptMessages(identifier, functionName, GPT3Model.GPT_3_5_TURBO, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
                     case FEEDBACK ->
-                            promptManager.exchangeFeedbackMessages(exchange, getNamespace(functionName), GPT3Model.GPT_3_5_TURBO, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
+                            promptManager.exchangeFeedbackMessages(identifier, getNamespace(functionName), GPT3Model.GPT_3_5_TURBO, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
                 });
     }
 
-    protected Mono<String> getLastPromptResponseContent(ServerWebExchange exchange, String functionName) {
-        return promptManager.getIdentifier(exchange)
-                .flatMap(identifier -> promptManager.getContext().getPromptChatMessages(functionName, identifier))
+    protected Mono<String> getLastPromptResponseContent(String identifier, String functionName) {
+        return Mono.just(identifier)
+                .flatMap(id -> promptManager.getContext().getPromptChatMessages(functionName, id))
                 .flatMap(promptMessageList -> Mono.just(promptMessageList.getContent().get(promptMessageList.getContent().size() - 1).getContent()));
     }
 

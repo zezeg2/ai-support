@@ -10,7 +10,6 @@ import io.github.zezeg2.aisupport.common.enums.model.gpt.GPT3Model;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.core.function.prompt.DefaultPromptManager;
 import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.util.List;
@@ -31,8 +30,7 @@ public abstract class DefaultResultValidator {
         return String.join(":", List.of(functionName, this.getClass().getSimpleName()));
     }
 
-    protected void init(String functionName, HttpServletRequest request) {
-        String identifier = promptManager.getIdentifier(request);
+    protected void init(String functionName, String identifier) {
         FeedbackMessages feedbackChatMessages = promptManager.getContext().getFeedbackChatMessages(getNamespace(functionName), identifier);
         if (feedbackChatMessages.getContent().isEmpty()) {
             promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
@@ -43,9 +41,8 @@ public abstract class DefaultResultValidator {
         return TemplateConstants.FEEDBACK_FRAME.formatted(BuildFormatUtil.getFormatString(FeedbackResponse.class), addContents(functionName));
     }
 
-    public String validate(HttpServletRequest request, String functionName) throws JsonProcessingException {
-        String identifier = promptManager.getIdentifier(request);
-        init(functionName, request);
+    public String validate(String identifier, String functionName) throws JsonProcessingException {
+        init(functionName, identifier);
         String lastPromptMessage;
         String feedbackContent;
         lastPromptMessage = getLastPromptResponseContent(functionName, identifier);

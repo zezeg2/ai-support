@@ -66,8 +66,8 @@ public class AISupportConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "servlet")
-    public DefaultPromptManager defaultPromptManager(OpenAiService service, PromptContextHolder context, ContextIdentifierProvider identifierProvider) {
-        return new DefaultPromptManager(service, context, identifierProvider, contextProperties);
+    public DefaultPromptManager defaultPromptManager(OpenAiService service, PromptContextHolder context) {
+        return new DefaultPromptManager(service, context, contextProperties);
     }
 
     @Bean
@@ -116,14 +116,14 @@ public class AISupportConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
-    public ReactiveAISupport reactiveAISupport(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValdateChain) {
-        return new ReactiveAISupport(service, mapper, resolver, promptManager, resultValdateChain, openAIProperties);
+    public ReactiveAISupport reactiveAISupport(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain) {
+        return new ReactiveAISupport(service, mapper, resolver, promptManager, resultValidatorChain, openAIProperties);
     }
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
-    public ReactivePromptManager reactivePromptManager(OpenAiService service, ReactivePromptContextHolder context, ReactiveContextIdentifierProvider identifierProvider) {
-        return new ReactivePromptManager(service, context, identifierProvider, contextProperties);
+    public ReactivePromptManager reactivePromptManager(OpenAiService service, ReactivePromptContextHolder context) {
+        return new ReactivePromptManager(service, context, contextProperties);
     }
 
     @Bean

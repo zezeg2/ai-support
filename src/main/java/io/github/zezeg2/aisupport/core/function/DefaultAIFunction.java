@@ -19,7 +19,6 @@ import io.github.zezeg2.aisupport.core.function.prompt.DefaultPromptManager;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.validator.DefaultResultValidatorChain;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 import java.util.LinkedHashMap;
@@ -98,9 +97,9 @@ public class DefaultAIFunction<T> {
         return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, setReturnType());
     }
 
-    protected T parseResponseWithValidate(HttpServletRequest request, ChatCompletionResult response) {
+    protected T parseResponseWithValidate(String identifier, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
-        content = resultValidatorChain.validate(request, functionName, content);
+        content = resultValidatorChain.validate(identifier, functionName, content);
         try {
             return mapper.readValue(content, returnType);
         } catch (JsonProcessingException e) {
@@ -112,16 +111,20 @@ public class DefaultAIFunction<T> {
         return BuildFormatUtil.getFormatString(returnType);
     }
 
-    public T execute(HttpServletRequest request, List<Argument<?>> args) {
+    public T execute(String identifier, List<Argument<?>> args) {
         AIModel model = getDefaultModel();
-        return execute(request, args, model);
+        return execute(identifier, args, model);
     }
 
-    public T execute(HttpServletRequest request, List<Argument<?>> args, AIModel model) {
-        String identifier = promptManager.getIdentifier(request);
+    public T execute(List<Argument<?>> args) {
+        AIModel model = getDefaultModel();
+        return execute("common", args, model);
+    }
+
+    public T execute(String identifier, List<Argument<?>> args, AIModel model) {
         init(args, identifier);
         ChatCompletionResult response = promptManager.exchangePromptMessages(functionName, identifier, model, true);
-        return parseResponseWithValidate(request, response);
+        return parseResponseWithValidate(identifier, response);
     }
 
     protected String setReturnType() {

@@ -8,12 +8,10 @@ import io.github.zezeg2.aisupport.common.JsonUtils;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
-import io.github.zezeg2.aisupport.context.reactive.ReactiveContextIdentifierProvider;
 import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -23,39 +21,33 @@ import java.util.List;
 public class ReactivePromptManager {
     protected final OpenAiService service;
     protected final ReactivePromptContextHolder context;
-    protected final ReactiveContextIdentifierProvider identifierProvider;
     protected final ContextProperties contextProperties;
 
-    public Mono<String> getIdentifier(ServerWebExchange exchange) {
-        return identifierProvider.getId(exchange);
+    public Mono<Void> addMessage(String identifier, String namespace, ROLE role, String message, ContextType contextType) {
+        return addMessageToContext(identifier, namespace, role, message, contextType);
     }
 
-    public Mono<Void> addMessage(ServerWebExchange exchange, String namespace, ROLE role, String message, ContextType contextType) {
-        return addMessageToContext(exchange, namespace, role, message, contextType);
-    }
-
-    protected Mono<Void> addMessageToContext(ServerWebExchange exchange, String namespace, ROLE role, String message, ContextType contextType) {
-        return getIdentifier(exchange).flatMap(identifier -> switch (contextType) {
-            case PROMPT -> context.savePromptMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
-            case FEEDBACK ->
-                    context.saveFeedbackMessages(namespace, identifier, new ChatMessage(role.getValue(), message));
+    protected Mono<Void> addMessageToContext(String identifier, String namespace, ROLE role, String message, ContextType contextType) {
+        return Mono.just(identifier).flatMap(id -> switch (contextType) {
+            case PROMPT -> context.savePromptMessages(namespace, id, new ChatMessage(role.getValue(), message));
+            case FEEDBACK -> context.saveFeedbackMessages(namespace, id, new ChatMessage(role.getValue(), message));
         });
 
     }
 
-    public Mono<ChatCompletionResult> exchangePromptMessages(ServerWebExchange exchange, String namespace, AIModel model, boolean save) {
-        return getIdentifier(exchange)
-                .flatMap(identifier -> context.getPromptChatMessages(namespace, identifier))
-                .flatMap(contextMessages -> getChatCompletionResult(exchange, namespace, model, save, contextMessages.getContent(), ContextType.PROMPT));
+    public Mono<ChatCompletionResult> exchangePromptMessages(String identifier, String namespace, AIModel model, boolean save) {
+        return Mono.just(identifier)
+                .flatMap(id -> context.getPromptChatMessages(namespace, id))
+                .flatMap(contextMessages -> getChatCompletionResult(identifier, namespace, model, save, contextMessages.getContent(), ContextType.PROMPT));
     }
 
-    public Mono<ChatCompletionResult> exchangeFeedbackMessages(ServerWebExchange exchange, String namespace, AIModel model, boolean save) {
-        return getIdentifier(exchange)
-                .flatMap(identifier -> context.getFeedbackChatMessages(namespace, identifier))
-                .flatMap(contextMessages -> getChatCompletionResult(exchange, namespace, model, save, contextMessages.getContent(), ContextType.FEEDBACK));
+    public Mono<ChatCompletionResult> exchangeFeedbackMessages(String identifier, String namespace, AIModel model, boolean save) {
+        return Mono.just(identifier)
+                .flatMap(id -> context.getFeedbackChatMessages(namespace, id))
+                .flatMap(contextMessages -> getChatCompletionResult(identifier, namespace, model, save, contextMessages.getContent(), ContextType.FEEDBACK));
     }
 
-    protected Mono<ChatCompletionResult> getChatCompletionResult(ServerWebExchange exchange, String namespace, AIModel model, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
+    protected Mono<ChatCompletionResult> getChatCompletionResult(String identifier, String namespace, AIModel model, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
         return createChatCompletion(model, contextMessages)
                 .flatMap(response -> {
                     ChatMessage responseMessage = response.getChoices().get(0).getMessage();
@@ -64,12 +56,12 @@ public class ReactivePromptManager {
                 })
                 .flatMap(response -> {
                     if (save) {
-                        return getIdentifier(exchange)
-                                .flatMap(identifier -> switch (contextType) {
+                        return Mono.just(identifier)
+                                .flatMap(id -> switch (contextType) {
                                     case PROMPT ->
-                                            context.savePromptMessages(namespace, identifier, response.getChoices().get(0).getMessage());
+                                            context.savePromptMessages(namespace, id, response.getChoices().get(0).getMessage());
                                     case FEEDBACK ->
-                                            context.saveFeedbackMessages(namespace, identifier, response.getChoices().get(0).getMessage());
+                                            context.saveFeedbackMessages(namespace, id, response.getChoices().get(0).getMessage());
                                 })
                                 .thenReturn(response);
                     }

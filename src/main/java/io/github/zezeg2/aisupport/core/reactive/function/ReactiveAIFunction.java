@@ -20,14 +20,9 @@ import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptMa
 import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidatorChain;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -47,7 +42,7 @@ public class ReactiveAIFunction<T> {
         return ModelMapper.map(openAIProperties.getModel());
     }
 
-    protected Mono<Void> init(ServerWebExchange exchange, List<Argument<?>> args) {
+    protected Mono<Void> init(String identifier, List<Argument<?>> args) {
         try {
             return promptManager.getContext().get(functionName)
                     .hasElement()
@@ -68,8 +63,8 @@ public class ReactiveAIFunction<T> {
                         return promptManager.getContext().get(functionName);
                     })
                     .flatMap(prompt -> promptManager.getContext().savePrompt(functionName, prompt)
-                            .then(promptManager.addMessage(exchange, functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT)))
-                    .then(promptManager.addMessage(exchange, functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT));
+                            .then(promptManager.addMessage(identifier, functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT)))
+                    .then(promptManager.addMessage(identifier, functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -105,9 +100,9 @@ public class ReactiveAIFunction<T> {
         return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, setReturnType());
     }
 
-    protected Mono<T> parseResponseWithValidate(ServerWebExchange exchange, ChatCompletionResult response) {
+    protected Mono<T> parseResponseWithValidate(String identifier, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
-        return resultValidatorChain.validate(exchange, functionName, content).flatMap((stringResult) -> {
+        return resultValidatorChain.validate(identifier, functionName, content).flatMap((stringResult) -> {
             try {
                 return Mono.just(mapper.readValue(stringResult, returnType));
             } catch (JsonProcessingException e) {
@@ -120,15 +115,21 @@ public class ReactiveAIFunction<T> {
         return BuildFormatUtil.getFormatString(returnType);
     }
 
-    public Mono<T> execute(ServerWebExchange exchange, List<Argument<?>> args) {
+    public Mono<T> execute(String identifier, List<Argument<?>> args) {
         AIModel model = getDefaultModel();
-        return execute(exchange, args, model);
+        return execute(identifier, args, model);
     }
 
-    public Mono<T> execute(ServerWebExchange exchange, List<Argument<?>> args, AIModel model) {
-        return init(exchange, args)
-                .then(promptManager.exchangePromptMessages(exchange, functionName, model, true)
-                        .flatMap(chatCompletionResult -> parseResponseWithValidate(exchange, chatCompletionResult)));
+    public Mono<T> execute(List<Argument<?>> args) {
+        AIModel model = getDefaultModel();
+        return execute("temp-identifier-" + UUID.randomUUID(), args, model);
+    }
+
+    public Mono<T> execute(String identifier, List<Argument<?>> args, AIModel model) {
+        return init(identifier, args)
+                .then(promptManager.exchangePromptMessages(identifier, functionName, model, true)
+                        .flatMap(chatCompletionResult -> parseResponseWithValidate(identifier, chatCompletionResult)));
+        // TODO: 2023/06/20  .doOnNext(promptManager.getContext()); //임시 identifier 삭제를 위한 promptContextHolder.deletePrompt() 메서드 추가 및 적용
     }
 
     protected String setReturnType() {
