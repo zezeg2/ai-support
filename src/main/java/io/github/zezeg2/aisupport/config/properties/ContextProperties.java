@@ -7,7 +7,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 public class ContextProperties {
     private CONTEXT context = CONTEXT.LOCAL;
-    private IDENTIFIER identifier = IDENTIFIER.THREAD;
     private ENVIRONMENT environment = ENVIRONMENT.SYNCHRONOUS;
 
     public enum ENVIRONMENT {
@@ -19,11 +18,5 @@ public class ContextProperties {
         LOCAL,
         REDIS,
         MONGO
-    }
-
-    public enum IDENTIFIER {
-        THREAD,
-        SESSION,
-        AUTHENTICATION
     }
 }

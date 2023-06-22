@@ -94,24 +94,6 @@ public class AISupportConfiguration {
         return new LocalMemoryPromptContextHolder();
     }
 
-    @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'thread' && '${ai-supporter.context.environment}' == 'synchronous'")
-    public ContextIdentifierProvider threadContextIdentifierProvider() {
-        return new ThreadContextIdentifierProvider();
-    }
-
-    @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'session' && '${ai-supporter.context.environment}' == 'synchronous'")
-    public ContextIdentifierProvider sessionContextIdentifierProvider() {
-        return new SessionContextIdentifierProvider();
-    }
-
-    @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'authentication' && '${ai-supporter.context.environment}' == 'synchronous'")
-    public ContextIdentifierProvider authenticationContextIdentifierProvider() {
-        return new AuthenticationContextIdentifierProvider();
-    }
-
     //EVENTLOOP
 
     @Bean
@@ -148,18 +130,5 @@ public class AISupportConfiguration {
     @ConditionalOnExpression("'${ai-supporter.context.context}' == 'local' && '${ai-supporter.context.environment}' == 'eventloop'")
     public ReactivePromptContextHolder reactiveLocalMemoryPromptContextHolder() {
         return new ReactiveLocalMemoryPromptContextHolder();
-    }
-
-
-    @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'session' && '${ai-supporter.context.environment}' == 'eventloop'")
-    public ReactiveContextIdentifierProvider reactiveSessionContextIdentifierProvider() {
-        return new ReactiveSessionContextIdentifierProvider();
-    }
-
-    @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.identifier}' == 'authentication' && '${ai-supporter.context.environment}' == 'eventloop'")
-    public ReactiveContextIdentifierProvider reactiveAuthenticationContextIdentifierProvider() {
-        return new ReactiveAuthenticationContextIdentifierProvider();
     }
 }
