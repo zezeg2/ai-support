@@ -33,7 +33,7 @@ public abstract class DefaultResultValidator {
     protected void init(String functionName, String identifier) {
         FeedbackMessages feedbackChatMessages = promptManager.getContext().getFeedbackChatMessages(getNamespace(functionName), identifier);
         if (feedbackChatMessages.getContent().isEmpty()) {
-            promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
+            promptManager.addMessage(getNamespace(functionName), identifier, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
         }
     }
 
@@ -71,7 +71,7 @@ public abstract class DefaultResultValidator {
             case PROMPT ->
                     promptManager.exchangePromptMessages(functionName, identifier, GPT3Model.GPT_3_5_TURBO, true).getChoices().get(0).getMessage();
             case FEEDBACK ->
-                    promptManager.exchangeFeedbackMessages(getNamespace(functionName), identifier, GPT3Model.GPT_3_5_TURBO, true).getChoices().get(0).getMessage();
+                    promptManager.exchangeFeedbackMessages(functionName, identifier, GPT3Model.GPT_3_5_TURBO, true).getChoices().get(0).getMessage();
         };
         return responseMessage.getContent();
     }

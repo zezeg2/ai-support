@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Data
 public abstract class BaseSupportType implements Supportable {
+    @FormatIgnore
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @JsonIgnore

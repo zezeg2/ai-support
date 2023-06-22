@@ -19,7 +19,7 @@ public interface Supportable {
         Class<?> currentClass = this.getClass();
         while (currentClass != null) {
             for (Field field : currentClass.getDeclaredFields()) {
-                if (field.getName().equals("mapper")) continue;
+                if (field.getAnnotation(FormatIgnore.class) != null) continue;
                 field.setAccessible(true);
                 handleField(field, fieldDescriptions);
             }

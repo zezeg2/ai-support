@@ -8,10 +8,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ContextProperties {
     private CONTEXT context = CONTEXT.LOCAL;
     private IDENTIFIER identifier = IDENTIFIER.THREAD;
-    private ENVIRONMENT environment = ENVIRONMENT.SERVLET;
+    private ENVIRONMENT environment = ENVIRONMENT.SYNCHRONOUS;
 
     public enum ENVIRONMENT {
-        SERVLET,
+        SYNCHRONOUS,
         EVENTLOOP
     }
 

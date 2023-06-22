@@ -129,7 +129,6 @@ public class ReactiveAIFunction<T> {
         return init(identifier, args)
                 .then(promptManager.exchangePromptMessages(identifier, functionName, model, true)
                         .flatMap(chatCompletionResult -> parseResponseWithValidate(identifier, chatCompletionResult)));
-        // TODO: 2023/06/20  .doOnNext(promptManager.getContext()); //임시 identifier 삭제를 위한 promptContextHolder.deletePrompt() 메서드 추가 및 적용
     }
 
     protected String setReturnType() {

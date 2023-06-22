@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class RedisPromptContextHolder implements PromptContextHolder {
@@ -40,6 +41,7 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     @Override
     public Prompt get(String namespace) {
         String serializedPrompt = hashOperations.get(namespace, "prompt");
+        if (serializedPrompt == null) return null;
         try {
             return mapper.readValue(serializedPrompt, Prompt.class);
         } catch (IOException e) {
@@ -51,7 +53,7 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     public PromptMessages getPromptChatMessages(String namespace, String identifier) {
         String serializedPromptMessages = hashOperations.get(namespace, identifier);
         if (serializedPromptMessages == null) {
-            PromptMessages promptMessages = PromptMessages.builder().identifier(identifier).content(new CopyOnWriteArrayList<>()).build();
+            PromptMessages promptMessages = PromptMessages.builder().functionName(namespace).identifier(identifier).content(new CopyOnWriteArrayList<>()).build();
             try {
                 hashOperations.put(namespace, identifier, mapper.writeValueAsString(promptMessages));
             } catch (JsonProcessingException e) {
@@ -69,9 +71,14 @@ public class RedisPromptContextHolder implements PromptContextHolder {
 
     @Override
     public FeedbackMessages getFeedbackChatMessages(String namespace, String identifier) {
+        String[] split = namespace.split(":");
         String serializedFeedbackMessages = hashOperations.get(namespace, identifier);
         if (serializedFeedbackMessages == null) {
-            FeedbackMessages feedbackMessages = FeedbackMessages.builder().identifier(identifier).content(new CopyOnWriteArrayList<>()).build();
+            FeedbackMessages feedbackMessages = FeedbackMessages.builder()
+                    .identifier(identifier)
+                    .functionName(split[0])
+                    .validatorName(split[1])
+                    .content(new ArrayList<>()).build();
             try {
                 hashOperations.put(namespace, identifier, mapper.writeValueAsString(feedbackMessages));
             } catch (JsonProcessingException e) {
