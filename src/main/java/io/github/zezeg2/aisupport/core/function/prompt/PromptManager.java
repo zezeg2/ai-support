@@ -16,7 +16,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Getter
-public class DefaultPromptManager {
+public class PromptManager {
 
     protected final OpenAiService service;
     protected final PromptContextHolder context;

@@ -2,13 +2,13 @@ package io.github.zezeg2.aisupport.core.validator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.TemplateConstants;
-import io.github.zezeg2.aisupport.core.function.prompt.DefaultPromptManager;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import org.springframework.stereotype.Component;
 
 @Component
 @ValidateTarget(global = true)
-public class JsonResultValidator extends DefaultResultValidator {
-    public JsonResultValidator(DefaultPromptManager promptManager, ObjectMapper mapper) {
+public class JsonResultValidator extends ResultValidator {
+    public JsonResultValidator(PromptManager promptManager, ObjectMapper mapper) {
         super(promptManager, mapper);
     }
 

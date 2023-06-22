@@ -8,19 +8,19 @@ import io.github.zezeg2.aisupport.common.TemplateConstants;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.GPT3Model;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
-import io.github.zezeg2.aisupport.core.function.prompt.DefaultPromptManager;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.util.List;
 
 @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "SERVLET")
-public abstract class DefaultResultValidator {
+public abstract class ResultValidator {
     protected static final int MAX_ATTEMPTS = 3;
-    protected final DefaultPromptManager promptManager;
+    protected final PromptManager promptManager;
     protected final ObjectMapper mapper;
 
-    public DefaultResultValidator(DefaultPromptManager promptManager, ObjectMapper mapper) {
+    public ResultValidator(PromptManager promptManager, ObjectMapper mapper) {
         this.promptManager = promptManager;
         this.mapper = mapper;
     }

@@ -8,14 +8,14 @@ import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.context.*;
 import io.github.zezeg2.aisupport.context.reactive.*;
-import io.github.zezeg2.aisupport.core.DefaultAISupport;
+import io.github.zezeg2.aisupport.core.AISupport;
 import io.github.zezeg2.aisupport.core.ReactiveAISupport;
-import io.github.zezeg2.aisupport.core.function.prompt.DefaultPromptManager;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidator;
 import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidatorChain;
-import io.github.zezeg2.aisupport.core.validator.DefaultResultValidator;
-import io.github.zezeg2.aisupport.core.validator.DefaultResultValidatorChain;
+import io.github.zezeg2.aisupport.core.validator.ResultValidator;
+import io.github.zezeg2.aisupport.core.validator.ResultValidatorChain;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -60,20 +60,20 @@ public class AISupportConfiguration {
     //SERVLET
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "synchronous")
-    public DefaultAISupport defaultAISupport(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, DefaultPromptManager promptManager, DefaultResultValidatorChain resultValidateChain) {
-        return new DefaultAISupport(service, mapper, resolver, promptManager, resultValidateChain, openAIProperties);
+    public AISupport defaultAISupport(OpenAiService service, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ResultValidatorChain resultValidateChain) {
+        return new AISupport(service, mapper, resolver, promptManager, resultValidateChain, openAIProperties);
     }
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "synchronous")
-    public DefaultPromptManager defaultPromptManager(OpenAiService service, PromptContextHolder context) {
-        return new DefaultPromptManager(service, context, contextProperties);
+    public PromptManager defaultPromptManager(OpenAiService service, PromptContextHolder context) {
+        return new PromptManager(service, context, contextProperties);
     }
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "synchronous")
-    public DefaultResultValidatorChain defaultResultValidatorChain(List<DefaultResultValidator> validators) {
-        return new DefaultResultValidatorChain(validators);
+    public ResultValidatorChain defaultResultValidatorChain(List<ResultValidator> validators) {
+        return new ResultValidatorChain(validators);
     }
 
     @Bean

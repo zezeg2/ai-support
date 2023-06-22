@@ -5,17 +5,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Arrays;
 import java.util.List;
 
-public class DefaultResultValidatorChain {
+public class ResultValidatorChain {
 
-    protected final List<DefaultResultValidator> validators;
+    protected final List<ResultValidator> validators;
 
-    public DefaultResultValidatorChain(List<DefaultResultValidator> validators) {
+    public ResultValidatorChain(List<ResultValidator> validators) {
         this.validators = validators;
     }
 
     public String validate(String identifier, String functionName, String target) {
         String result = target;
-        for (DefaultResultValidator validator : validators) {
+        for (ResultValidator validator : validators) {
             ValidateTarget targetFunction = validator.getClass().getAnnotation(ValidateTarget.class);
             List<String> targetFunctionList = Arrays.stream(targetFunction.names()).toList();
             if (targetFunction.global() || targetFunctionList.contains(functionName)) {
@@ -29,7 +29,7 @@ public class DefaultResultValidatorChain {
         return result;
     }
 
-    public List<DefaultResultValidator> peekValidators(String functionName) {
+    public List<ResultValidator> peekValidators(String functionName) {
         return validators.stream().filter(validator -> {
             ValidateTarget targetFunction = validator.getClass().getAnnotation(ValidateTarget.class);
             List<String> targetFunctionList = Arrays.stream(targetFunction.names()).toList();
