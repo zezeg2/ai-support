@@ -45,8 +45,9 @@ public class AIFunction<T> {
     }
 
     protected void init(List<Argument<?>> args, String identifier) {
-        if (promptManager.getContext().get(functionName) == null) {
-            Prompt prompt = new Prompt(
+        Prompt prompt = promptManager.getContext().get(functionName);
+        if (prompt == null) {
+            prompt = new Prompt(
                     functionName,
                     purpose,
                     resolveRefTypes(args),
@@ -57,6 +58,8 @@ public class AIFunction<T> {
                     BuildFormatUtil.getFormatString(FeedbackResponse.class)
             );
             promptManager.getContext().savePrompt(functionName, prompt);
+        }
+        if (promptManager.getContext().getPromptChatMessages(functionName, identifier).getContent().isEmpty()) {
             promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT);
         }
         try {

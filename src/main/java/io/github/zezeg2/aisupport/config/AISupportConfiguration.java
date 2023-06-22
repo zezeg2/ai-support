@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -33,6 +34,7 @@ import java.util.List;
 @Configuration
 @Conditional(ConflictingPropertiesCondition.class)
 @EnableConfigurationProperties({ContextProperties.class, OpenAIProperties.class})
+@ComponentScan("io.github.zezeg2.aisupport")
 public class AISupportConfiguration {
     private final OpenAIProperties openAIProperties;
     private final ContextProperties contextProperties;

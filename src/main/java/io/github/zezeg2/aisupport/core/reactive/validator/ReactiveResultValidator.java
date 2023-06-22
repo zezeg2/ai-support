@@ -7,6 +7,7 @@ import io.github.zezeg2.aisupport.common.TemplateConstants;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.GPT3Model;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
+import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,7 +15,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-@ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "EVENTLOOP")
+@ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
 public abstract class ReactiveResultValidator {
     protected static final int MAX_ATTEMPTS = 3;
     protected final ReactivePromptManager promptManager;
@@ -88,4 +89,8 @@ public abstract class ReactiveResultValidator {
     }
 
     protected abstract Mono<String> addContents(String functionName);
+
+    protected Mono<Prompt> getPrompt(String functionName) {
+        return promptManager.getContext().get(functionName);
+    }
 }

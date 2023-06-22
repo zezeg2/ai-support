@@ -58,12 +58,12 @@ public class ReactiveAIFunction<T> {
                                     buildResultFormat(),
                                     BuildFormatUtil.getFormatString(FeedbackResponse.class)
                             );
-                            return Mono.just(prompt);
+                            return promptManager.getContext().savePrompt(functionName, prompt).thenReturn(prompt);
                         }
                         return promptManager.getContext().get(functionName);
                     })
-                    .flatMap(prompt -> promptManager.getContext().savePrompt(functionName, prompt)
-                            .then(promptManager.addMessage(identifier, functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT)))
+                    .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
+                            .map(promptMessages -> promptMessages.getContent().isEmpty()).then(promptManager.addMessage(identifier, functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT)))
                     .then(promptManager.addMessage(identifier, functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
