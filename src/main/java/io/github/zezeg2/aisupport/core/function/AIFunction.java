@@ -54,7 +54,7 @@ public class AIFunction<T> {
                     createFunction(args),
                     createConstraints(constraints),
                     JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
-                    buildResultFormat(),
+                    BuildFormatUtil.getFormatString(returnType),
                     BuildFormatUtil.getFormatString(FeedbackResponse.class)
             );
             promptManager.getContext().savePrompt(functionName, prompt);
@@ -109,11 +109,6 @@ public class AIFunction<T> {
             throw new RuntimeException(e);
         }
     }
-
-    public String buildResultFormat() {
-        return BuildFormatUtil.getFormatString(returnType);
-    }
-
     public T execute(String identifier, List<Argument<?>> args) {
         AIModel model = getDefaultModel();
         return execute(identifier, args, model);

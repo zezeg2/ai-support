@@ -26,7 +26,7 @@ public interface Supportable {
             currentClass = currentClass.getSuperclass();
         }
 
-        SupportableFormatRegistry.save(this.getClass(), fieldDescriptions);
+        SupportableFormatRegistry.save(Objects.requireNonNull(this.getClass()), fieldDescriptions);
         return fieldDescriptions;
     }
 
@@ -40,18 +40,26 @@ public interface Supportable {
             Map<String, Object> nestedMap = ((Supportable) fieldValue).getFormatMap();
             fieldDescriptions.put(field.getName(), nestedMap);
         } else if (fieldValue instanceof List<?>) {
+            @SuppressWarnings("unchecked")
             List<Object> listDescriptions = getListDescription((List<Object>) fieldValue, description);
             fieldDescriptions.put(field.getName(), listDescriptions);
         } else if (fieldValue instanceof Map<?, ?>) {
             Type[] actualTypeArguments = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
             MapFieldDesc mapFieldDesc = field.getAnnotation(MapFieldDesc.class);
-            String mapKeyDescription = mapFieldDesc == null || mapFieldDesc.key().equals("") ? actualTypeArguments[0] + " Key" : mapFieldDesc.key();
-            String mapValueDescription = mapFieldDesc == null || mapFieldDesc.value().equals("") ? actualTypeArguments[1] + " Value" : mapFieldDesc.value();
+            String mapKeyDescription = mapFieldDesc == null || mapFieldDesc.key().equals("") ? getSimpleTypeName(actualTypeArguments[0]) + " Key" : mapFieldDesc.key();
+            String mapValueDescription = mapFieldDesc == null || mapFieldDesc.value().equals("") ? getSimpleTypeName(actualTypeArguments[1]) + " Value" : mapFieldDesc.value();
+            @SuppressWarnings("unchecked")
             Map<String, Object> mapDescription = getMapDescription(field.getName(), (Map<String, Object>) fieldValue, mapKeyDescription, mapValueDescription);
-            fieldDescriptions.put(field.getName(), mapDescription);
+            fieldDescriptions.put(field.getName(), mapDescription.get(field.getName()));
         } else {
             fieldDescriptions.put(field.getName(), description);
         }
+    }
+
+
+    default String getSimpleTypeName(Type type) {
+        String[] split = type.getTypeName().split("\\.");
+        return split[split.length - 1];
     }
 
     default Object getFieldValue(Field field) {

@@ -69,9 +69,6 @@ public class ArgumentsFactory {
 
     public String buildFieldName(Class<?> clazz) {
         String inputString = clazz.getSimpleName();
-        if (inputString.length() == 0) {
-            return inputString;
-        }
         return inputString.substring(0, 1).toLowerCase() + inputString.substring(1);
     }
 
