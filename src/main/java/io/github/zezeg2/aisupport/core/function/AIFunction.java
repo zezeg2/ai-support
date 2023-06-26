@@ -21,10 +21,7 @@ import io.github.zezeg2.aisupport.core.validator.ResultValidatorChain;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import lombok.RequiredArgsConstructor;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -116,7 +113,7 @@ public class AIFunction<T> {
 
     public T execute(List<Argument<?>> args) {
         AIModel model = getDefaultModel();
-        return execute("common", args, model);
+        return execute("temp-identifier-" + UUID.randomUUID(), args, model);
     }
 
     public T execute(String identifier, List<Argument<?>> args, AIModel model) {

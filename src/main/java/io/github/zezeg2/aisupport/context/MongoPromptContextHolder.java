@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MongoPromptContextHolder implements PromptContextHolder {
 
@@ -64,6 +65,28 @@ public class MongoPromptContextHolder implements PromptContextHolder {
     public void saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
         feedbackMessages.getContent().add(message);
+        mongoTemplate.save(feedbackMessages, namespace);
+    }
+
+    @Override
+    public void deleteLastPromptMessage(String namespace, String identifier, Integer n) {
+        PromptMessages promptMessages = getPromptChatMessages(namespace, identifier);
+        List<ChatMessage> content = promptMessages.getContent();
+        if (!content.isEmpty()) {
+            int removeIndex = Math.max(0, content.size() - n);
+            content.subList(removeIndex, content.size()).clear();
+        }
+        mongoTemplate.save(promptMessages, namespace);
+    }
+
+    @Override
+    public void deleteLastFeedbackMessage(String namespace, String identifier, Integer n) {
+        FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
+        List<ChatMessage> content = feedbackMessages.getContent();
+        if (!content.isEmpty()) {
+            int removeIndex = Math.max(0, content.size() - n);
+            content.subList(removeIndex, content.size()).clear();
+        }
         mongoTemplate.save(feedbackMessages, namespace);
     }
 }

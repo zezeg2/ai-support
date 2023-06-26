@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class RedisPromptContextHolder implements PromptContextHolder {
@@ -114,6 +115,36 @@ public class RedisPromptContextHolder implements PromptContextHolder {
             hashOperations.put(namespace, identifier, mapper.writeValueAsString(feedbackMessages));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error serializing the feedback messages", e);
+        }
+    }
+
+    @Override
+    public void deleteLastPromptMessage(String namespace, String identifier, Integer n) {
+        PromptMessages promptMessages = getPromptChatMessages(namespace, identifier);
+        List<ChatMessage> content = promptMessages.getContent();
+        if (!content.isEmpty()) {
+            int removeIndex = Math.max(0, content.size() - n);
+            content.subList(removeIndex, content.size()).clear();
+        }
+        try {
+            hashOperations.put(namespace, identifier, mapper.writeValueAsString(promptMessages));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error serializing the prompt messages after deletion");
+        }
+    }
+
+    @Override
+    public void deleteLastFeedbackMessage(String namespace, String identifier, Integer n) {
+        FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
+        List<ChatMessage> content = feedbackMessages.getContent();
+        if (!content.isEmpty()) {
+            int removeIndex = Math.max(0, content.size() - n);
+            content.subList(removeIndex, content.size()).clear();
+        }
+        try {
+            hashOperations.put(namespace, identifier, mapper.writeValueAsString(feedbackMessages));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error serializing the feedback messages after deletion");
         }
     }
 }

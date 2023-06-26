@@ -8,6 +8,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -83,6 +84,42 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
                     }
                     return Mono.empty();
                 });
+    }
+
+    @Override
+    public Mono<Void> deleteLastPromptMessage(String namespace, String identifier, Integer n) {
+        return Mono.fromRunnable(() -> {
+            List<PromptMessages> promptMessagesList = promptMessagesRegistry.get(namespace);
+            if (promptMessagesList != null) {
+                Optional<PromptMessages> promptMessagesOptional = promptMessagesList.stream()
+                        .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst();
+                promptMessagesOptional.ifPresent(promptMessages -> {
+                    List<ChatMessage> content = promptMessages.getContent();
+                    if (!content.isEmpty()) {
+                        int removeIndex = Math.max(0, content.size() - n);
+                        content.subList(removeIndex, content.size()).clear();
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
+    public Mono<Void> deleteLastFeedbackMessage(String namespace, String identifier, Integer n) {
+        return Mono.fromRunnable(() -> {
+            List<FeedbackMessages> feedbackMessagesList = feedbackMessagesRegistry.get(namespace);
+            if (feedbackMessagesList != null) {
+                Optional<FeedbackMessages> feedbackMessagesOptional = feedbackMessagesList.stream()
+                        .filter(feedbackMessages -> feedbackMessages.getIdentifier().equals(identifier)).findFirst();
+                feedbackMessagesOptional.ifPresent(feedbackMessages -> {
+                    List<ChatMessage> content = feedbackMessages.getContent();
+                    if (!content.isEmpty()) {
+                        int removeIndex = Math.max(0, content.size() - n);
+                        content.subList(removeIndex, content.size()).clear();
+                    }
+                });
+            }
+        });
     }
 
 }

@@ -21,4 +21,8 @@ public interface ReactivePromptContextHolder {
     Mono<Void> savePromptMessages(String namespace, String identifier, ChatMessage message);
 
     Mono<Void> saveFeedbackMessages(String namespace, String identifier, ChatMessage message);
+
+    Mono<Void> deleteLastPromptMessage(String namespace, String identifier, Integer n);
+
+    Mono<Void> deleteLastFeedbackMessage(String namespace, String identifier, Integer n);
 }

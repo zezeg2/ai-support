@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHolder {
 
@@ -65,9 +66,7 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     @Override
     public Mono<Void> savePromptMessages(String namespace, String identifier, ChatMessage message) {
         return getPromptChatMessages(namespace, identifier)
-                .doOnNext(promptMessages -> {
-                    promptMessages.getContent().add(message);
-                })
+                .doOnNext(promptMessages -> promptMessages.getContent().add(message))
                 .flatMap(promptMessages -> reactiveMongoTemplate.save(promptMessages, namespace))
                 .then();
     }
@@ -75,10 +74,35 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     @Override
     public Mono<Void> saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         return getFeedbackChatMessages(namespace, identifier)
-                .doOnNext(feedbackMessages -> {
-                    feedbackMessages.getContent().add(message);
-                })
+                .doOnNext(feedbackMessages -> feedbackMessages.getContent().add(message))
                 .flatMap(feedbackMessages -> reactiveMongoTemplate.save(feedbackMessages, namespace))
                 .then();
     }
+
+    @Override
+    public Mono<Void> deleteLastPromptMessage(String namespace, String identifier, Integer n) {
+        return getPromptChatMessages(namespace, identifier)
+                .filter(promptMessages -> !promptMessages.getContent().isEmpty())
+                .doOnNext(promptMessages -> {
+                    List<ChatMessage> content = promptMessages.getContent();
+                    if (!content.isEmpty()) {
+                        int removeIndex = Math.max(0, content.size() - n);
+                        content.subList(removeIndex, content.size()).clear();
+                    }
+                })
+                .flatMap(promptMessages -> reactiveMongoTemplate.save(promptMessages, namespace).then());
+    }
+
+    @Override
+    public Mono<Void> deleteLastFeedbackMessage(String namespace, String identifier, Integer n) {
+        return getFeedbackChatMessages(namespace, identifier)
+                .filter(feedbackMessages -> !feedbackMessages.getContent().isEmpty())
+                .doOnNext(feedbackMessages -> {
+                    List<ChatMessage> content = feedbackMessages.getContent();
+                    int removeIndex = Math.max(0, content.size() - n);
+                    content.subList(removeIndex, content.size()).clear();
+                })
+                .flatMap(feedbackMessages -> reactiveMongoTemplate.save(feedbackMessages, namespace).then());
+    }
+
 }

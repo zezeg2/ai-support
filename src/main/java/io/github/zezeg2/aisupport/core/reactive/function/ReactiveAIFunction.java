@@ -45,25 +45,19 @@ public class ReactiveAIFunction<T> {
     protected Mono<Void> init(String identifier, List<Argument<?>> args) {
         try {
             return promptManager.getContext().get(functionName)
-                    .hasElement()
-                    .flatMap(exists -> {
-                        if (!exists) {
-                            Prompt prompt = new Prompt(
-                                    functionName,
-                                    purpose,
-                                    resolveRefTypes(args),
-                                    createFunction(args),
-                                    createConstraints(constraints),
-                                    JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
-                                    buildResultFormat(),
-                                    BuildFormatUtil.getFormatString(FeedbackResponse.class)
-                            );
-                            return promptManager.getContext().savePrompt(functionName, prompt).thenReturn(prompt);
-                        }
-                        return promptManager.getContext().get(functionName);
-                    })
+                    .switchIfEmpty(Mono.just(new Prompt(
+                            functionName,
+                            purpose,
+                            resolveRefTypes(args),
+                            createFunction(args),
+                            createConstraints(constraints),
+                            JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
+                            BuildFormatUtil.getFormatString(returnType),
+                            BuildFormatUtil.getFormatString(FeedbackResponse.class)
+                    )).doOnNext(prompt -> promptManager.getContext().savePrompt(functionName, prompt)))
                     .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
-                            .map(promptMessages -> promptMessages.getContent().isEmpty()).then(promptManager.addMessage(identifier, functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT)))
+                            .map(promptMessages -> promptMessages.getContent().isEmpty())
+                            .flatMap(isEmpty -> isEmpty ? promptManager.addMessage(identifier, functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT) : Mono.empty()))
                     .then(promptManager.addMessage(identifier, functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

@@ -42,25 +42,28 @@ public abstract class ResultValidator {
         return TemplateConstants.FEEDBACK_FRAME.formatted(BuildFormatUtil.getFormatString(FeedbackResponse.class), addContents(functionName));
     }
 
-    public String validate(String identifier, String functionName) throws JsonProcessingException {
+    public String validate(String identifier, String functionName) {
         init(functionName, identifier);
-        String lastPromptMessage;
-        String feedbackContent;
-        lastPromptMessage = getLastPromptResponseContent(functionName, identifier);
+        String lastResponseContent;
+        String lastFeedbackContent;
+        lastResponseContent = getLastPromptResponseContent(functionName, identifier);
 
         for (int count = 1; count <= MAX_ATTEMPTS; count++) {
-            System.out.println("Try Count : " + count + "--------------------------------------------------------------");
-            System.out.println(lastPromptMessage);
-
-            feedbackContent = exchangeMessages(getNamespace(functionName), identifier, lastPromptMessage, ContextType.FEEDBACK);
-            FeedbackResponse feedbackResult = mapper.readValue(feedbackContent, FeedbackResponse.class);
-
-            System.out.println(feedbackResult);
-            if (feedbackResult.isValid()) {
-                return lastPromptMessage;
+            System.out.println("Try Count : " + count + "---------------------------------------------------------------------------\n" + lastResponseContent);
+            lastFeedbackContent = exchangeMessages(getNamespace(functionName), identifier, lastResponseContent, ContextType.FEEDBACK);
+            FeedbackResponse feedbackResult;
+            try {
+                feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
+            } catch (JsonProcessingException e) {
+                promptManager.getContext().deleteLastFeedbackMessage(getNamespace(functionName), identifier, 2);
+                continue;
             }
 
-            lastPromptMessage = exchangeMessages(functionName, identifier, feedbackContent, ContextType.PROMPT);
+            if (feedbackResult.isValid()) {
+                return lastResponseContent;
+            }
+            System.out.println("Feedback on results exists\n" + lastFeedbackContent);
+            lastResponseContent = exchangeMessages(functionName, identifier, lastFeedbackContent, ContextType.PROMPT);
         }
 
         throw new RuntimeException("Maximum Validate count over");

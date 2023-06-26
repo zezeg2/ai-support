@@ -55,7 +55,8 @@ public abstract class ReactiveResultValidator {
                                     try {
                                         feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
                                     } catch (JsonProcessingException e) {
-                                        return exchangeMessages(identifier, functionName, lastResponseContent, ContextType.FEEDBACK).doOnNext(ignored -> Mono.error(new RuntimeException(e)));
+                                        return promptManager.getContext().deleteLastFeedbackMessage(getNamespace(functionName), identifier, 2)
+                                                .then(exchangeMessages(identifier, functionName, lastResponseContent, ContextType.FEEDBACK).doOnNext(ignored -> Mono.error(new RuntimeException(e))));
                                     }
 
                                     if (feedbackResult.isValid()) {
@@ -63,7 +64,7 @@ public abstract class ReactiveResultValidator {
                                     } else {
                                         return Mono.defer(() -> {
                                             Mono<String> result = exchangeMessages(identifier, functionName, lastFeedbackContent, ContextType.PROMPT);
-                                            return result.flatMap(r -> Mono.error(new RuntimeException()));
+                                            return result.flatMap(r -> Mono.error(new RuntimeException("Feedback on results exists\n" + lastFeedbackContent)));
                                         });
                                     }
                                 })

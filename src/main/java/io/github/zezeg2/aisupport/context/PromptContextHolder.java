@@ -20,4 +20,8 @@ public interface PromptContextHolder {
     void savePromptMessages(String namespace, String identifier, ChatMessage message);
 
     void saveFeedbackMessages(String namespace, String identifier, ChatMessage message);
+
+    void deleteLastPromptMessage(String namespace, String identifier, Integer n);
+
+    void deleteLastFeedbackMessage(String namespace, String identifier, Integer n);
 }
