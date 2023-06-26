@@ -46,15 +46,16 @@ public class ReactiveAIFunction<T> {
         try {
             return promptManager.getContext().get(functionName)
                     .switchIfEmpty(Mono.just(new Prompt(
-                            functionName,
-                            purpose,
-                            resolveRefTypes(args),
-                            createFunction(args),
-                            createConstraints(constraints),
-                            JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
-                            BuildFormatUtil.getFormatString(returnType),
-                            BuildFormatUtil.getFormatString(FeedbackResponse.class)
-                    )).doOnNext(prompt -> promptManager.getContext().savePrompt(functionName, prompt)))
+                                    functionName,
+                                    purpose,
+                                    resolveRefTypes(args),
+                                    createFunction(args),
+                                    createConstraints(constraints),
+                                    JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
+                                    BuildFormatUtil.getFormatString(returnType),
+                                    BuildFormatUtil.getFormatString(FeedbackResponse.class)
+                            ))
+                            .flatMap(prompt -> promptManager.getContext().savePrompt(functionName, prompt).thenReturn(prompt)))
                     .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
                             .map(promptMessages -> promptMessages.getContent().isEmpty())
                             .flatMap(isEmpty -> isEmpty ? promptManager.addMessage(identifier, functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT) : Mono.empty()))
@@ -122,6 +123,7 @@ public class ReactiveAIFunction<T> {
     public Mono<T> execute(List<Argument<?>> args, AIModel model) {
         return execute("temp-identifier-" + UUID.randomUUID(), args, model);
     }
+
     public Mono<T> execute(String identifier, List<Argument<?>> args, AIModel model) {
         return init(identifier, args)
                 .then(promptManager.exchangePromptMessages(identifier, functionName, model, true)
