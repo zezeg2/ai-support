@@ -119,6 +119,9 @@ public class ReactiveAIFunction<T> {
         return execute("temp-identifier-" + UUID.randomUUID(), args, model);
     }
 
+    public Mono<T> execute(List<Argument<?>> args, AIModel model) {
+        return execute("temp-identifier-" + UUID.randomUUID(), args, model);
+    }
     public Mono<T> execute(String identifier, List<Argument<?>> args, AIModel model) {
         return init(identifier, args)
                 .then(promptManager.exchangePromptMessages(identifier, functionName, model, true)

@@ -106,6 +106,7 @@ public class AIFunction<T> {
             throw new RuntimeException(e);
         }
     }
+
     public T execute(String identifier, List<Argument<?>> args) {
         AIModel model = getDefaultModel();
         return execute(identifier, args, model);
@@ -113,6 +114,10 @@ public class AIFunction<T> {
 
     public T execute(List<Argument<?>> args) {
         AIModel model = getDefaultModel();
+        return execute("temp-identifier-" + UUID.randomUUID(), args, model);
+    }
+
+    public T execute(List<Argument<?>> args, AIModel model) {
         return execute("temp-identifier-" + UUID.randomUUID(), args, model);
     }
 

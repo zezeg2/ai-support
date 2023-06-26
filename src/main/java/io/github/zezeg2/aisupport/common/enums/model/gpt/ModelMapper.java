@@ -1,6 +1,6 @@
 package io.github.zezeg2.aisupport.common.enums.model.gpt;
 
-import io.github.zezeg2.aisupport.config.properties.OpenAIProperties.MODEL;
+import io.github.zezeg2.aisupport.config.properties.MODEL;
 
 import java.util.HashMap;
 import java.util.Map;

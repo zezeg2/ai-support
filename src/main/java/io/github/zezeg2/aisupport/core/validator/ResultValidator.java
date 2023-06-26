@@ -8,6 +8,7 @@ import io.github.zezeg2.aisupport.common.TemplateConstants;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
+import io.github.zezeg2.aisupport.config.properties.MODEL;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
@@ -46,7 +47,8 @@ public abstract class ResultValidator {
     }
 
     public String validate(String identifier, String functionName) {
-        AIModel model = ModelMapper.map(openAIProperties.getModel());
+        MODEL annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
+        AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
         return validate(identifier, functionName, model);
     }
 
@@ -95,7 +97,7 @@ public abstract class ResultValidator {
 
     protected abstract String addTemplateContents(String functionName);
 
-    protected Prompt getPrompt(String functionName){
+    protected Prompt getPrompt(String functionName) {
         return promptManager.getContext().get(functionName);
     }
 }

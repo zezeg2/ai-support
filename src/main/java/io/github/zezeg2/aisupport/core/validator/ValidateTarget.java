@@ -1,8 +1,7 @@
 package io.github.zezeg2.aisupport.core.validator;
 
 
-import io.github.zezeg2.aisupport.common.enums.model.AIModel;
-import io.github.zezeg2.aisupport.common.enums.model.gpt.GPT3Model;
+import io.github.zezeg2.aisupport.config.properties.MODEL;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -17,4 +16,6 @@ public @interface ValidateTarget {
     String[] names() default {};
 
     int order() default Integer.MAX_VALUE;
+
+    MODEL model() default MODEL.NONE;
 }

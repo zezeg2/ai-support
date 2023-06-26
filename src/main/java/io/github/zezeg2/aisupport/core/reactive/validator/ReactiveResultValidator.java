@@ -6,13 +6,14 @@ import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.TemplateConstants;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
-import io.github.zezeg2.aisupport.common.enums.model.gpt.GPT3Model;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
+import io.github.zezeg2.aisupport.config.properties.MODEL;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
+import io.github.zezeg2.aisupport.core.validator.ValidateTarget;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import reactor.core.publisher.Mono;
 
@@ -52,7 +53,8 @@ public abstract class ReactiveResultValidator {
     }
 
     public Mono<String> validate(String identifier, String functionName) {
-        AIModel model = ModelMapper.map(openAIProperties.getModel());
+        MODEL annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
+        AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
         return validate(identifier, functionName, model);
     }
 
@@ -66,7 +68,8 @@ public abstract class ReactiveResultValidator {
                                         feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
                                     } catch (JsonProcessingException e) {
                                         return promptManager.getContext().deleteLastFeedbackMessage(getNamespace(functionName), identifier, 2)
-                                                .then(exchangeMessages(identifier, functionName, lastResponseContent, ContextType.FEEDBACK, model).doOnNext(ignored -> Mono.error(new RuntimeException(e))));
+                                                .then(exchangeMessages(identifier, functionName, lastResponseContent, ContextType.FEEDBACK, model)
+                                                        .flatMap(ignored -> Mono.<String>error(new RuntimeException(e))));
                                     }
 
                                     if (feedbackResult.isValid()) {
@@ -87,9 +90,9 @@ public abstract class ReactiveResultValidator {
         return promptManager.addMessage(identifier, contextType.equals(ContextType.PROMPT) ? functionName : getNamespace(functionName), ROLE.USER, message, contextType)
                 .then(switch (contextType) {
                     case PROMPT ->
-                            promptManager.exchangePromptMessages(identifier, functionName, GPT3Model.GPT_3_5_TURBO, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
+                            promptManager.exchangePromptMessages(identifier, functionName, model, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
                     case FEEDBACK ->
-                            promptManager.exchangeFeedbackMessages(identifier, getNamespace(functionName), GPT3Model.GPT_3_5_TURBO, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
+                            promptManager.exchangeFeedbackMessages(identifier, getNamespace(functionName), model, true).map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
                 });
     }
 

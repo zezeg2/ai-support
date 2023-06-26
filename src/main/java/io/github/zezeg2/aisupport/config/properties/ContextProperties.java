@@ -8,15 +8,4 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ContextProperties {
     private CONTEXT context = CONTEXT.LOCAL;
     private ENVIRONMENT environment = ENVIRONMENT.SYNCHRONOUS;
-
-    public enum ENVIRONMENT {
-        SYNCHRONOUS,
-        EVENTLOOP
-    }
-
-    public enum CONTEXT {
-        LOCAL,
-        REDIS,
-        MONGO
-    }
 }
