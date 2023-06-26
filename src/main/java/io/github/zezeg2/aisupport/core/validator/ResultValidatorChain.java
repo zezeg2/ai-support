@@ -1,5 +1,7 @@
 package io.github.zezeg2.aisupport.core.validator;
 
+import io.github.zezeg2.aisupport.common.enums.model.AIModel;
+
 import java.util.Arrays;
 import java.util.List;
 
