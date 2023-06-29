@@ -1,6 +1,7 @@
 package io.github.zezeg2.aisupport.context;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptMessages;
@@ -51,7 +52,11 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
             promptMessagesRegistry.put(namespace, new CopyOnWriteArrayList<>());
         }
         PromptMessages promptChatMessages = getPromptChatMessages(namespace, identifier);
-        promptChatMessages.getContent().add(message);
+        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptChatMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+            promptChatMessages.getContent().get(0).setContent(message.getContent());
+        } else {
+            promptChatMessages.getContent().add(message);
+        }
 
         if (promptMessagesRegistry.get(namespace).stream()
                 .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst().isEmpty()) {
@@ -65,7 +70,11 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
             feedbackMessagesRegistry.put(namespace, new CopyOnWriteArrayList<>());
         }
         FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
-        feedbackMessages.getContent().add(message);
+        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+            feedbackMessages.getContent().get(0).setContent(message.getContent());
+        } else {
+            feedbackMessages.getContent().add(message);
+        }
 
         if (feedbackMessagesRegistry.get(namespace).stream()
                 .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst().isEmpty()) {

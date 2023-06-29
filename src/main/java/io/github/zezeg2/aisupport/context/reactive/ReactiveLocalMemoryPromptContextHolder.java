@@ -1,6 +1,7 @@
 package io.github.zezeg2.aisupport.context.reactive;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptMessages;
@@ -53,9 +54,13 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
                         promptMessagesRegistry.put(namespace, new CopyOnWriteArrayList<>());
                     }
                 }).then(getPromptChatMessages(namespace, identifier))
-                .flatMap(promptChatMessages -> {
-                    promptChatMessages.getContent().add(message);
-                    return Mono.just(promptChatMessages);
+                .flatMap(promptMessages -> {
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+                        promptMessages.getContent().get(0).setContent(message.getContent());
+                    } else {
+                        promptMessages.getContent().add(message);
+                    }
+                    return Mono.just(promptMessages);
                 })
                 .flatMap(promptChatMessages -> {
                     if (promptMessagesRegistry.get(namespace).stream()
@@ -74,7 +79,11 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
                     }
                 }).then(getFeedbackChatMessages(namespace, identifier))
                 .flatMap(feedbackMessages -> {
-                    feedbackMessages.getContent().add(message);
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+                        feedbackMessages.getContent().get(0).setContent(message.getContent());
+                    } else {
+                        feedbackMessages.getContent().add(message);
+                    }
                     return Mono.just(feedbackMessages);
                 })
                 .flatMap(feedbackMessages -> {

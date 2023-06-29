@@ -57,7 +57,7 @@ public class AIFunction<T> {
             promptManager.getContext().savePrompt(functionName, prompt);
         }
         if (promptManager.getContext().getPromptChatMessages(functionName, identifier).getContent().isEmpty()) {
-            promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT);
+            promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT);
         }
         try {
             promptManager.addMessage(functionName, identifier, ROLE.USER, createValuesString(args), ContextType.PROMPT);

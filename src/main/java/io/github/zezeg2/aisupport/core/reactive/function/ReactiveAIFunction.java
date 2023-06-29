@@ -3,6 +3,7 @@ package io.github.zezeg2.aisupport.core.reactive.function;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
+import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.JsonUtils;
@@ -43,6 +44,10 @@ public class ReactiveAIFunction<T> {
     }
 
     protected Mono<Void> init(String identifier, List<Argument<?>> args) {
+        return init(identifier, args, null);
+    }
+
+    protected Mono<Void> init(String identifier, List<Argument<?>> args, T example) {
         try {
             return promptManager.getContext().get(functionName)
                     .switchIfEmpty(Mono.just(new Prompt(
@@ -58,12 +63,26 @@ public class ReactiveAIFunction<T> {
                             .flatMap(prompt -> promptManager.getContext().savePrompt(functionName, prompt).thenReturn(prompt)))
                     .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
                             .map(promptMessages -> promptMessages.getContent().isEmpty())
-                            .flatMap(isEmpty -> isEmpty ? promptManager.addMessage(identifier, functionName, ROLE.SYSTEM, prompt.toString(), ContextType.PROMPT) : Mono.empty()))
+                            .flatMap(isEmpty -> isEmpty ? promptManager.addMessage(identifier, functionName, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT) : Mono.empty())
+                            .thenReturn(prompt)
+                    )
+                    .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
+                            .flatMap(promptMessages -> {
+                                if (example == null) return Mono.empty();
+                                ChatMessage systemMessage = promptMessages.getContent().stream().filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue())).findFirst().orElseThrow();
+                                String generatedSystemMessageContent = prompt.generate(mapper, example);
+                                if (systemMessage.getContent().equals(generatedSystemMessageContent))
+                                    return Mono.empty();
+                                systemMessage.setContent(generatedSystemMessageContent);
+                                return promptManager.getContext().savePromptMessages(functionName, identifier, systemMessage);
+                            })
+                    )
                     .then(promptManager.addMessage(identifier, functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
+
 
     protected String createValuesString(List<Argument<?>> args) throws JsonProcessingException {
         Map<String, Object> valueMap = new LinkedHashMap<>();
@@ -112,20 +131,40 @@ public class ReactiveAIFunction<T> {
 
     public Mono<T> execute(String identifier, List<Argument<?>> args) {
         AIModel model = getDefaultModel();
-        return execute(identifier, args, model);
+        return execute(identifier, args, null, model);
     }
 
     public Mono<T> execute(List<Argument<?>> args) {
         AIModel model = getDefaultModel();
-        return execute("temp-identifier-" + UUID.randomUUID(), args, model);
+        return execute("temp-identifier-" + UUID.randomUUID(), args, null, model);
     }
 
     public Mono<T> execute(List<Argument<?>> args, AIModel model) {
-        return execute("temp-identifier-" + UUID.randomUUID(), args, model);
+        return execute("temp-identifier-" + UUID.randomUUID(), args, null, model);
     }
 
     public Mono<T> execute(String identifier, List<Argument<?>> args, AIModel model) {
-        return init(identifier, args)
+        return init(identifier, args, null)
+                .then(promptManager.exchangePromptMessages(identifier, functionName, model, true)
+                        .flatMap(chatCompletionResult -> parseResponseWithValidate(identifier, chatCompletionResult)));
+    }
+
+    public Mono<T> execute(String identifier, List<Argument<?>> args, T example) {
+        AIModel model = getDefaultModel();
+        return execute(identifier, args, example, model);
+    }
+
+    public Mono<T> execute(List<Argument<?>> args, T example) {
+        AIModel model = getDefaultModel();
+        return execute("temp-identifier-" + UUID.randomUUID(), args, example, model);
+    }
+
+    public Mono<T> execute(List<Argument<?>> args, T example, AIModel model) {
+        return execute("temp-identifier-" + UUID.randomUUID(), args, example, model);
+    }
+
+    public Mono<T> execute(String identifier, List<Argument<?>> args, T example, AIModel model) {
+        return init(identifier, args, example)
                 .then(promptManager.exchangePromptMessages(identifier, functionName, model, true)
                         .flatMap(chatCompletionResult -> parseResponseWithValidate(identifier, chatCompletionResult)));
     }

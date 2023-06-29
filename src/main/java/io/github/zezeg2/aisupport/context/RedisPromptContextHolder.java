@@ -3,6 +3,7 @@ package io.github.zezeg2.aisupport.context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptMessages;
@@ -99,7 +100,11 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     @Override
     public void savePromptMessages(String namespace, String identifier, ChatMessage message) {
         PromptMessages promptMessages = getPromptChatMessages(namespace, identifier);
-        promptMessages.getContent().add(message);
+        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+            promptMessages.getContent().get(0).setContent(message.getContent());
+        } else {
+            promptMessages.getContent().add(message);
+        }
         try {
             hashOperations.put(namespace, identifier, mapper.writeValueAsString(promptMessages));
         } catch (JsonProcessingException e) {
@@ -110,7 +115,11 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     @Override
     public void saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
-        feedbackMessages.getContent().add(message);
+        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+            feedbackMessages.getContent().get(0).setContent(message.getContent());
+        } else {
+            feedbackMessages.getContent().add(message);
+        }
         try {
             hashOperations.put(namespace, identifier, mapper.writeValueAsString(feedbackMessages));
         } catch (JsonProcessingException e) {

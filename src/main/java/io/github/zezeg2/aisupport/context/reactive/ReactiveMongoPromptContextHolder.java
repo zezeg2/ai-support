@@ -1,6 +1,7 @@
 package io.github.zezeg2.aisupport.context.reactive;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptMessages;
@@ -66,7 +67,13 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     @Override
     public Mono<Void> savePromptMessages(String namespace, String identifier, ChatMessage message) {
         return getPromptChatMessages(namespace, identifier)
-                .doOnNext(promptMessages -> promptMessages.getContent().add(message))
+                .doOnNext(promptMessages -> {
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+                        promptMessages.getContent().get(0).setContent(message.getContent());
+                    } else {
+                        promptMessages.getContent().add(message);
+                    }
+                })
                 .flatMap(promptMessages -> reactiveMongoTemplate.save(promptMessages, namespace))
                 .then();
     }
@@ -74,7 +81,13 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     @Override
     public Mono<Void> saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         return getFeedbackChatMessages(namespace, identifier)
-                .doOnNext(feedbackMessages -> feedbackMessages.getContent().add(message))
+                .doOnNext(feedbackMessages -> {
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+                        feedbackMessages.getContent().get(0).setContent(message.getContent());
+                    } else {
+                        feedbackMessages.getContent().add(message);
+                    }
+                })
                 .flatMap(feedbackMessages -> reactiveMongoTemplate.save(feedbackMessages, namespace))
                 .then();
     }

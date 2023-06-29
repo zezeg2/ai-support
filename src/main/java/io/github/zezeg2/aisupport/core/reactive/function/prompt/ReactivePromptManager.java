@@ -70,9 +70,14 @@ public class ReactivePromptManager {
     }
 
     protected Mono<ChatCompletionResult> createChatCompletion(AIModel model, List<ChatMessage> messages) {
+        return createChatCompletion(model, messages, 1d);
+    }
+
+    protected Mono<ChatCompletionResult> createChatCompletion(AIModel model, List<ChatMessage> messages, double topP) {
         return Mono.fromCallable(() -> service.createChatCompletion(ChatCompletionRequest.builder()
                 .model(model.getValue())
                 .messages(messages)
+                .topP(topP)
                 .build()));
     }
 }
