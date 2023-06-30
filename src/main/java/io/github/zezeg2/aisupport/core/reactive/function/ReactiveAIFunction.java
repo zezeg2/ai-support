@@ -20,12 +20,13 @@ import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidatorChain;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-
+@RequiredArgsConstructor
 public class ReactiveAIFunction<T> {
     private final String functionName;
     private final String purpose;
@@ -39,32 +40,6 @@ public class ReactiveAIFunction<T> {
     private final ReactiveResultValidatorChain resultValidatorChain;
     private final OpenAIProperties openAIProperties;
     private final double topP;
-
-    public ReactiveAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain, OpenAIProperties openAIProperties, double topP) {
-        this.functionName = functionName;
-        this.purpose = purpose;
-        this.constraints = constraints;
-        this.returnType = returnType;
-        this.mapper = mapper;
-        this.resolver = resolver;
-        this.promptManager = promptManager;
-        this.resultValidatorChain = resultValidatorChain;
-        this.openAIProperties = openAIProperties;
-        this.topP = topP;
-    }
-
-    public ReactiveAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain, OpenAIProperties openAIProperties) {
-        this.functionName = functionName;
-        this.purpose = purpose;
-        this.constraints = constraints;
-        this.returnType = returnType;
-        this.mapper = mapper;
-        this.resolver = resolver;
-        this.promptManager = promptManager;
-        this.resultValidatorChain = resultValidatorChain;
-        this.openAIProperties = openAIProperties;
-        this.topP = 1d;
-    }
 
     private AIModel getDefaultModel() {
         return ModelMapper.map(openAIProperties.getModel());

@@ -19,10 +19,12 @@ import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.core.validator.ResultValidatorChain;
+import lombok.RequiredArgsConstructor;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 public class AIFunction<T> {
     private final String functionName;
     private final String purpose;
@@ -34,33 +36,6 @@ public class AIFunction<T> {
     private final ResultValidatorChain resultValidatorChain;
     private final OpenAIProperties openAIProperties;
     private final double topP;
-
-    public AIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ResultValidatorChain resultValidatorChain, OpenAIProperties openAIProperties, double topP) {
-        this.functionName = functionName;
-        this.purpose = purpose;
-        this.constraints = constraints;
-        this.returnType = returnType;
-        this.mapper = mapper;
-        this.resolver = resolver;
-        this.promptManager = promptManager;
-        this.resultValidatorChain = resultValidatorChain;
-        this.openAIProperties = openAIProperties;
-        this.topP = topP;
-    }
-
-    public AIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ResultValidatorChain resultValidatorChain, OpenAIProperties openAIProperties) {
-        this.functionName = functionName;
-        this.purpose = purpose;
-        this.constraints = constraints;
-        this.returnType = returnType;
-        this.mapper = mapper;
-        this.resolver = resolver;
-        this.promptManager = promptManager;
-        this.resultValidatorChain = resultValidatorChain;
-        this.openAIProperties = openAIProperties;
-        this.topP = 1d;
-    }
-
 
     private AIModel getDefaultModel() {
         return ModelMapper.map(openAIProperties.getModel());

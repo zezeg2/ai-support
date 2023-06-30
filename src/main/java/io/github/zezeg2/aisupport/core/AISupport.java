@@ -23,6 +23,10 @@ public class AISupport {
     private final OpenAIProperties openAIProperties;
 
     public <T extends BaseSupportType> AIFunction<T> createFunction(Class<T> returnType, String functionName, String purpose, List<Constraint> constraintList) {
-        return new AIFunction<>(functionName, purpose, constraintList, returnType, mapper, resolver, promptManager, resultValidatorChain, openAIProperties);
+        return new AIFunction<>(functionName, purpose, constraintList, returnType, mapper, resolver, promptManager, resultValidatorChain, openAIProperties, 1d);
+    }
+
+    public <T extends BaseSupportType> AIFunction<T> createFunction(Class<T> returnType, String functionName, String purpose, List<Constraint> constraintList, double topP) {
+        return new AIFunction<>(functionName, purpose, constraintList, returnType, mapper, resolver, promptManager, resultValidatorChain, openAIProperties, topP);
     }
 }

@@ -23,6 +23,10 @@ public class ReactiveAISupport {
     private final OpenAIProperties openAIProperties;
 
     public <T extends BaseSupportType> ReactiveAIFunction<T> createFunction(Class<T> returnType, String functionName, String purpose, List<Constraint> constraintList) {
-        return new ReactiveAIFunction<>(functionName, purpose, constraintList, returnType, mapper, resolver, promptManager, resultValidatorChain, openAIProperties);
+        return new ReactiveAIFunction<>(functionName, purpose, constraintList, returnType, mapper, resolver, promptManager, resultValidatorChain, openAIProperties, 1d);
+    }
+
+    public <T extends BaseSupportType> ReactiveAIFunction<T> createFunction(Class<T> returnType, String functionName, String purpose, List<Constraint> constraintList, double topP) {
+        return new ReactiveAIFunction<>(functionName, purpose, constraintList, returnType, mapper, resolver, promptManager, resultValidatorChain, openAIProperties, topP);
     }
 }
