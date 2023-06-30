@@ -66,8 +66,8 @@ public class ReactiveAIFunction<T> {
                     .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
                             .map(promptMessages -> promptMessages.getContent().isEmpty())
                             .flatMap(isEmpty -> isEmpty ? example == null ?
-                                    promptManager.addMessage(identifier, functionName, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT) :
-                                    promptManager.addMessage(identifier, functionName, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT) :
+                                    promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT) :
+                                    promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT) :
                                     Mono.empty())
                             .thenReturn(prompt)
                     )
@@ -82,7 +82,7 @@ public class ReactiveAIFunction<T> {
                                 return promptManager.getContext().savePromptMessages(functionName, identifier, systemMessage);
                             })
                     )
-                    .then(promptManager.addMessage(identifier, functionName, ROLE.USER, createValuesString(args), ContextType.PROMPT));
+                    .then(promptManager.addMessage(functionName, identifier, ROLE.USER, createValuesString(args), ContextType.PROMPT));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -121,7 +121,7 @@ public class ReactiveAIFunction<T> {
 
     private Mono<T> parseResponseWithValidate(String identifier, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
-        return resultValidatorChain.validate(identifier, functionName, content).flatMap((stringResult) -> {
+        return resultValidatorChain.validate(functionName, identifier, content).flatMap((stringResult) -> {
             try {
                 return Mono.just(mapper.readValue(stringResult, returnType));
             } catch (JsonProcessingException e) {
@@ -134,7 +134,7 @@ public class ReactiveAIFunction<T> {
         if (params.getModel() == null) params.setModel(getDefaultModel());
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
         return init(params)
-                .then(promptManager.exchangePromptMessages(params.getIdentifier(), functionName, params.getModel(), topP, true)
+                .then(promptManager.exchangePromptMessages(functionName, params.getIdentifier(), params.getModel(), topP, true)
                         .flatMap(chatCompletionResult -> parseResponseWithValidate(params.getIdentifier(), chatCompletionResult)));
     }
 }
