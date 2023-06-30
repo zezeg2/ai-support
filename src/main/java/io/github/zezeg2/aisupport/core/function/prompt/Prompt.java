@@ -23,6 +23,7 @@ public class Prompt implements Serializable {
     private String inputFormat;
     private String resultFormat;
     private String feedbackFormat;
+    private double topP;
 
     @JsonCreator
     public Prompt(@JsonProperty("functionName") String functionName,
@@ -32,7 +33,8 @@ public class Prompt implements Serializable {
                   @JsonProperty("constraints") String constraints,
                   @JsonProperty("inputFormat") String inputFormat,
                   @JsonProperty("resultFormat") String resultFormat,
-                  @JsonProperty("feedbackFormat") String feedbackFormat) {
+                  @JsonProperty("feedbackFormat") String feedbackFormat,
+                  @JsonProperty("topP") double topP) {
         this.functionName = functionName;
         this.purpose = purpose;
         this.refTypes = refTypes;
@@ -41,6 +43,7 @@ public class Prompt implements Serializable {
         this.inputFormat = inputFormat;
         this.resultFormat = resultFormat;
         this.feedbackFormat = feedbackFormat;
+        this.topP = topP;
     }
 
     public String generate() {

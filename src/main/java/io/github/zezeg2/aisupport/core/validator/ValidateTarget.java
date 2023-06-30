@@ -17,5 +17,7 @@ public @interface ValidateTarget {
 
     int order() default Integer.MAX_VALUE;
 
+    double topP() default 1d;
+
     MODEL model() default MODEL.NONE;
 }

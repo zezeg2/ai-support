@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
-import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.JsonUtils;
 import io.github.zezeg2.aisupport.common.TemplateConstants;
@@ -21,30 +20,57 @@ import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidatorChain;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
-import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
-public class ReactiveAIFunction<T> {
-    protected final String functionName;
-    protected final String purpose;
-    protected final List<Constraint> constraints;
-    protected final Class<T> returnType;
-    protected final OpenAiService service;
-    protected final ObjectMapper mapper;
-    protected final ConstructResolver resolver;
-    protected final ReactivePromptManager promptManager;
-    protected final ReactiveResultValidatorChain resultValidatorChain;
-    private final OpenAIProperties openAIProperties;
 
-    protected AIModel getDefaultModel() {
+public class ReactiveAIFunction<T> {
+    private final String functionName;
+    private final String purpose;
+
+    private final List<Constraint> constraints;
+
+    private final Class<T> returnType;
+    private final ObjectMapper mapper;
+    private final ConstructResolver resolver;
+    private final ReactivePromptManager promptManager;
+    private final ReactiveResultValidatorChain resultValidatorChain;
+    private final OpenAIProperties openAIProperties;
+    private final double topP;
+
+    public ReactiveAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain, OpenAIProperties openAIProperties, double topP) {
+        this.functionName = functionName;
+        this.purpose = purpose;
+        this.constraints = constraints;
+        this.returnType = returnType;
+        this.mapper = mapper;
+        this.resolver = resolver;
+        this.promptManager = promptManager;
+        this.resultValidatorChain = resultValidatorChain;
+        this.openAIProperties = openAIProperties;
+        this.topP = topP;
+    }
+
+    public ReactiveAIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain, OpenAIProperties openAIProperties) {
+        this.functionName = functionName;
+        this.purpose = purpose;
+        this.constraints = constraints;
+        this.returnType = returnType;
+        this.mapper = mapper;
+        this.resolver = resolver;
+        this.promptManager = promptManager;
+        this.resultValidatorChain = resultValidatorChain;
+        this.openAIProperties = openAIProperties;
+        this.topP = 1d;
+    }
+
+    private AIModel getDefaultModel() {
         return ModelMapper.map(openAIProperties.getModel());
     }
 
-    protected Mono<Void> init(ExecuteParameters<T> params) {
+    private Mono<Void> init(ExecuteParameters<T> params) {
         List<Argument<?>> args = params.getArgs();
         String identifier = params.getIdentifier();
         T example = params.getExample();
@@ -58,7 +84,8 @@ public class ReactiveAIFunction<T> {
                                     createConstraints(constraints),
                                     JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
                                     BuildFormatUtil.getFormatString(returnType),
-                                    BuildFormatUtil.getFormatString(FeedbackResponse.class)
+                                    BuildFormatUtil.getFormatString(FeedbackResponse.class),
+                                    topP
                             ))
                             .flatMap(prompt -> promptManager.getContext().savePrompt(functionName, prompt).thenReturn(prompt)))
                     .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
@@ -87,21 +114,21 @@ public class ReactiveAIFunction<T> {
     }
 
 
-    protected String createValuesString(List<Argument<?>> args) throws JsonProcessingException {
+    private String createValuesString(List<Argument<?>> args) throws JsonProcessingException {
         Map<String, Object> valueMap = new LinkedHashMap<>();
         args.forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
 
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(valueMap);
     }
 
-    protected String resolveRefTypes(List<Argument<?>> args) {
+    private String resolveRefTypes(List<Argument<?>> args) {
         Set<Class<?>> classList = args.stream().map(Argument::getType).collect(Collectors.toSet());
         classList.add(returnType);
         classList.add(FeedbackResponse.class);
         return resolver.resolve(classList);
     }
 
-    protected String createConstraints(List<Constraint> constraintList) {
+    private String createConstraints(List<Constraint> constraintList) {
         return !constraintList.isEmpty() ? constraintList.stream()
                 .map(constraint -> !constraint.topic().isBlank() ? constraint.topic() + ": " + constraint.description() : constraint.description())
                 .collect(Collectors.joining("\n- ", "- ", "\n")) : "";
@@ -117,7 +144,7 @@ public class ReactiveAIFunction<T> {
         return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, returnType.getSimpleName());
     }
 
-    protected Mono<T> parseResponseWithValidate(String identifier, ChatCompletionResult response) {
+    private Mono<T> parseResponseWithValidate(String identifier, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
         return resultValidatorChain.validate(identifier, functionName, content).flatMap((stringResult) -> {
             try {
@@ -132,7 +159,7 @@ public class ReactiveAIFunction<T> {
         if (params.getModel() == null) params.setModel(getDefaultModel());
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
         return init(params)
-                .then(promptManager.exchangePromptMessages(params.getIdentifier(), functionName, params.getModel(), true)
+                .then(promptManager.exchangePromptMessages(params.getIdentifier(), functionName, params.getModel(), topP, true)
                         .flatMap(chatCompletionResult -> parseResponseWithValidate(params.getIdentifier(), chatCompletionResult)));
     }
 }

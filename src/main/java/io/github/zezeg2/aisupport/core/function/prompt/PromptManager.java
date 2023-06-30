@@ -34,18 +34,18 @@ public class PromptManager {
         }
     }
 
-    public ChatCompletionResult exchangePromptMessages(String namespace, String identifier, AIModel model, boolean save) {
+    public ChatCompletionResult exchangePromptMessages(String namespace, String identifier, AIModel model, double topP, boolean save) {
         List<ChatMessage> contextMessages = context.getPromptChatMessages(namespace, identifier).getContent();
-        return getChatCompletionResult(namespace, identifier, model, save, contextMessages, ContextType.PROMPT);
+        return getChatCompletionResult(namespace, identifier, model, topP, save, contextMessages, ContextType.PROMPT);
     }
 
-    public ChatCompletionResult exchangeFeedbackMessages(String namespace, String identifier, AIModel model, boolean save) {
+    public ChatCompletionResult exchangeFeedbackMessages(String namespace, String identifier, AIModel model, double topP, boolean save) {
         List<ChatMessage> contextMessages = context.getFeedbackChatMessages(namespace, identifier).getContent();
-        return getChatCompletionResult(namespace, identifier, model, save, contextMessages, ContextType.FEEDBACK);
+        return getChatCompletionResult(namespace, identifier, model, topP, save, contextMessages, ContextType.FEEDBACK);
     }
 
-    protected ChatCompletionResult getChatCompletionResult(String namespace, String identifier, AIModel model, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
-        ChatCompletionResult response = createChatCompletion(model, contextMessages);
+    protected ChatCompletionResult getChatCompletionResult(String namespace, String identifier, AIModel model, double topP, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
+        ChatCompletionResult response = createChatCompletion(model, contextMessages, topP);
         ChatMessage responseMessage = response.getChoices().get(0).getMessage();
         responseMessage.setContent(JsonUtils.extractJsonFromMessage(responseMessage.getContent()));
         if (save) {
@@ -58,10 +58,11 @@ public class PromptManager {
         return response;
     }
 
-    protected ChatCompletionResult createChatCompletion(AIModel model, List<ChatMessage> messages) {
+    protected ChatCompletionResult createChatCompletion(AIModel model, List<ChatMessage> messages, double topP) {
         return service.createChatCompletion(ChatCompletionRequest.builder()
                 .model(model.getValue())
                 .messages(messages)
+                .topP(topP)
                 .build());
     }
 }

@@ -82,10 +82,14 @@ public abstract class ResultValidator {
     protected String exchangeMessages(String functionName, String identifier, String message, ContextType contextType, AIModel model) {
         promptManager.addMessage(functionName, identifier, ROLE.USER, message, contextType);
         ChatMessage responseMessage = switch (contextType) {
-            case PROMPT ->
-                    promptManager.exchangePromptMessages(functionName, identifier, model, true).getChoices().get(0).getMessage();
-            case FEEDBACK ->
-                    promptManager.exchangeFeedbackMessages(functionName, identifier, model, true).getChoices().get(0).getMessage();
+            case PROMPT -> {
+                double topP = promptManager.getContext().get(functionName).getTopP();
+                yield promptManager.exchangePromptMessages(functionName, identifier, model, topP, true).getChoices().get(0).getMessage();
+            }
+            case FEEDBACK -> {
+                double topP = this.getClass().getAnnotation(ValidateTarget.class).topP();
+                yield promptManager.exchangeFeedbackMessages(functionName, identifier, model, topP, true).getChoices().get(0).getMessage();
+            }
         };
         return responseMessage.getContent();
     }

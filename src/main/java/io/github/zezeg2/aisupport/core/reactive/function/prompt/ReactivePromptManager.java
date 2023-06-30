@@ -23,11 +23,11 @@ public class ReactivePromptManager {
     protected final ReactivePromptContextHolder context;
     protected final ContextProperties contextProperties;
 
-    public Mono<Void> addMessage(String identifier, String namespace, ROLE role, String message, ContextType contextType) {
-        return addMessageToContext(identifier, namespace, role, message, contextType);
+    public Mono<Void> addMessage(String namespace, String identifier, ROLE role, String message, ContextType contextType) {
+        return addMessageToContext(namespace, identifier, role, message, contextType);
     }
 
-    protected Mono<Void> addMessageToContext(String identifier, String namespace, ROLE role, String message, ContextType contextType) {
+    protected Mono<Void> addMessageToContext(String namespace, String identifier, ROLE role, String message, ContextType contextType) {
         return Mono.just(identifier).flatMap(id -> switch (contextType) {
             case PROMPT -> context.savePromptMessages(namespace, id, new ChatMessage(role.getValue(), message));
             case FEEDBACK -> context.saveFeedbackMessages(namespace, id, new ChatMessage(role.getValue(), message));
@@ -35,20 +35,20 @@ public class ReactivePromptManager {
 
     }
 
-    public Mono<ChatCompletionResult> exchangePromptMessages(String identifier, String namespace, AIModel model, boolean save) {
+    public Mono<ChatCompletionResult> exchangePromptMessages(String namespace, String identifier, AIModel model, double topP, boolean save) {
         return Mono.just(identifier)
                 .flatMap(id -> context.getPromptChatMessages(namespace, id))
-                .flatMap(contextMessages -> getChatCompletionResult(identifier, namespace, model, save, contextMessages.getContent(), ContextType.PROMPT));
+                .flatMap(contextMessages -> getChatCompletionResult(namespace, identifier, model, topP, save, contextMessages.getContent(), ContextType.PROMPT));
     }
 
-    public Mono<ChatCompletionResult> exchangeFeedbackMessages(String identifier, String namespace, AIModel model, boolean save) {
+    public Mono<ChatCompletionResult> exchangeFeedbackMessages(String namespace, String identifier, AIModel model, double topP, boolean save) {
         return Mono.just(identifier)
                 .flatMap(id -> context.getFeedbackChatMessages(namespace, id))
-                .flatMap(contextMessages -> getChatCompletionResult(identifier, namespace, model, save, contextMessages.getContent(), ContextType.FEEDBACK));
+                .flatMap(contextMessages -> getChatCompletionResult(namespace, identifier, model, topP, save, contextMessages.getContent(), ContextType.FEEDBACK));
     }
 
-    protected Mono<ChatCompletionResult> getChatCompletionResult(String identifier, String namespace, AIModel model, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
-        return createChatCompletion(model, contextMessages)
+    protected Mono<ChatCompletionResult> getChatCompletionResult(String namespace, String identifier, AIModel model, double topP, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
+        return createChatCompletion(model, contextMessages, topP)
                 .flatMap(response -> {
                     ChatMessage responseMessage = response.getChoices().get(0).getMessage();
                     responseMessage.setContent(JsonUtils.extractJsonFromMessage(responseMessage.getContent()));
@@ -67,10 +67,6 @@ public class ReactivePromptManager {
                     }
                     return Mono.just(response);
                 });
-    }
-
-    protected Mono<ChatCompletionResult> createChatCompletion(AIModel model, List<ChatMessage> messages) {
-        return createChatCompletion(model, messages, 1d);
     }
 
     protected Mono<ChatCompletionResult> createChatCompletion(AIModel model, List<ChatMessage> messages, double topP) {

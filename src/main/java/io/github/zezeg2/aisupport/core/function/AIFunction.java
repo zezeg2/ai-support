@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
-import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.JsonUtils;
 import io.github.zezeg2.aisupport.common.TemplateConstants;
@@ -20,29 +19,54 @@ import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.core.validator.ResultValidatorChain;
-import lombok.RequiredArgsConstructor;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
 public class AIFunction<T> {
-    protected final String functionName;
-    protected final String purpose;
-    protected final List<Constraint> constraints;
-    protected final Class<T> returnType;
-    protected final OpenAiService service;
-    protected final ObjectMapper mapper;
-    protected final ConstructResolver resolver;
-    protected final PromptManager promptManager;
-    protected final ResultValidatorChain resultValidatorChain;
+    private final String functionName;
+    private final String purpose;
+    private final List<Constraint> constraints;
+    private final Class<T> returnType;
+    private final ObjectMapper mapper;
+    private final ConstructResolver resolver;
+    private final PromptManager promptManager;
+    private final ResultValidatorChain resultValidatorChain;
     private final OpenAIProperties openAIProperties;
+    private final double topP;
 
-    protected AIModel getDefaultModel() {
+    public AIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ResultValidatorChain resultValidatorChain, OpenAIProperties openAIProperties, double topP) {
+        this.functionName = functionName;
+        this.purpose = purpose;
+        this.constraints = constraints;
+        this.returnType = returnType;
+        this.mapper = mapper;
+        this.resolver = resolver;
+        this.promptManager = promptManager;
+        this.resultValidatorChain = resultValidatorChain;
+        this.openAIProperties = openAIProperties;
+        this.topP = topP;
+    }
+
+    public AIFunction(String functionName, String purpose, List<Constraint> constraints, Class<T> returnType, ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ResultValidatorChain resultValidatorChain, OpenAIProperties openAIProperties) {
+        this.functionName = functionName;
+        this.purpose = purpose;
+        this.constraints = constraints;
+        this.returnType = returnType;
+        this.mapper = mapper;
+        this.resolver = resolver;
+        this.promptManager = promptManager;
+        this.resultValidatorChain = resultValidatorChain;
+        this.openAIProperties = openAIProperties;
+        this.topP = 1d;
+    }
+
+
+    private AIModel getDefaultModel() {
         return ModelMapper.map(openAIProperties.getModel());
     }
 
-    protected void init(ExecuteParameters<T> params) {
+    private void init(ExecuteParameters<T> params) {
         List<Argument<?>> args = params.getArgs();
         String identifier = params.getIdentifier();
         T example = params.getExample();
@@ -57,7 +81,8 @@ public class AIFunction<T> {
                     createConstraints(constraints),
                     JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
                     BuildFormatUtil.getFormatString(returnType),
-                    BuildFormatUtil.getFormatString(FeedbackResponse.class)
+                    BuildFormatUtil.getFormatString(FeedbackResponse.class),
+                    topP
             );
             promptManager.getContext().savePrompt(functionName, prompt);
         }
@@ -83,21 +108,21 @@ public class AIFunction<T> {
 
     }
 
-    protected String createValuesString(List<Argument<?>> args) throws JsonProcessingException {
+    private String createValuesString(List<Argument<?>> args) throws JsonProcessingException {
         Map<String, Object> valueMap = new LinkedHashMap<>();
         args.forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
 
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(valueMap);
     }
 
-    protected String resolveRefTypes(List<Argument<?>> args) {
+    private String resolveRefTypes(List<Argument<?>> args) {
         Set<Class<?>> classList = args.stream().map(Argument::getType).collect(Collectors.toSet());
         classList.add(returnType);
         classList.add(FeedbackResponse.class);
         return resolver.resolve(classList);
     }
 
-    protected String createConstraints(List<Constraint> constraintList) {
+    private String createConstraints(List<Constraint> constraintList) {
         return !constraintList.isEmpty() ? constraintList.stream()
                 .map(constraint -> !constraint.topic().isBlank() ? constraint.topic() + ": " + constraint.description() : constraint.description())
                 .collect(Collectors.joining("\n- ", "- ", "\n")) : "";
@@ -113,7 +138,7 @@ public class AIFunction<T> {
         return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, returnType.getSimpleName());
     }
 
-    protected T parseResponseWithValidate(String identifier, ChatCompletionResult response) {
+    private T parseResponseWithValidate(String identifier, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
         content = resultValidatorChain.validate(identifier, functionName, content);
         try {
@@ -127,7 +152,7 @@ public class AIFunction<T> {
         if (params.getModel() == null) params.setModel(getDefaultModel());
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
         init(params);
-        ChatCompletionResult response = promptManager.exchangePromptMessages(functionName, params.getIdentifier(), params.getModel(), true);
+        ChatCompletionResult response = promptManager.exchangePromptMessages(functionName, params.getIdentifier(), params.getModel(), topP, true);
         return parseResponseWithValidate(params.getIdentifier(), response);
     }
 }
