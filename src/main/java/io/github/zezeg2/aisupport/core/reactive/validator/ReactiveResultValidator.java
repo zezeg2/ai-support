@@ -87,17 +87,15 @@ public abstract class ReactiveResultValidator {
 
 
     protected Mono<String> exchangeMessages(String functionName, String identifier, String message, ContextType contextType, AIModel model) {
-        return promptManager.addMessage(identifier, contextType.equals(ContextType.PROMPT) ? functionName : getNamespace(functionName), ROLE.USER, message, contextType)
+        return promptManager.addMessage(contextType.equals(ContextType.PROMPT) ? functionName : getNamespace(functionName), identifier, ROLE.USER, message, contextType)
                 .then(switch (contextType) {
                     case PROMPT -> promptManager.getContext().get(functionName)
                             .map(Prompt::getTopP)
                             .flatMap(topP -> promptManager.exchangePromptMessages(functionName, identifier, model, topP, true)
                                     .map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent()));
-                    case FEEDBACK -> {
-                        double topP = this.getClass().getAnnotation(ValidateTarget.class).topP();
-                        yield promptManager.exchangeFeedbackMessages(getNamespace(functionName), identifier, model, topP, true)
-                                .map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
-                    }
+                    case FEEDBACK ->
+                            promptManager.exchangeFeedbackMessages(getNamespace(functionName), identifier, model, this.getClass().getAnnotation(ValidateTarget.class).topP(), true)
+                                    .map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
                 });
     }
 
