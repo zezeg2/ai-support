@@ -42,11 +42,11 @@ public class AIFunction<T> {
         return ModelMapper.map(openAIProperties.getModel());
     }
 
-    protected void init(List<Argument<?>> args, String identifier) {
-        init(args, identifier, null);
-    }
+    protected void init(ExecuteParameters<T> params) {
+        List<Argument<?>> args = params.getArgs();
+        String identifier = params.getIdentifier();
+        T example = params.getExample();
 
-    protected void init(List<Argument<?>> args, String identifier, T example) {
         Prompt prompt = promptManager.getContext().get(functionName);
         if (prompt == null) {
             prompt = new Prompt(
@@ -62,7 +62,10 @@ public class AIFunction<T> {
             promptManager.getContext().savePrompt(functionName, prompt);
         }
         if (promptManager.getContext().getPromptChatMessages(functionName, identifier).getContent().isEmpty()) {
-            promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT);
+            if (example == null)
+                promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT);
+            else
+                promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT);
         }
         if (example != null) {
             ChatMessage systemMessage = promptManager.getContext().getPromptChatMessages(functionName, identifier).getContent().stream().filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue())).findFirst().orElseThrow();
@@ -120,41 +123,11 @@ public class AIFunction<T> {
         }
     }
 
-    public T execute(String identifier, List<Argument<?>> args) {
-        AIModel model = getDefaultModel();
-        return execute(identifier, args, null, model);
-    }
-
-    public T execute(List<Argument<?>> args) {
-        AIModel model = getDefaultModel();
-        return execute("temp-identifier-" + UUID.randomUUID(), args, null, model);
-    }
-
-    public T execute(List<Argument<?>> args, AIModel model) {
-        return execute("temp-identifier-" + UUID.randomUUID(), args, null, model);
-    }
-
-    public T execute(String identifier, List<Argument<?>> args, AIModel model) {
-        return execute(identifier, args, null, model);
-    }
-
-    public T execute(String identifier, List<Argument<?>> args, T example) {
-        AIModel model = getDefaultModel();
-        return execute(identifier, args, example, model);
-    }
-
-    public T execute(List<Argument<?>> args, T example) {
-        AIModel model = getDefaultModel();
-        return execute("temp-identifier-" + UUID.randomUUID(), args, example, model);
-    }
-
-    public T execute(List<Argument<?>> args, T example, AIModel model) {
-        return execute("temp-identifier-" + UUID.randomUUID(), args, example, model);
-    }
-
-    public T execute(String identifier, List<Argument<?>> args, T example, AIModel model) {
-        init(args, identifier, example);
-        ChatCompletionResult response = promptManager.exchangePromptMessages(functionName, identifier, model, true);
-        return parseResponseWithValidate(identifier, response);
+    public T execute(ExecuteParameters<T> params) {
+        if (params.getModel() == null) params.setModel(getDefaultModel());
+        if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
+        init(params);
+        ChatCompletionResult response = promptManager.exchangePromptMessages(functionName, params.getIdentifier(), params.getModel(), true);
+        return parseResponseWithValidate(params.getIdentifier(), response);
     }
 }
