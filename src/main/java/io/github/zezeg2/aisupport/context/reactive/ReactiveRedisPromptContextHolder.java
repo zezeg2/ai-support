@@ -108,7 +108,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     public Mono<Void> savePromptMessages(String namespace, String identifier, ChatMessage message) {
         return getPromptChatMessages(namespace, identifier)
                 .doOnNext(promptMessages -> {
-                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
                         promptMessages.getContent().get(0).setContent(message.getContent());
                     } else {
                         promptMessages.getContent().add(message);
@@ -127,7 +127,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     public Mono<Void> saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         return getFeedbackChatMessages(namespace, identifier)
                 .doOnNext(feedbackMessages -> {
-                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
                         feedbackMessages.getContent().get(0).setContent(message.getContent());
                     } else {
                         feedbackMessages.getContent().add(message);

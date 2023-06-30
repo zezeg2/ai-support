@@ -58,7 +58,7 @@ public class MongoPromptContextHolder implements PromptContextHolder {
     @Override
     public void savePromptMessages(String namespace, String identifier, ChatMessage message) {
         PromptMessages promptMessages = getPromptChatMessages(namespace, identifier);
-        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
             promptMessages.getContent().get(0).setContent(message.getContent());
         } else {
             promptMessages.getContent().add(message);
@@ -69,7 +69,7 @@ public class MongoPromptContextHolder implements PromptContextHolder {
     @Override
     public void saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
-        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
             feedbackMessages.getContent().get(0).setContent(message.getContent());
         } else {
             feedbackMessages.getContent().add(message);

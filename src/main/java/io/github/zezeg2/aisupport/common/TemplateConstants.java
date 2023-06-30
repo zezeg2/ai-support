@@ -83,7 +83,7 @@ public class TemplateConstants {
             ```json
             %s
             ```
-            
+                        
             Result Example:
             ```json
             %s

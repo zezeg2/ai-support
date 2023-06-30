@@ -52,7 +52,7 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
             promptMessagesRegistry.put(namespace, new CopyOnWriteArrayList<>());
         }
         PromptMessages promptChatMessages = getPromptChatMessages(namespace, identifier);
-        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptChatMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptChatMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
             promptChatMessages.getContent().get(0).setContent(message.getContent());
         } else {
             promptChatMessages.getContent().add(message);
@@ -70,7 +70,7 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
             feedbackMessagesRegistry.put(namespace, new CopyOnWriteArrayList<>());
         }
         FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
-        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
             feedbackMessages.getContent().get(0).setContent(message.getContent());
         } else {
             feedbackMessages.getContent().add(message);

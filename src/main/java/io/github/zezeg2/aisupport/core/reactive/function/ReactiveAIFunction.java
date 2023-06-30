@@ -111,7 +111,7 @@ public class ReactiveAIFunction<T> {
                 .map(argument -> argument.getTypeName() + " " + argument.getFieldName())
                 .collect(Collectors.joining(", "));
 
-        return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, setReturnType());
+        return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, returnType.getSimpleName());
     }
 
     protected Mono<T> parseResponseWithValidate(String identifier, ChatCompletionResult response) {
@@ -123,10 +123,6 @@ public class ReactiveAIFunction<T> {
                 return Mono.error(new RuntimeException(e));
             }
         }).onErrorResume(Mono::error);
-    }
-
-    public String buildResultFormat() {
-        return BuildFormatUtil.getFormatString(returnType);
     }
 
     public Mono<T> execute(String identifier, List<Argument<?>> args) {
@@ -144,9 +140,7 @@ public class ReactiveAIFunction<T> {
     }
 
     public Mono<T> execute(String identifier, List<Argument<?>> args, AIModel model) {
-        return init(identifier, args, null)
-                .then(promptManager.exchangePromptMessages(identifier, functionName, model, true)
-                        .flatMap(chatCompletionResult -> parseResponseWithValidate(identifier, chatCompletionResult)));
+        return execute(identifier, args, null, model);
     }
 
     public Mono<T> execute(String identifier, List<Argument<?>> args, T example) {
@@ -167,9 +161,5 @@ public class ReactiveAIFunction<T> {
         return init(identifier, args, example)
                 .then(promptManager.exchangePromptMessages(identifier, functionName, model, true)
                         .flatMap(chatCompletionResult -> parseResponseWithValidate(identifier, chatCompletionResult)));
-    }
-
-    protected String setReturnType() {
-        return returnType.getSimpleName();
     }
 }

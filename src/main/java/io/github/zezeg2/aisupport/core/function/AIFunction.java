@@ -3,6 +3,7 @@ package io.github.zezeg2.aisupport.core.function;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
+import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.JsonUtils;
@@ -15,10 +16,10 @@ import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
-import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
-import io.github.zezeg2.aisupport.core.validator.ResultValidatorChain;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
+import io.github.zezeg2.aisupport.core.validator.ResultValidatorChain;
 import lombok.RequiredArgsConstructor;
 
 import java.util.*;
@@ -42,6 +43,10 @@ public class AIFunction<T> {
     }
 
     protected void init(List<Argument<?>> args, String identifier) {
+        init(args, identifier, null);
+    }
+
+    protected void init(List<Argument<?>> args, String identifier, T example) {
         Prompt prompt = promptManager.getContext().get(functionName);
         if (prompt == null) {
             prompt = new Prompt(
@@ -58,6 +63,14 @@ public class AIFunction<T> {
         }
         if (promptManager.getContext().getPromptChatMessages(functionName, identifier).getContent().isEmpty()) {
             promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT);
+        }
+        if (example != null) {
+            ChatMessage systemMessage = promptManager.getContext().getPromptChatMessages(functionName, identifier).getContent().stream().filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue())).findFirst().orElseThrow();
+            String generatedSystemMessageContent = prompt.generate(mapper, example);
+            if (!systemMessage.getContent().equals(generatedSystemMessageContent)) {
+                systemMessage.setContent(generatedSystemMessageContent);
+                promptManager.getContext().savePromptMessages(functionName, identifier, systemMessage);
+            }
         }
         try {
             promptManager.addMessage(functionName, identifier, ROLE.USER, createValuesString(args), ContextType.PROMPT);
@@ -94,7 +107,7 @@ public class AIFunction<T> {
                 .map(argument -> argument.getTypeName() + " " + argument.getFieldName())
                 .collect(Collectors.joining(", "));
 
-        return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, setReturnType());
+        return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, returnType.getSimpleName());
     }
 
     protected T parseResponseWithValidate(String identifier, ChatCompletionResult response) {
@@ -109,25 +122,39 @@ public class AIFunction<T> {
 
     public T execute(String identifier, List<Argument<?>> args) {
         AIModel model = getDefaultModel();
-        return execute(identifier, args, model);
+        return execute(identifier, args, null, model);
     }
 
     public T execute(List<Argument<?>> args) {
         AIModel model = getDefaultModel();
-        return execute("temp-identifier-" + UUID.randomUUID(), args, model);
+        return execute("temp-identifier-" + UUID.randomUUID(), args, null, model);
     }
 
     public T execute(List<Argument<?>> args, AIModel model) {
-        return execute("temp-identifier-" + UUID.randomUUID(), args, model);
+        return execute("temp-identifier-" + UUID.randomUUID(), args, null, model);
     }
 
     public T execute(String identifier, List<Argument<?>> args, AIModel model) {
-        init(args, identifier);
-        ChatCompletionResult response = promptManager.exchangePromptMessages(functionName, identifier, model, true);
-        return parseResponseWithValidate(identifier, response);
+        return execute(identifier, args, null, model);
     }
 
-    protected String setReturnType() {
-        return returnType.getSimpleName();
+    public T execute(String identifier, List<Argument<?>> args, T example) {
+        AIModel model = getDefaultModel();
+        return execute(identifier, args, example, model);
+    }
+
+    public T execute(List<Argument<?>> args, T example) {
+        AIModel model = getDefaultModel();
+        return execute("temp-identifier-" + UUID.randomUUID(), args, example, model);
+    }
+
+    public T execute(List<Argument<?>> args, T example, AIModel model) {
+        return execute("temp-identifier-" + UUID.randomUUID(), args, example, model);
+    }
+
+    public T execute(String identifier, List<Argument<?>> args, T example, AIModel model) {
+        init(args, identifier, example);
+        ChatCompletionResult response = promptManager.exchangePromptMessages(functionName, identifier, model, true);
+        return parseResponseWithValidate(identifier, response);
     }
 }

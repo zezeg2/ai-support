@@ -55,7 +55,7 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
                     }
                 }).then(getPromptChatMessages(namespace, identifier))
                 .flatMap(promptMessages -> {
-                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
                         promptMessages.getContent().get(0).setContent(message.getContent());
                     } else {
                         promptMessages.getContent().add(message);
@@ -79,7 +79,7 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
                     }
                 }).then(getFeedbackChatMessages(namespace, identifier))
                 .flatMap(feedbackMessages -> {
-                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))){
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
                         feedbackMessages.getContent().get(0).setContent(message.getContent());
                     } else {
                         feedbackMessages.getContent().add(message);
@@ -130,5 +130,4 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
             }
         });
     }
-
 }
