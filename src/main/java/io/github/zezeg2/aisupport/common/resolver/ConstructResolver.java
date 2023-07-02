@@ -8,23 +8,58 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
 
+/**
+ * The ConstructResolver interface provides methods for resolving and generating class maps.
+ * It is used to convert class information into a string representation.
+ *
+ * @since 1.0
+ */
 public interface ConstructResolver {
 
+    /**
+     * Converts the given class map to a string representation.
+     *
+     * @param classMap The class map to convert.
+     * @return The string representation of the class map.
+     */
     String toString(Map<String, Map<String, List<String>>> classMap);
 
+    /**
+     * Resolves the given class and returns its string representation.
+     *
+     * @param clazz The class to resolve.
+     * @return The string representation of the resolved class.
+     */
     default String resolve(Class<?> clazz) {
         return toString(generateClassMap(Collections.singleton(clazz), null));
     }
 
+    /**
+     * Resolves the given set of classes and returns their string representation.
+     *
+     * @param classSet The set of classes to resolve.
+     * @return The string representation of the resolved classes.
+     */
     default String resolve(Set<Class<?>> classSet) {
         return toString(generateClassMap(classSet, null));
     }
 
+    /**
+     * Generates a class map for the given set of classes.
+     *
+     * @param classSet The set of classes to generate the class map for.
+     * @param classMap The existing class map to populate (optional).
+     * @return The generated class map.
+     */
     default Map<String, Map<String, List<String>>> generateClassMap(Set<Class<?>> classSet, Map<String, Map<String, List<String>>> classMap) {
-        if (classMap == null) classMap = new HashMap<>();
+        if (classMap == null) {
+            classMap = new HashMap<>();
+        }
 
         for (Class<?> clazz : classSet) {
-            if (clazz.getSuperclass() == null) continue;
+            if (clazz.getSuperclass() == null) {
+                continue;
+            }
             if (clazz.equals(Object.class) ||
                     clazz.equals(Mono.class) ||
                     clazz.equals(Flux.class) ||
@@ -35,8 +70,9 @@ public interface ConstructResolver {
                     clazz.getSuperclass().equals(HashMap.class) ||
                     clazz.getSuperclass().equals(Set.class) ||
                     clazz.getSuperclass().equals(HashSet.class) ||
-                    clazz.getSuperclass().equals(List.class)
-            ) continue;
+                    clazz.getSuperclass().equals(List.class)) {
+                continue;
+            }
 
             Map<String, List<String>> fieldsMap = new HashMap<>();
             for (Field field : clazz.getDeclaredFields()) {
@@ -48,6 +84,13 @@ public interface ConstructResolver {
         return classMap;
     }
 
+    /**
+     * Adds a field to the class map.
+     *
+     * @param classMap  The class map to populate.
+     * @param fieldsMap The map of fields.
+     * @param field     The field to add.
+     */
     default void addFieldToMap(Map<String, Map<String, List<String>>> classMap, Map<String, List<String>> fieldsMap, Field field) {
         Class<?> type = field.getType();
         Type genericType = field.getGenericType();
@@ -66,6 +109,14 @@ public interface ConstructResolver {
         fieldsMap.put(field.getName(), fieldInfo);
     }
 
+    /**
+     * Adds the parameterized type information to the field information.
+     *
+     * @param fieldInfo         The list of field information.
+     * @param temp              The list of temporary classes.
+     * @param parameterizedType The parameterized type.
+     * @param type              The field type.
+     */
     default void addParameterizedTypeToFieldInfo(List<String> fieldInfo, List<Class<?>> temp, ParameterizedType parameterizedType, Class<?> type) {
         Type[] typeArguments = parameterizedType.getActualTypeArguments();
         List<String> collect = new ArrayList<>();
@@ -89,10 +140,19 @@ public interface ConstructResolver {
         fieldInfo.add(String.format("%s<%s>", type.getSimpleName(), String.join(", ", collect)));
     }
 
-
+    /**
+     * Analyzes non-primitive classes recursively and generates their class maps.
+     *
+     * @param classMap The class map to populate.
+     * @param classes  The list of classes to analyze.
+     */
     default void analyzeNonPrimitiveClasses(Map<String, Map<String, List<String>>> classMap, List<Class<?>> classes) {
         classes.stream()
                 .filter(t -> !t.isPrimitive() && !String.class.equals(t) && !Number.class.isAssignableFrom(t) && !Object.class.equals(t))
                 .forEach(t -> generateClassMap(Collections.singleton(t), classMap));
     }
 }
+
+
+
+

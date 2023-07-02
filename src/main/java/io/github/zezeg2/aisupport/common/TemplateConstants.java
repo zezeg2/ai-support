@@ -1,6 +1,15 @@
 package io.github.zezeg2.aisupport.common;
 
+/**
+ * The TemplateConstants class provides constants for template strings used in generating prompts and templates.
+ *
+ * @since 1.0
+ */
 public class TemplateConstants {
+    /**
+     * The template string for the function structure.
+     * It represents a functional interface and a main class with a lambda function.
+     */
     public static final String FUNCTION_TEMPLATE = """
             @FunctionalInterface
             public interface FC {
@@ -15,6 +24,11 @@ public class TemplateConstants {
                 }
             }
             """;
+
+    /**
+     * The template string for the prompt.
+     * It includes information about the purpose, class structure, constraints, input and result formats, and feedback format.
+     */
     public static final String PROMPT_TEMPLATE = """
             You are a function execution delegate. When I present an input, you generate and return the result. If you perform your role well, the `Lambda Function` below will finally run in action.
                         
@@ -53,6 +67,10 @@ public class TemplateConstants {
             ```
             """;
 
+    /**
+     * The template string for the prompt with example.
+     * It includes information about the purpose, class structure, constraints, input and result formats, result example, and feedback format.
+     */
     public static final String PROMPT_TEMPLATE_WITH_EXAMPLE = """
             You are a function execution delegate. When I present an input, you generate and return the result. If you perform your role well, the `Lambda Function` below will finally run in action.
                         
@@ -95,6 +113,11 @@ public class TemplateConstants {
             %s
             ```
             """;
+
+    /**
+     * The template string for the feedback frame.
+     * It includes the feedback format and the inspection items.
+     */
     public static final String FEEDBACK_FRAME = """
             You are tasked with inspecting the provided Json and please provide feedback according to the given `Feedback Format`
                         
@@ -110,6 +133,10 @@ public class TemplateConstants {
             Do not include any other explanatory text in your response other than result
             """;
 
+    /**
+     * The template string for JSON validation.
+     * It includes steps for validating the JSON string.
+     */
     public static final String JSON_VALIDATE_TEMPLATE = """
             1. Ensure Parse-ability: Check that the JSON string is valid and can be properly parsed as `Required Format`.
             2. Verify schema compliance: The JSON string should comply with a given schema, omitting any objects or fields mentioned in the schema but not found in the JSON.

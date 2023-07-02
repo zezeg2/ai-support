@@ -37,10 +37,20 @@ public class AIFunction<T> {
     private final OpenAIProperties openAIProperties;
     private final double topP;
 
+    /**
+     * Retrieves the default AI model.
+     *
+     * @return The default AI model.
+     */
     private AIModel getDefaultModel() {
         return ModelMapper.map(openAIProperties.getModel());
     }
 
+    /**
+     * Initializes the AIFunction with the specified execution parameters.
+     *
+     * @param params The execution parameters.
+     */
     private void init(ExecuteParameters<T> params) {
         List<Argument<?>> args = params.getArgs();
         String identifier = params.getIdentifier();
@@ -80,9 +90,15 @@ public class AIFunction<T> {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-
     }
 
+    /**
+     * Creates a string representation of the argument values.
+     *
+     * @param args The list of arguments.
+     * @return The string representation of the argument values.
+     * @throws JsonProcessingException If an error occurs while processing the JSON.
+     */
     private String createValuesString(List<Argument<?>> args) throws JsonProcessingException {
         Map<String, Object> valueMap = new LinkedHashMap<>();
         args.forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
@@ -90,6 +106,12 @@ public class AIFunction<T> {
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(valueMap);
     }
 
+    /**
+     * Resolves the reference types used in the AIFunction.
+     *
+     * @param args The list of arguments.
+     * @return The resolved reference types.
+     */
     private String resolveRefTypes(List<Argument<?>> args) {
         Set<Class<?>> classList = args.stream().map(Argument::getType).collect(Collectors.toSet());
         classList.add(returnType);
@@ -97,13 +119,26 @@ public class AIFunction<T> {
         return resolver.resolve(classList);
     }
 
+    /**
+     * Creates the constraints
+     * /**
+     * Creates the constraints string.
+     *
+     * @param constraintList The list of constraints.
+     * @return The constraints string.
+     */
     private String createConstraints(List<Constraint> constraintList) {
         return !constraintList.isEmpty() ? constraintList.stream()
                 .map(constraint -> !constraint.topic().isBlank() ? constraint.topic() + ": " + constraint.description() : constraint.description())
                 .collect(Collectors.joining("\n- ", "- ", "\n")) : "";
     }
 
-
+    /**
+     * Creates the function string based on the argument list.
+     *
+     * @param args The list of arguments.
+     * @return The function string.
+     */
     public String createFunction(List<Argument<?>> args) {
         String fieldsString = args.stream().map(Argument::getFieldName).collect(Collectors.joining(", "));
         String fieldTypesString = args.stream()
@@ -113,6 +148,13 @@ public class AIFunction<T> {
         return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, returnType.getSimpleName());
     }
 
+    /**
+     * Parses the response from the AI model and validates it using the result validator chain.
+     *
+     * @param identifier The identifier of the context.
+     * @param response   The chat completion result.
+     * @return The parsed and validated response object.
+     */
     private T parseResponseWithValidate(String identifier, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
         content = resultValidatorChain.validate(identifier, functionName, content);
@@ -123,6 +165,12 @@ public class AIFunction<T> {
         }
     }
 
+    /**
+     * Executes the AIFunction with the specified execution parameters.
+     *
+     * @param params The execution parameters.
+     * @return The result of the execution.
+     */
     public T execute(ExecuteParameters<T> params) {
         if (params.getModel() == null) params.setModel(getDefaultModel());
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
