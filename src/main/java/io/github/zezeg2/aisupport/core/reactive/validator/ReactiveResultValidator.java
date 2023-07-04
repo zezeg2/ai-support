@@ -56,7 +56,10 @@ public abstract class ReactiveResultValidator {
     public Mono<String> validate(String functionName, String identifier, String lastUserInput) {
         MODEL annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
         AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
-        return validate(functionName, identifier, lastUserInput, model);
+        return ignoreCondition(functionName, identifier).flatMap(ignore -> {
+            if (!ignore) return validate(functionName, identifier, lastUserInput, model);
+            return getLastPromptResponseContent(functionName,identifier);
+        });
     }
 
     public Mono<String> validate(String functionName, String identifier, String lastUserInput, AIModel model) {
@@ -116,5 +119,9 @@ public abstract class ReactiveResultValidator {
 
     protected Mono<Prompt> getPrompt(String functionName) {
         return promptManager.getContext().get(functionName);
+    }
+
+    protected Mono<Boolean> ignoreCondition(String functionName, String identifier) {
+        return Mono.just(false);
     }
 }

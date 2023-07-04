@@ -49,7 +49,8 @@ public abstract class ResultValidator {
     public String validate(String functionName, String identifier, String lastUserInput) {
         MODEL annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
         AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
-        return validate(functionName, identifier, lastUserInput, model);
+        if (!ignoreCondition(functionName, identifier)) return validate(functionName, identifier, lastUserInput, model);
+        return getLastPromptResponseContent(functionName,identifier);
     }
 
     public String validate(String functionName, String identifier, String lastUserInput, AIModel model) {
@@ -104,5 +105,8 @@ public abstract class ResultValidator {
 
     protected Prompt getPrompt(String functionName) {
         return promptManager.getContext().get(functionName);
+    }
+    protected boolean ignoreCondition(String functionName, String identifier) {
+        return false;
     }
 }
