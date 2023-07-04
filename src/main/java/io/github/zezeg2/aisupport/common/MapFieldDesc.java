@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
  * The MapFieldDesc annotation is used to provide descriptions for keys and values in a map field.
  * It can be applied to fields and accepts two optional properties: "key" and "value".
  *
+ * @see Supportable
  * @since 1.0
  */
 @Retention(RetentionPolicy.RUNTIME)

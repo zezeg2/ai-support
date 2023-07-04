@@ -124,6 +124,15 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
+    public Mono<Void> savePromptMessages(PromptMessages messages) {
+        try {
+            return hashOperations.put(messages.getFunctionName(), messages.getIdentifier(), mapper.writeValueAsString(messages)).then();
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public Mono<Void> saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         return getFeedbackChatMessages(namespace, identifier)
                 .doOnNext(feedbackMessages -> {
@@ -140,6 +149,15 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
                         return Mono.error(new RuntimeException("Error serializing the feedback messages", e));
                     }
                 });
+    }
+
+    @Override
+    public Mono<Void> saveFeedbackMessages(FeedbackMessages messages) {
+        try {
+            return hashOperations.put(messages.getFunctionName() + ":" + messages.getValidatorName(), messages.getIdentifier(), mapper.writeValueAsString(messages)).then();
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

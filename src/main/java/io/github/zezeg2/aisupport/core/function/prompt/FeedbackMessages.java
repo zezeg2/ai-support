@@ -1,5 +1,7 @@
 package io.github.zezeg2.aisupport.core.function.prompt;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import lombok.Builder;
 import lombok.Data;
@@ -34,7 +36,11 @@ public class FeedbackMessages implements Serializable {
      * @param validatorName The name of the validator.
      * @param content       The list of chat messages.
      */
-    public FeedbackMessages(String identifier, String functionName, String validatorName, List<ChatMessage> content) {
+    @JsonCreator
+    public FeedbackMessages(@JsonProperty("identifier") String identifier,
+                            @JsonProperty("functionName") String functionName,
+                            @JsonProperty("validatorName") String validatorName,
+                            @JsonProperty("content") List<ChatMessage> content) {
         this.identifier = identifier;
         this.functionName = functionName;
         this.validatorName = validatorName;

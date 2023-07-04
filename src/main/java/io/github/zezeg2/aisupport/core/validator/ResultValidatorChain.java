@@ -11,13 +11,13 @@ public class ResultValidatorChain {
         this.validators = validators;
     }
 
-    public String validate(String identifier, String functionName, String target) {
+    public String validate(String functionName, String identifier, String lastUserInput, String target) {
         String result = target;
         for (ResultValidator validator : validators) {
             ValidateTarget targetFunction = validator.getClass().getAnnotation(ValidateTarget.class);
             List<String> targetFunctionList = Arrays.stream(targetFunction.names()).toList();
             if (targetFunction.global() || targetFunctionList.contains(functionName)) {
-                result = validator.validate(identifier, functionName);
+                result = validator.validate(functionName, identifier, lastUserInput);
             }
         }
         return result;

@@ -66,6 +66,8 @@ public interface ReactivePromptContextHolder {
      */
     Mono<Void> savePromptMessages(String namespace, String identifier, ChatMessage message);
 
+    Mono<Void> savePromptMessages(PromptMessages messages);
+
     /**
      * Saves a feedback chat message for the given namespace and identifier.
      *
@@ -75,6 +77,8 @@ public interface ReactivePromptContextHolder {
      * @return A Mono representing the completion of the save operation.
      */
     Mono<Void> saveFeedbackMessages(String namespace, String identifier, ChatMessage message);
+
+    Mono<Void> saveFeedbackMessages(FeedbackMessages messages);
 
     /**
      * Deletes the last N prompt chat messages for the given namespace and identifier.

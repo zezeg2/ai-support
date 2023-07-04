@@ -49,51 +49,51 @@ public class ReactiveAIFunction<T> {
         List<Argument<?>> args = params.getArgs();
         String identifier = params.getIdentifier();
         T example = params.getExample();
-        try {
-            return promptManager.getContext().get(functionName)
-                    .switchIfEmpty(Mono.just(new Prompt(
-                                    functionName,
-                                    purpose,
-                                    resolveRefTypes(args),
-                                    createFunction(args),
-                                    createConstraints(constraints),
-                                    JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
-                                    BuildFormatUtil.getFormatString(returnType),
-                                    BuildFormatUtil.getFormatString(FeedbackResponse.class),
-                                    topP
-                            ))
-                            .flatMap(prompt -> promptManager.getContext().savePrompt(functionName, prompt).thenReturn(prompt)))
-                    .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
-                            .map(promptMessages -> promptMessages.getContent().isEmpty())
-                            .flatMap(isEmpty -> isEmpty ? example == null ?
-                                    promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT) :
-                                    promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT) :
-                                    Mono.empty())
-                            .thenReturn(prompt)
-                    )
-                    .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
-                            .flatMap(promptMessages -> {
-                                if (example == null) return Mono.empty();
-                                ChatMessage systemMessage = promptMessages.getContent().stream().filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue())).findFirst().orElseThrow();
-                                String generatedSystemMessageContent = prompt.generate(mapper, example);
-                                if (systemMessage.getContent().equals(generatedSystemMessageContent))
-                                    return Mono.empty();
-                                systemMessage.setContent(generatedSystemMessageContent);
-                                return promptManager.getContext().savePromptMessages(functionName, identifier, systemMessage);
-                            })
-                    )
-                    .then(promptManager.addMessage(functionName, identifier, ROLE.USER, createValuesString(args), ContextType.PROMPT));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        return promptManager.getContext().get(functionName)
+                .switchIfEmpty(Mono.just(new Prompt(
+                                functionName,
+                                purpose,
+                                resolveRefTypes(args),
+                                createFunction(args),
+                                createConstraints(constraints),
+                                JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
+                                BuildFormatUtil.getFormatString(returnType),
+                                BuildFormatUtil.getFormatString(FeedbackResponse.class),
+                                topP
+                        ))
+                        .flatMap(prompt -> promptManager.getContext().savePrompt(functionName, prompt).thenReturn(prompt)))
+                .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
+                        .map(promptMessages -> promptMessages.getContent().isEmpty())
+                        .flatMap(isEmpty -> isEmpty ? example == null ?
+                                promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT) :
+                                promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT) :
+                                Mono.empty())
+                        .thenReturn(prompt)
+                )
+                .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
+                        .flatMap(promptMessages -> {
+                            if (example == null) return Mono.empty();
+                            ChatMessage systemMessage = promptMessages.getContent().stream().filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue())).findFirst().orElseThrow();
+                            String generatedSystemMessageContent = prompt.generate(mapper, example);
+                            if (systemMessage.getContent().equals(generatedSystemMessageContent))
+                                return Mono.empty();
+                            systemMessage.setContent(generatedSystemMessageContent);
+                            return promptManager.getContext().savePromptMessages(functionName, identifier, systemMessage);
+                        })
+                )
+                .then(promptManager.addMessage(functionName, identifier, ROLE.USER, createValuesString(args), ContextType.PROMPT));
     }
 
 
-    private String createValuesString(List<Argument<?>> args) throws JsonProcessingException {
+    private String createValuesString(List<Argument<?>> args) {
         Map<String, Object> valueMap = new LinkedHashMap<>();
         args.forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
 
-        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(valueMap);
+        try {
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(valueMap);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String resolveRefTypes(List<Argument<?>> args) {
@@ -119,9 +119,10 @@ public class ReactiveAIFunction<T> {
         return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, returnType.getSimpleName());
     }
 
-    private Mono<T> parseResponseWithValidate(String identifier, ChatCompletionResult response) {
+    private Mono<T> parseResponseWithValidate(ExecuteParameters<T> params, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
-        return resultValidatorChain.validate(functionName, identifier, content).flatMap((stringResult) -> {
+        String valuesString = createValuesString(params.getArgs());
+        return resultValidatorChain.validate(functionName, params.getIdentifier(), valuesString, content).flatMap((stringResult) -> {
             try {
                 return Mono.just(mapper.readValue(stringResult, returnType));
             } catch (JsonProcessingException e) {
@@ -135,6 +136,6 @@ public class ReactiveAIFunction<T> {
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
         return init(params)
                 .then(promptManager.exchangePromptMessages(functionName, params.getIdentifier(), params.getModel(), topP, true)
-                        .flatMap(chatCompletionResult -> parseResponseWithValidate(params.getIdentifier(), chatCompletionResult)));
+                        .flatMap(chatCompletionResult -> parseResponseWithValidate(params, chatCompletionResult)));
     }
 }

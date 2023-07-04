@@ -79,6 +79,11 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
+    public Mono<Void> savePromptMessages(PromptMessages messages) {
+        return reactiveMongoTemplate.save(messages, messages.getFunctionName()).then();
+    }
+
+    @Override
     public Mono<Void> saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         return getFeedbackChatMessages(namespace, identifier)
                 .doOnNext(feedbackMessages -> {
@@ -90,6 +95,11 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
                 })
                 .flatMap(feedbackMessages -> reactiveMongoTemplate.save(feedbackMessages, namespace))
                 .then();
+    }
+
+    @Override
+    public Mono<Void> saveFeedbackMessages(FeedbackMessages messages) {
+        return reactiveMongoTemplate.save(messages, messages.getFunctionName() + ":" + messages.getValidatorName()).then();
     }
 
     @Override

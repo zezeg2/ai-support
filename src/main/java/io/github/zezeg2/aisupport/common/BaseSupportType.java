@@ -1,6 +1,7 @@
 package io.github.zezeg2.aisupport.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.Serializable;
@@ -44,5 +45,14 @@ public abstract class BaseSupportType implements Supportable, Serializable {
     @JsonIgnore
     public Object getFormatValue() throws IllegalAccessException {
         return getFormatMap().entrySet().stream().findFirst().get().getValue();
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

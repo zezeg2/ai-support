@@ -62,11 +62,20 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
                     }
                     return Mono.just(promptMessages);
                 })
-                .flatMap(promptChatMessages -> {
+                .flatMap(promptMessages -> {
                     if (promptMessagesRegistry.get(namespace).stream()
                             .noneMatch(existingPromptMessages -> existingPromptMessages.getIdentifier().equals(identifier))) {
-                        promptMessagesRegistry.get(namespace).add(promptChatMessages);
+                        promptMessagesRegistry.get(namespace).add(promptMessages);
                     }
+                    return Mono.empty();
+                });
+    }
+
+    @Override
+    public Mono<Void> savePromptMessages(PromptMessages messages) {
+        return getPromptChatMessages(messages.getFunctionName(), messages.getIdentifier())
+                .flatMap(promptMessages -> {
+                    promptMessages.setContent(messages.getContent());
                     return Mono.empty();
                 });
     }
@@ -91,6 +100,15 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
                             .noneMatch(existingFeedbackMessages -> existingFeedbackMessages.getIdentifier().equals(identifier))) {
                         feedbackMessagesRegistry.get(namespace).add(feedbackMessages);
                     }
+                    return Mono.empty();
+                });
+    }
+
+    @Override
+    public Mono<Void> saveFeedbackMessages(FeedbackMessages messages) {
+        return getFeedbackChatMessages(messages.getFunctionName() + ":" + messages.getValidatorName(), messages.getIdentifier())
+                .flatMap(promptMessages -> {
+                    promptMessages.setContent(messages.getContent());
                     return Mono.empty();
                 });
     }

@@ -19,7 +19,7 @@ public class TemplateConstants {
             public class Main {
                 public static void main(String[] args) {
                     FC fc = (%s) -> {
-                        return [RESULT] //TODO: [RESULT] is JsonString of `%s`
+                        return [RESULT] //TODO: Replace [RESULT] with a JsonString of `%s`
                     };
                 }
             }
@@ -45,7 +45,7 @@ public class TemplateConstants {
             %s
             ```
                         
-            Please adhere to the following constraints when generating results.
+            Please consider following constraints:
             Constraints:
             - Only respond with your `return` value. Do not include any other explanatory text in your response.
             %s
@@ -60,7 +60,7 @@ public class TemplateConstants {
             %s
             ```
                         
-            If you receive input in the given `Feedback Format`(FeedbackResponse.class), please respond by reflecting the content of the feedback in the previous results.
+            If feedback is provided in the format of the `FeedbackResponse` class, adjust your previous results based on the feedback content.
             Feedback Format
             ```json
             %s
@@ -87,7 +87,7 @@ public class TemplateConstants {
             %s
             ```
                         
-            Please adhere to the following constraints when generating results.
+            Please consider following constraints:
             Constraints:
             - Only respond with your `return` value. Do not include any other explanatory text in your response.
             %s
@@ -107,7 +107,7 @@ public class TemplateConstants {
             %s
             ```
                         
-            If you receive input in the given `Feedback Format`(FeedbackResponse.class), please respond by reflecting the content of the feedback in the previous results.
+            If feedback is provided in the format of the `FeedbackResponse` class, adjust your previous results based on the feedback content.
             Feedback Format
             ```json
             %s
@@ -119,7 +119,7 @@ public class TemplateConstants {
      * It includes the feedback format and the inspection items.
      */
     public static final String FEEDBACK_FRAME = """
-            You are tasked with inspecting the provided Json and please provide feedback according to the given `Feedback Format`
+            You are tasked with inspecting 'assistantOutput' of the provided json data. You can reference the 'userInput' of the given json data as needed. Please provide feedback according to the given `Feedback Format`
                         
             Feedback Format:
             ```json
@@ -149,5 +149,14 @@ public class TemplateConstants {
             ```json
             %s
             ```
+            """;
+    /**
+     * The template string for Constraint validation.
+     */
+    public static String CONSTRAINT_VALIDATE_TEMPLATE = """
+            Evaluate compliance with given constraints
+            ---
+            %s
+            ---
             """;
 }

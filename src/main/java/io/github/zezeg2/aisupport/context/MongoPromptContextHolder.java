@@ -67,6 +67,11 @@ public class MongoPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
+    public void savePromptMessages(PromptMessages messages) {
+        mongoTemplate.save(messages, messages.getFunctionName());
+    }
+
+    @Override
     public void saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
         if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
@@ -76,6 +81,11 @@ public class MongoPromptContextHolder implements PromptContextHolder {
         }
         feedbackMessages.getContent().add(message);
         mongoTemplate.save(feedbackMessages, namespace);
+    }
+
+    @Override
+    public void saveFeedbackMessages(FeedbackMessages messages) {
+        mongoTemplate.save(messages, messages.getFunctionName() + ":" + messages.getValidatorName());
     }
 
     @Override

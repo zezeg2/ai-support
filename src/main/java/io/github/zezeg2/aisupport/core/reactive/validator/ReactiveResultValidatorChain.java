@@ -20,7 +20,7 @@ public class ReactiveResultValidatorChain {
                 .collect(Collectors.toList());
     }
 
-    public Mono<String> validate(String functionName, String identifier, String target) {
+    public Mono<String> validate(String functionName, String identifier, String lastUserInput, String target) {
         if (validators.isEmpty()) {
             return Mono.just(target);
         }
@@ -31,7 +31,7 @@ public class ReactiveResultValidatorChain {
                     List<String> targetFunctionList = Arrays.stream(targetFunction.names()).toList();
                     return targetFunction.global() || targetFunctionList.contains(functionName);
                 })
-                .concatMap(validator -> validator.validate(functionName, identifier)).last();
+                .concatMap(validator -> validator.validate(functionName, identifier, lastUserInput)).last();
     }
 
     public List<ReactiveResultValidator> peekValidators(String functionName) {

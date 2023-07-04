@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
  * The FieldDesc annotation is used to provide a description for a field.
  * It can be applied to fields and accepts a single property "value" to specify the description.
  *
+ * @see Supportable
  * @since 1.0
  */
 @Retention(RetentionPolicy.RUNTIME)

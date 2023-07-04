@@ -85,11 +85,7 @@ public class AIFunction<T> {
                 promptManager.getContext().savePromptMessages(functionName, identifier, systemMessage);
             }
         }
-        try {
-            promptManager.addMessage(functionName, identifier, ROLE.USER, createValuesString(args), ContextType.PROMPT);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        promptManager.addMessage(functionName, identifier, ROLE.USER, createValuesString(args), ContextType.PROMPT);
     }
 
     /**
@@ -97,13 +93,16 @@ public class AIFunction<T> {
      *
      * @param args The list of arguments.
      * @return The string representation of the argument values.
-     * @throws JsonProcessingException If an error occurs while processing the JSON.
      */
-    private String createValuesString(List<Argument<?>> args) throws JsonProcessingException {
+    private String createValuesString(List<Argument<?>> args) {
         Map<String, Object> valueMap = new LinkedHashMap<>();
         args.forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
 
-        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(valueMap);
+        try {
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(valueMap);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -151,18 +150,20 @@ public class AIFunction<T> {
     /**
      * Parses the response from the AI model and validates it using the result validator chain.
      *
-     * @param identifier The identifier of the context.
-     * @param response   The chat completion result.
+     * @param params   The execution parameters.
+     * @param response The chat completion result.
      * @return The parsed and validated response object.
      */
-    private T parseResponseWithValidate(String identifier, ChatCompletionResult response) {
+    private T parseResponseWithValidate(ExecuteParameters<T> params, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
-        content = resultValidatorChain.validate(identifier, functionName, content);
+        String valuesString = createValuesString(params.getArgs());
+        content = resultValidatorChain.validate(functionName, params.getIdentifier(), valuesString, content);
         try {
             return mapper.readValue(content, returnType);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+
     }
 
     /**
@@ -176,6 +177,6 @@ public class AIFunction<T> {
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
         init(params);
         ChatCompletionResult response = promptManager.exchangePromptMessages(functionName, params.getIdentifier(), params.getModel(), topP, true);
-        return parseResponseWithValidate(params.getIdentifier(), response);
+        return parseResponseWithValidate(params, response);
     }
 }

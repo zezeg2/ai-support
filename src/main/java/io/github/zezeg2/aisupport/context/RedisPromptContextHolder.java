@@ -113,6 +113,15 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
+    public void savePromptMessages(PromptMessages messages) {
+        try {
+            hashOperations.put(messages.getFunctionName(), messages.getIdentifier(), mapper.writeValueAsString(messages));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error serializing the prompt messages", e);
+        }
+    }
+
+    @Override
     public void saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
         if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
@@ -124,6 +133,15 @@ public class RedisPromptContextHolder implements PromptContextHolder {
             hashOperations.put(namespace, identifier, mapper.writeValueAsString(feedbackMessages));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error serializing the feedback messages", e);
+        }
+    }
+
+    @Override
+    public void saveFeedbackMessages(FeedbackMessages messages) {
+        try {
+            hashOperations.put(messages.getFunctionName() + ":" + messages.getValidatorName(), messages.getIdentifier(), mapper.writeValueAsString(messages));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error serializing the prompt messages", e);
         }
     }
 

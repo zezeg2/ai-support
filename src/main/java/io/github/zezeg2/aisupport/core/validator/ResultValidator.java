@@ -46,21 +46,22 @@ public abstract class ResultValidator {
         return TemplateConstants.FEEDBACK_FRAME.formatted(BuildFormatUtil.getFormatString(FeedbackResponse.class), addTemplateContents(functionName));
     }
 
-    public String validate(String identifier, String functionName) {
+    public String validate(String functionName, String identifier, String lastUserInput) {
         MODEL annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
         AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
-        return validate(identifier, functionName, model);
+        return validate(functionName, identifier, lastUserInput, model);
     }
 
-    public String validate(String identifier, String functionName, AIModel model) {
-        init(functionName, identifier);
-        String lastResponseContent;
+    public String validate(String functionName, String identifier, String lastUserInput, AIModel model) {
         String lastFeedbackContent;
-        lastResponseContent = getLastPromptResponseContent(functionName, identifier);
+        String lastResponseContent = getLastPromptResponseContent(functionName, identifier);
+        FeedbackRequest feedbackRequest = FeedbackRequest.builder().userInput(lastUserInput).build();
+        init(functionName, identifier);
 
         for (int count = 1; count <= MAX_ATTEMPTS; count++) {
+            feedbackRequest.setAssistantOutput(lastResponseContent);
             System.out.println("Try Count : " + count + " ---------------------------------------------------------------------------\n" + lastResponseContent);
-            lastFeedbackContent = exchangeMessages(getNamespace(functionName), identifier, lastResponseContent, ContextType.FEEDBACK, model);
+            lastFeedbackContent = exchangeMessages(getNamespace(functionName), identifier, feedbackRequest.toString(), ContextType.FEEDBACK, model);
             FeedbackResponse feedbackResult;
             try {
                 feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);

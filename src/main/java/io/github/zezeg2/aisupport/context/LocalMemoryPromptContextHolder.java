@@ -65,6 +65,12 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
+    public void savePromptMessages(PromptMessages messages) {
+        PromptMessages origin = promptMessagesRegistry.get(messages.getFunctionName()).stream().filter(promptMessages -> promptMessages.getIdentifier().equals(messages.getIdentifier())).findFirst().orElseThrow();
+        origin.setContent(messages.getContent());
+    }
+
+    @Override
     public void saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         if (!feedbackMessagesRegistry.containsKey(namespace)) {
             feedbackMessagesRegistry.put(namespace, new CopyOnWriteArrayList<>());
@@ -80,6 +86,12 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
                 .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst().isEmpty()) {
             feedbackMessagesRegistry.get(namespace).add(feedbackMessages);
         }
+    }
+
+    @Override
+    public void saveFeedbackMessages(FeedbackMessages messages) {
+        FeedbackMessages origin = feedbackMessagesRegistry.get(messages.getFunctionName() + ":" + messages.getValidatorName()).stream().filter(feedbackMessages -> feedbackMessages.getIdentifier().equals(messages.getIdentifier())).findFirst().orElseThrow();
+        origin.setContent(messages.getContent());
     }
 
     @Override
