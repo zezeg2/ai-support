@@ -20,4 +20,9 @@ public class ConstraintsValidator extends ResultValidator {
         String constraints = getPrompt(functionName).getConstraints();
         return TemplateConstants.CONSTRAINT_VALIDATE_TEMPLATE.formatted(constraints);
     }
+
+    @Override
+    protected boolean ignoreCondition(String functionName, String identifier) {
+        return getPrompt(functionName).getConstraints().isEmpty();
+    }
 }

@@ -22,4 +22,9 @@ public class ReactiveConstraintsValidator extends ReactiveResultValidator {
         return getPrompt(functionName).flatMap(prompt -> Mono.just(prompt.getConstraints()))
                 .map(constraintsString -> (TemplateConstants.CONSTRAINT_VALIDATE_TEMPLATE.formatted(constraintsString)));
     }
+
+    @Override
+    protected Mono<Boolean> ignoreCondition(String functionName, String identifier) {
+        return getPrompt(functionName).map(prompt -> prompt.getConstraints().isEmpty());
+    }
 }
