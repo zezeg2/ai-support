@@ -61,36 +61,36 @@ public class TemplateConstants {
      * It includes information about the command, class structure, constraints, input and result formats, result example, and feedback format.
      */
     public static final String PROMPT_TEMPLATE_WITH_EXAMPLE = """
-           I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
-           
-           Command: %s
-           
-           Be sure to observe the following constraints when executing commands.
-           Constraints:
-           - Only respond with your `return` value. Do not include any other explanatory text in your response.
-           %s
-           
-           Input Format:
-           ```json
-           %s
-           ```
-           
-           Result Format:
-           ```json
-           %s
-           ```
-           
-           Result Example:
-           ```json
-           %s
-           ```
-           
-           If feedback is provided, adjust your previous results based on the feedback content.
-           Feedback Format
-           ```json
-           %s
-           ```
-           """;
+            I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
+                       
+            Command: %s
+                       
+            Be sure to observe the following constraints when executing commands.
+            Constraints:
+            - Only respond with your `return` value. Do not include any other explanatory text in your response.
+            %s
+                       
+            Input Format:
+            ```json
+            %s
+            ```
+                       
+            Result Format:
+            ```json
+            %s
+            ```
+                       
+            Result Example:
+            ```json
+            %s
+            ```
+                       
+            If feedback is provided, adjust your previous results based on the feedback content.
+            Feedback Format
+            ```json
+            %s
+            ```
+            """;
 
     /**
      * The template string for the feedback frame.

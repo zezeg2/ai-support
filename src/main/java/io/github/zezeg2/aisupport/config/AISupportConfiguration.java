@@ -68,8 +68,8 @@ public class AISupportConfiguration {
     //SERVLET
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "synchronous")
-    public AISupport defaultAISupport(ObjectMapper mapper, ConstructResolver resolver, PromptManager promptManager, ResultValidatorChain resultValidateChain) {
-        return new AISupport(mapper, resolver, promptManager, resultValidateChain, openAIProperties);
+    public AISupport defaultAISupport(ObjectMapper mapper, PromptManager promptManager, ResultValidatorChain resultValidateChain) {
+        return new AISupport(mapper, promptManager, resultValidateChain, openAIProperties);
     }
 
     @Bean
@@ -106,8 +106,8 @@ public class AISupportConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
-    public ReactiveAISupport reactiveAISupport(ObjectMapper mapper, ConstructResolver resolver, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain) {
-        return new ReactiveAISupport(mapper, resolver, promptManager, resultValidatorChain, openAIProperties);
+    public ReactiveAISupport reactiveAISupport(ObjectMapper mapper, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain) {
+        return new ReactiveAISupport(mapper, promptManager, resultValidatorChain, openAIProperties);
     }
 
     @Bean

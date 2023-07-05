@@ -4,27 +4,24 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
-import io.github.zezeg2.aisupport.common.BuildFormatUtil;
-import io.github.zezeg2.aisupport.common.JsonUtils;
-import io.github.zezeg2.aisupport.common.TemplateConstants;
 import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
-import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.function.ExecuteParameters;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidatorChain;
-import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 public class ReactiveAIFunction<T> {
@@ -35,7 +32,6 @@ public class ReactiveAIFunction<T> {
 
     private final Class<T> returnType;
     private final ObjectMapper mapper;
-    private final ConstructResolver resolver;
     private final ReactivePromptManager promptManager;
     private final ReactiveResultValidatorChain resultValidatorChain;
     private final OpenAIProperties openAIProperties;
@@ -50,17 +46,7 @@ public class ReactiveAIFunction<T> {
         String identifier = params.getIdentifier();
         T example = params.getExample();
         return promptManager.getContext().get(functionName)
-                .switchIfEmpty(Mono.just(new Prompt(
-                                functionName,
-                                command,
-                                resolveRefTypes(args),
-                                createFunction(args),
-                                createConstraints(constraints),
-                                JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
-                                BuildFormatUtil.getFormatString(returnType),
-                                BuildFormatUtil.getFormatString(FeedbackResponse.class),
-                                topP
-                        ))
+                .switchIfEmpty(Mono.just(new Prompt(functionName, command, constraints, args, returnType, topP))
                         .flatMap(prompt -> promptManager.getContext().savePrompt(functionName, prompt).thenReturn(prompt)))
                 .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
                         .map(promptMessages -> promptMessages.getContent().isEmpty())
@@ -94,29 +80,6 @@ public class ReactiveAIFunction<T> {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private String resolveRefTypes(List<Argument<?>> args) {
-        Set<Class<?>> classList = args.stream().map(Argument::getType).collect(Collectors.toSet());
-        classList.add(returnType);
-        classList.add(FeedbackResponse.class);
-        return resolver.resolve(classList);
-    }
-
-    private String createConstraints(List<Constraint> constraintList) {
-        return !constraintList.isEmpty() ? constraintList.stream()
-                .map(constraint -> !constraint.topic().isBlank() ? constraint.topic() + ": " + constraint.description() : constraint.description())
-                .collect(Collectors.joining("\n- ", "- ", "\n")) : "";
-    }
-
-
-    public String createFunction(List<Argument<?>> args) {
-        String fieldsString = args.stream().map(Argument::getFieldName).collect(Collectors.joining(", "));
-        String fieldTypesString = args.stream()
-                .map(argument -> argument.getTypeName() + " " + argument.getFieldName())
-                .collect(Collectors.joining(", "));
-
-        return TemplateConstants.FUNCTION_TEMPLATE.formatted(functionName, fieldTypesString, fieldsString, returnType.getSimpleName());
     }
 
     private Mono<T> parseResponseWithValidate(ExecuteParameters<T> params, ChatCompletionResult response) {

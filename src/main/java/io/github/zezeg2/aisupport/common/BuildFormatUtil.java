@@ -2,6 +2,7 @@ package io.github.zezeg2.aisupport.common;
 
 import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.argument.MapArgument;
+import io.github.zezeg2.aisupport.common.constraint.Constraint;
 import io.github.zezeg2.aisupport.common.enums.STRUCTURE;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportedConstructException;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportedTypeException;
@@ -10,6 +11,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * The BuildFormatUtil class provides utility methods for generating format maps and strings
@@ -32,6 +34,24 @@ public class BuildFormatUtil {
             addArgumentFormat(inputDescMap, argument);
         }
         return inputDescMap;
+    }
+
+    public static String getArgumentsFormatMapString(List<Argument<?>> args) {
+        return JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args));
+    }
+
+    /**
+     * Creates the constraints String
+     * /**
+     * Creates the constraints string.
+     *
+     * @param constraintList The list of constraints.
+     * @return The constraints string.
+     */
+    public static String createConstraintsString(List<Constraint> constraintList) {
+        return !constraintList.isEmpty() ? constraintList.stream()
+                .map(constraint -> !constraint.topic().isBlank() ? constraint.topic() + ": " + constraint.description() : constraint.description())
+                .collect(Collectors.joining("\n- ", "- ", "\n")) : "";
     }
 
     /**
@@ -155,5 +175,6 @@ public class BuildFormatUtil {
             return returnType.getSimpleName();
         }
     }
+
 }
 

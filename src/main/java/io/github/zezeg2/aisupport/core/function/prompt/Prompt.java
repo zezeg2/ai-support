@@ -4,15 +4,17 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.TemplateConstants;
+import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
+import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * The Prompt class represents a prompt entity used in the system.
@@ -28,8 +30,6 @@ public class Prompt implements Serializable {
     @Id
     private String functionName;
     private String command;
-    private String refTypes;
-    private String function;
     private String constraints;
     private String inputFormat;
     private String resultFormat;
@@ -61,6 +61,16 @@ public class Prompt implements Serializable {
         this.inputFormat = inputFormat;
         this.resultFormat = resultFormat;
         this.feedbackFormat = feedbackFormat;
+        this.topP = topP;
+    }
+
+    public Prompt(String functionName, String command, List<Constraint> constraints, List<Argument<?>> args, Class<?> returnType, double topP) {
+        this.functionName = functionName;
+        this.command = command;
+        this.constraints = BuildFormatUtil.createConstraintsString(constraints);
+        this.inputFormat = BuildFormatUtil.getArgumentsFormatMapString(args);
+        this.resultFormat = BuildFormatUtil.getFormatString(returnType);
+        this.feedbackFormat = BuildFormatUtil.getFormatString(FeedbackResponse.class);
         this.topP = topP;
     }
 

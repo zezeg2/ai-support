@@ -4,7 +4,6 @@ package io.github.zezeg2.aisupport.core;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.BaseSupportType;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
-import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.function.AIFunction;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
@@ -17,16 +16,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AISupport {
     private final ObjectMapper mapper;
-    private final ConstructResolver resolver;
     private final PromptManager promptManager;
     protected final ResultValidatorChain resultValidatorChain;
     private final OpenAIProperties openAIProperties;
 
     public <T extends BaseSupportType> AIFunction<T> createFunction(Class<T> returnType, String functionName, String command, List<Constraint> constraintList) {
-        return new AIFunction<>(functionName, command, constraintList, returnType, mapper, resolver, promptManager, resultValidatorChain, openAIProperties, 1d);
+        return new AIFunction<>(functionName, command, constraintList, returnType, mapper, promptManager, resultValidatorChain, openAIProperties, 1d);
     }
 
     public <T extends BaseSupportType> AIFunction<T> createFunction(Class<T> returnType, String functionName, String command, List<Constraint> constraintList, double topP) {
-        return new AIFunction<>(functionName, command, constraintList, returnType, mapper, resolver, promptManager, resultValidatorChain, openAIProperties, topP);
+        return new AIFunction<>(functionName, command, constraintList, returnType, mapper, promptManager, resultValidatorChain, openAIProperties, topP);
     }
 }

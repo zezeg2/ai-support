@@ -14,9 +14,6 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
 /**
  * The PromptManager class is responsible for managing prompts and exchanging messages in a chat-based AI system.
  *

@@ -58,7 +58,7 @@ public abstract class ReactiveResultValidator {
         AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
         return ignoreCondition(functionName, identifier).flatMap(ignore -> {
             if (!ignore) return validate(functionName, identifier, lastUserInput, model);
-            return getLastPromptResponseContent(functionName,identifier);
+            return getLastPromptResponseContent(functionName, identifier);
         });
     }
 
