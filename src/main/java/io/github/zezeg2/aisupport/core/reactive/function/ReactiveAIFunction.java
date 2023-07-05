@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReactiveAIFunction<T> {
     private final String functionName;
-    private final String purpose;
+    private final String command;
 
     private final List<Constraint> constraints;
 
@@ -52,7 +52,7 @@ public class ReactiveAIFunction<T> {
         return promptManager.getContext().get(functionName)
                 .switchIfEmpty(Mono.just(new Prompt(
                                 functionName,
-                                purpose,
+                                command,
                                 resolveRefTypes(args),
                                 createFunction(args),
                                 createConstraints(constraints),

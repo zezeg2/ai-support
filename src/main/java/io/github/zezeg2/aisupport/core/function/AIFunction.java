@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AIFunction<T> {
     private final String functionName;
-    private final String purpose;
+    private final String command;
     private final List<Constraint> constraints;
     private final Class<T> returnType;
     private final ObjectMapper mapper;
@@ -60,9 +60,7 @@ public class AIFunction<T> {
         if (prompt == null) {
             prompt = new Prompt(
                     functionName,
-                    purpose,
-                    resolveRefTypes(args),
-                    createFunction(args),
+                    command,
                     createConstraints(constraints),
                     JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args)),
                     BuildFormatUtil.getFormatString(returnType),

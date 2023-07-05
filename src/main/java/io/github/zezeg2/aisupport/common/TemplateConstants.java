@@ -27,25 +27,14 @@ public class TemplateConstants {
 
     /**
      * The template string for the prompt.
-     * It includes information about the purpose, class structure, constraints, input and result formats, and feedback format.
+     * It includes information about the command, class structure, constraints, input and result formats, and feedback format.
      */
     public static final String PROMPT_TEMPLATE = """
-            You are a function execution delegate. When I present an input, you generate and return the result. If you perform your role well, the `Lambda Function` below will finally run in action.
+            I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
                         
-            The purpose I want to achieve through the function is as follows.
-            Purpose: %s
+            Command: %s
                         
-            The class structure is as follows:
-            ```java
-            %s
-            ```
-                        
-            Here's the main class where you need to execute the lambda function:
-            ```java
-            %s
-            ```
-                        
-            Please consider following constraints:
+            Be sure to observe the following constraints when executing commands.
             Constraints:
             - Only respond with your `return` value. Do not include any other explanatory text in your response.
             %s
@@ -60,7 +49,7 @@ public class TemplateConstants {
             %s
             ```
                         
-            If feedback is provided in the format of the `FeedbackResponse` class, adjust your previous results based on the feedback content.
+            If feedback is provided, adjust your previous results based on the feedback content.
             Feedback Format
             ```json
             %s
@@ -69,50 +58,39 @@ public class TemplateConstants {
 
     /**
      * The template string for the prompt with example.
-     * It includes information about the purpose, class structure, constraints, input and result formats, result example, and feedback format.
+     * It includes information about the command, class structure, constraints, input and result formats, result example, and feedback format.
      */
     public static final String PROMPT_TEMPLATE_WITH_EXAMPLE = """
-            You are a function execution delegate. When I present an input, you generate and return the result. If you perform your role well, the `Lambda Function` below will finally run in action.
-                        
-            The purpose I want to achieve through the function is as follows.
-            Purpose: %s
-                        
-            The class structure is as follows:
-            ```java
-            %s
-            ```
-                        
-            Here's the main class where you need to execute the lambda function:
-            ```java
-            %s
-            ```
-                        
-            Please consider following constraints:
-            Constraints:
-            - Only respond with your `return` value. Do not include any other explanatory text in your response.
-            %s
-                        
-            Input Format:
-            ```json
-            %s
-            ```
-                        
-            Result Format:
-            ```json
-            %s
-            ```
-                        
-            Result Example:
-            ```json
-            %s
-            ```
-                        
-            If feedback is provided in the format of the `FeedbackResponse` class, adjust your previous results based on the feedback content.
-            Feedback Format
-            ```json
-            %s
-            ```
-            """;
+           I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
+           
+           Command: %s
+           
+           Be sure to observe the following constraints when executing commands.
+           Constraints:
+           - Only respond with your `return` value. Do not include any other explanatory text in your response.
+           %s
+           
+           Input Format:
+           ```json
+           %s
+           ```
+           
+           Result Format:
+           ```json
+           %s
+           ```
+           
+           Result Example:
+           ```json
+           %s
+           ```
+           
+           If feedback is provided, adjust your previous results based on the feedback content.
+           Feedback Format
+           ```json
+           %s
+           ```
+           """;
 
     /**
      * The template string for the feedback frame.
