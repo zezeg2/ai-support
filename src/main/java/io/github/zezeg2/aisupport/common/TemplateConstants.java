@@ -12,26 +12,25 @@ public class TemplateConstants {
      * It includes information about the command, class structure, constraints, input and result formats, and feedback format.
      */
     public static final String PROMPT_TEMPLATE = """
-            I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
-                        
+            You are tasked to act as a function execution delegate. You will be given an input and required to execute the following command.
+ 
             Command: %s
-                        
+ 
             Be sure to observe the following constraints when executing commands.
             Constraints:
-            - Only respond with your `return` value. Do not include any other explanatory text in your response.
-            %s
-                        
+            %s- Only respond with your `return` value. Do not include any other explanatory text in your response.
+ 
             Input Format:
             ```json
             %s
             ```
-                        
+ 
             Result Format:
             ```json
             %s
             ```
-                        
-            If feedback is provided, adjust your previous results based on the feedback content.
+ 
+            If feedback is provided, adjust your previous results based on the content of the feedback.
             Feedback Format
             ```json
             %s
@@ -44,29 +43,28 @@ public class TemplateConstants {
      */
     public static final String PROMPT_TEMPLATE_WITH_EXAMPLE = """
             I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
-                       
+            
             Command: %s
-                       
+            
             Be sure to observe the following constraints when executing commands.
             Constraints:
-            - Only respond with your `return` value. Do not include any other explanatory text in your response.
-            %s
-                       
+            %s- Only respond with your `return` value. Do not include any other explanatory text in your response.
+            
             Input Format:
             ```json
             %s
             ```
-                       
+            
             Result Format:
             ```json
             %s
             ```
-                       
+            
             Result Example:
             ```json
             %s
             ```
-                       
+            
             If feedback is provided, adjust your previous results based on the feedback content.
             Feedback Format
             ```json
@@ -79,18 +77,17 @@ public class TemplateConstants {
      * It includes the feedback format and the inspection items.
      */
     public static final String FEEDBACK_FRAME = """
-            You are tasked with inspecting 'assistantOutput' of the provided json data. Please provide feedback according to the given `Feedback Format`
-                        
+            Your task is to inspect the 'assistantOutput' of the provided JSON data. Please provide feedback according to the given `Feedback Format`.
+            
             Feedback Format:
             ```json
             %s
             ```
-                            
+            
             The inspection items are as follows.
             %s
-                        
-                        
-            Do not include any other explanatory text in your response other than result
+            
+            Do not include any other explanatory text in your response apart from the result.
             """;
 
     /**
@@ -104,7 +101,7 @@ public class TemplateConstants {
             4. Handle incorrectly escaped characters: Check for and handle any incorrectly escaped characters within the JSON string.
             5. Replace None or NaN values: Any 'None' or 'NaN' values in the JSON string should be replaced with 'null' to facilitate correct parsing.
             6. Parse the JSON: Parse the cleaned, schema-compliant JSON.
-                    
+            
             Required Format:
             ```json
             %s
@@ -114,7 +111,7 @@ public class TemplateConstants {
      * The template string for Constraint validation.
      */
     public static String CONSTRAINT_VALIDATE_TEMPLATE = """
-            Evaluate compliance with given constraints
+            Evaluate compliance with the given constraints
             ---
             %s
             ---
