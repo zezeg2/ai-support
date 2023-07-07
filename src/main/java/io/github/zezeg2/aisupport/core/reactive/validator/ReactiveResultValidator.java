@@ -1,6 +1,7 @@
 package io.github.zezeg2.aisupport.core.reactive.validator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.TemplateConstants;
@@ -19,6 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Map;
 
 @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
 public abstract class ReactiveResultValidator {
@@ -53,7 +55,7 @@ public abstract class ReactiveResultValidator {
         return addTemplateContents(functionName).map(content -> TemplateConstants.FEEDBACK_FRAME.formatted(BuildFormatUtil.getFormatString(FeedbackResponse.class), content));
     }
 
-    public Mono<String> validate(String functionName, String identifier, String lastUserInput) {
+    public Mono<String> validate(String functionName, String identifier, Map<String, Object> lastUserInput) {
         MODEL annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
         AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
         return ignoreCondition(functionName, identifier).flatMap(ignore -> {
@@ -62,13 +64,17 @@ public abstract class ReactiveResultValidator {
         });
     }
 
-    public Mono<String> validate(String functionName, String identifier, String lastUserInput, AIModel model) {
+    public Mono<String> validate(String functionName, String identifier,  Map<String, Object> lastUserInput, AIModel model) {
         FeedbackRequest feedbackRequest = FeedbackRequest.builder().userInput(lastUserInput).build();
         return init(functionName, identifier)
                 .then(Mono.defer(() ->
                         getLastPromptResponseContent(functionName, identifier)
                                 .flatMap(lastResponseContent -> {
-                                    feedbackRequest.setAssistantOutput(lastResponseContent);
+                                    try {
+                                        feedbackRequest.setAssistantOutput(mapper.readValue(lastResponseContent,new TypeReference<Map<String, Object>>(){}));
+                                    } catch (JsonProcessingException e) {
+                                        return Mono.error(new RuntimeException(e));
+                                    }
                                     return exchangeMessages(functionName, identifier, feedbackRequest.toString(), ContextType.FEEDBACK, model)
                                             .flatMap(lastFeedbackContent -> {
                                                 FeedbackResponse feedbackResult;

@@ -1,6 +1,7 @@
 package io.github.zezeg2.aisupport.core.validator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
@@ -17,6 +18,7 @@ import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.util.List;
+import java.util.Map;
 
 @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "synchronous")
 public abstract class ResultValidator {
@@ -46,21 +48,25 @@ public abstract class ResultValidator {
         return TemplateConstants.FEEDBACK_FRAME.formatted(BuildFormatUtil.getFormatString(FeedbackResponse.class), addTemplateContents(functionName));
     }
 
-    public String validate(String functionName, String identifier, String lastUserInput) {
+    public String validate(String functionName, String identifier, Map<String, Object> lastUserInput) {
         MODEL annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
         AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
         if (!ignoreCondition(functionName, identifier)) return validate(functionName, identifier, lastUserInput, model);
         return getLastPromptResponseContent(functionName, identifier);
     }
 
-    public String validate(String functionName, String identifier, String lastUserInput, AIModel model) {
+    public String validate(String functionName, String identifier, Map<String, Object> lastUserInput, AIModel model) {
         String lastFeedbackContent;
         String lastResponseContent = getLastPromptResponseContent(functionName, identifier);
         FeedbackRequest feedbackRequest = FeedbackRequest.builder().userInput(lastUserInput).build();
         init(functionName, identifier);
 
         for (int count = 1; count <= MAX_ATTEMPTS; count++) {
-            feedbackRequest.setAssistantOutput(lastResponseContent);
+            try {
+                feedbackRequest.setAssistantOutput(mapper.readValue(lastResponseContent,new TypeReference<Map<String, Object>>(){}));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
             System.out.println("Try Count : " + count + " ---------------------------------------------------------------------------\n" + lastResponseContent);
             lastFeedbackContent = exchangeMessages(getNamespace(functionName), identifier, feedbackRequest.toString(), ContextType.FEEDBACK, model);
             FeedbackResponse feedbackResult;

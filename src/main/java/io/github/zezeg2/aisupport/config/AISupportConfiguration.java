@@ -1,5 +1,6 @@
 package io.github.zezeg2.aisupport.config;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
@@ -57,7 +58,9 @@ public class AISupportConfiguration {
 
     @Bean
     public static ObjectMapper mapper() {
-        return new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, false);
+        return mapper;
     }
 
     @Bean

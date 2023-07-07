@@ -6,24 +6,6 @@ package io.github.zezeg2.aisupport.common;
  * @since 1.0
  */
 public class TemplateConstants {
-    /**
-     * The template string for the function structure.
-     * It represents a functional interface and a main class with a lambda function.
-     */
-    public static final String FUNCTION_TEMPLATE = """
-            @FunctionalInterface
-            public interface FC {
-                String %s(%s);
-            }
-                        
-            public class Main {
-                public static void main(String[] args) {
-                    FC fc = (%s) -> {
-                        return [RESULT] //TODO: Replace [RESULT] with a JsonString of `%s`
-                    };
-                }
-            }
-            """;
 
     /**
      * The template string for the prompt.
@@ -97,7 +79,7 @@ public class TemplateConstants {
      * It includes the feedback format and the inspection items.
      */
     public static final String FEEDBACK_FRAME = """
-            You are tasked with inspecting 'assistantOutput' of the provided json data. You can reference the 'userInput' of the given json data as needed. Please provide feedback according to the given `Feedback Format`
+            You are tasked with inspecting 'assistantOutput' of the provided json data. Please provide feedback according to the given `Feedback Format`
                         
             Feedback Format:
             ```json

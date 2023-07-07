@@ -71,24 +71,21 @@ public class AIFunction<T> {
                 promptManager.getContext().savePromptMessages(functionName, identifier, systemMessage);
             }
         }
-        promptManager.addMessage(functionName, identifier, ROLE.USER, createValuesString(args), ContextType.PROMPT);
+        promptManager.addMessage(functionName, identifier, ROLE.USER, createArgsString(args), ContextType.PROMPT);
     }
 
-    /**
-     * Creates a string representation of the argument values.
-     *
-     * @param args The list of arguments.
-     * @return The string representation of the argument values.
-     */
-    private String createValuesString(List<Argument<?>> args) {
-        Map<String, Object> valueMap = new LinkedHashMap<>();
-        args.forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
-
+    private String createArgsString(List<Argument<?>> args) {
         try {
-            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(valueMap);
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(createArgsMap(args));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Map<String, Object> createArgsMap(List<Argument<?>> args) {
+        Map<String, Object> valueMap = new LinkedHashMap<>();
+        args.forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
+        return valueMap;
     }
 
     /**
@@ -100,8 +97,8 @@ public class AIFunction<T> {
      */
     private T parseResponseWithValidate(ExecuteParameters<T> params, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
-        String valuesString = createValuesString(params.getArgs());
-        content = resultValidatorChain.validate(functionName, params.getIdentifier(), valuesString, content);
+        Map<String, Object> argsMap = createArgsMap(params.getArgs());
+        content = resultValidatorChain.validate(functionName, params.getIdentifier(), argsMap, content);
         try {
             return mapper.readValue(content, returnType);
         } catch (JsonProcessingException e) {

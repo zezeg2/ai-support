@@ -175,6 +175,5 @@ public class BuildFormatUtil {
             return returnType.getSimpleName();
         }
     }
-
 }
 

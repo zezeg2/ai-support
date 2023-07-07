@@ -2,13 +2,17 @@ package io.github.zezeg2.aisupport.core.validator;
 
 import io.github.zezeg2.aisupport.common.BaseSupportType;
 import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+import java.util.Map;
+
+@Getter
+@Setter
 @Builder
 @EqualsAndHashCode(callSuper = true)
 public class FeedbackRequest extends BaseSupportType {
-    private String userInput;
-    private String assistantOutput;
+    private Map<String, Object> userInput;
+    private Object assistantOutput;
 }

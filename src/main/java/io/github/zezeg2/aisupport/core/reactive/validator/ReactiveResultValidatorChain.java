@@ -7,6 +7,7 @@ import reactor.core.publisher.Mono;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -20,7 +21,7 @@ public class ReactiveResultValidatorChain {
                 .collect(Collectors.toList());
     }
 
-    public Mono<String> validate(String functionName, String identifier, String lastUserInput, String target) {
+    public Mono<String> validate(String functionName, String identifier, Map<String, Object> lastUserInput, String target) {
         if (validators.isEmpty()) {
             return Mono.just(target);
         }

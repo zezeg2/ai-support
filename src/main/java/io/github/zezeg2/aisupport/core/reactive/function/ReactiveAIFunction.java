@@ -67,25 +67,28 @@ public class ReactiveAIFunction<T> {
                             return promptManager.getContext().savePromptMessages(functionName, identifier, systemMessage);
                         })
                 )
-                .then(promptManager.addMessage(functionName, identifier, ROLE.USER, createValuesString(args), ContextType.PROMPT));
+                .then(promptManager.addMessage(functionName, identifier, ROLE.USER, createArgsString(args), ContextType.PROMPT));
     }
 
 
-    private String createValuesString(List<Argument<?>> args) {
-        Map<String, Object> valueMap = new LinkedHashMap<>();
-        args.forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
-
+    private String createArgsString(List<Argument<?>> args) {
         try {
-            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(valueMap);
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(createArgsMap(args));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private Map<String, Object> createArgsMap(List<Argument<?>> args) {
+        Map<String, Object> valueMap = new LinkedHashMap<>();
+        args.forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
+        return valueMap;
+    }
+
     private Mono<T> parseResponseWithValidate(ExecuteParameters<T> params, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
-        String valuesString = createValuesString(params.getArgs());
-        return resultValidatorChain.validate(functionName, params.getIdentifier(), valuesString, content).flatMap((stringResult) -> {
+        Map<String, Object> argsMap = createArgsMap(params.getArgs());
+        return resultValidatorChain.validate(functionName, params.getIdentifier(), argsMap, content).flatMap((stringResult) -> {
             try {
                 return Mono.just(mapper.readValue(stringResult, returnType));
             } catch (JsonProcessingException e) {
