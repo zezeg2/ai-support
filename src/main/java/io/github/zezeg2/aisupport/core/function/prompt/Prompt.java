@@ -10,6 +10,7 @@ import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -25,6 +26,7 @@ import java.util.List;
  */
 @Data
 @Document
+@NoArgsConstructor
 public class Prompt implements Serializable {
 
     @Id
