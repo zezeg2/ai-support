@@ -85,15 +85,11 @@ public abstract class ReactiveResultValidator {
                                                             .then(exchangeMessages(functionName, identifier, lastResponseContent, ContextType.FEEDBACK, model)
                                                                     .flatMap(ignored -> Mono.<String>error(new RuntimeException(e))));
                                                 }
-
-                                                if (feedbackResult.isValid()) {
-                                                    return Mono.empty();
-                                                } else {
-                                                    return Mono.defer(() -> {
-                                                        Mono<String> result = exchangeMessages(functionName, identifier, lastFeedbackContent, ContextType.PROMPT, model);
-                                                        return result.flatMap(r -> Mono.error(new RuntimeException("Feedback on results exists\n" + lastFeedbackContent)));
-                                                    });
-                                                }
+                                                if (feedbackResult.isValid()) return Mono.empty();
+                                                else return Mono.defer(() -> {
+                                                    Mono<String> result = exchangeMessages(functionName, identifier, lastFeedbackContent, ContextType.PROMPT, model);
+                                                    return result.flatMap(r -> Mono.error(new RuntimeException("Feedback on results exists\n" + lastFeedbackContent)));
+                                                });
                                             });
                                 })
                                 .retry(MAX_ATTEMPTS - 1)

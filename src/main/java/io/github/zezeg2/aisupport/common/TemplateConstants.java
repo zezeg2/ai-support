@@ -12,8 +12,7 @@ public class TemplateConstants {
      * It includes information about the command, class structure, constraints, input and result formats, and feedback format.
      */
     public static final String PROMPT_TEMPLATE = """
-            You are tasked to act as a function execution delegate. You will be given an input and required to execute the following command.
- 
+            Please ignore all previous instructions. I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
             Command: %s
  
             Be sure to observe the following constraints when executing commands.
@@ -42,8 +41,7 @@ public class TemplateConstants {
      * It includes information about the command, class structure, constraints, input and result formats, result example, and feedback format.
      */
     public static final String PROMPT_TEMPLATE_WITH_EXAMPLE = """
-            I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
-            
+            Please ignore all previous instructions. I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
             Command: %s
             
             Be sure to observe the following constraints when executing commands.
@@ -78,6 +76,20 @@ public class TemplateConstants {
      */
     public static final String FEEDBACK_FRAME = """
             Your task is to inspect the 'assistantOutput' of the provided JSON data. Please provide feedback according to the given `Feedback Format`.
+            
+            Feedback Format:
+            ```json
+            %s
+            ```
+            
+            The inspection items are as follows.
+            %s
+            
+            Do not include any other explanatory text in your response apart from the result.
+            """;
+
+    public static final String FEEDBACK_FRAME_WITH_ROLE = """
+            Your task is to inspect the 'assistantOutput' of the provided JSON data.  I want you to act as %s Please provide feedback according to the given `Feedback Format`.
             
             Feedback Format:
             ```json
