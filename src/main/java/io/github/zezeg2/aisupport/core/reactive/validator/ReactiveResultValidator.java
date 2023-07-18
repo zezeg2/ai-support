@@ -1,7 +1,6 @@
 package io.github.zezeg2.aisupport.core.reactive.validator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.BuildFormatUtil;
 import io.github.zezeg2.aisupport.common.TemplateConstants;
@@ -13,18 +12,19 @@ import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
-import io.github.zezeg2.aisupport.core.validator.FeedbackRequest;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.core.validator.ValidateTarget;
+import lombok.Setter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Map;
 
 @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
 public abstract class ReactiveResultValidator {
-    protected static final int MAX_ATTEMPTS = 3;
+    protected final int MAX_ATTEMPTS = 3;
+    @Setter
+    protected String role = null;
     protected final ReactivePromptManager promptManager;
     protected final ObjectMapper mapper;
     protected final OpenAIProperties openAIProperties;
@@ -52,46 +52,39 @@ public abstract class ReactiveResultValidator {
     }
 
     private Mono<String> buildTemplate(String functionName) {
-        return addTemplateContents(functionName).map(content -> TemplateConstants.FEEDBACK_FRAME.formatted(BuildFormatUtil.getFormatString(FeedbackResponse.class), content));
+        return addTemplateContents(functionName).flatMap(content -> getPrompt(functionName).map(Prompt::getResultFormat).flatMap(resultFormat -> Mono.just(this.role == null ? TemplateConstants.FEEDBACK_FRAME.formatted(content, resultFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class)) :
+                TemplateConstants.FEEDBACK_FRAME_WITH_ROLE.formatted(this.role, content, resultFormat,  BuildFormatUtil.getFormatString(FeedbackResponse.class)))));
     }
 
-    public Mono<String> validate(String functionName, String identifier, Map<String, Object> lastUserInput) {
+    public Mono<String> validate(String functionName, String identifier) {
         MODEL annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
         AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
         return ignoreCondition(functionName, identifier).flatMap(ignore -> {
-            if (!ignore) return validate(functionName, identifier, lastUserInput, model);
+            if (!ignore) return validate(functionName, identifier, model);
             return getLastPromptResponseContent(functionName, identifier);
         });
     }
 
-    public Mono<String> validate(String functionName, String identifier,  Map<String, Object> lastUserInput, AIModel model) {
-        FeedbackRequest feedbackRequest = FeedbackRequest.builder().userInput(lastUserInput).build();
+    public Mono<String> validate(String functionName, String identifier, AIModel model) {
         return init(functionName, identifier)
                 .then(Mono.defer(() ->
                         getLastPromptResponseContent(functionName, identifier)
-                                .flatMap(lastResponseContent -> {
-                                    try {
-                                        feedbackRequest.setAssistantOutput(mapper.readValue(lastResponseContent,new TypeReference<Map<String, Object>>(){}));
-                                    } catch (JsonProcessingException e) {
-                                        return Mono.error(new RuntimeException(e));
-                                    }
-                                    return exchangeMessages(functionName, identifier, feedbackRequest.toString(), ContextType.FEEDBACK, model)
-                                            .flatMap(lastFeedbackContent -> {
-                                                FeedbackResponse feedbackResult;
-                                                try {
-                                                    feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
-                                                } catch (JsonProcessingException e) {
-                                                    return promptManager.getContext().deleteLastFeedbackMessage(getNamespace(functionName), identifier, 2)
-                                                            .then(exchangeMessages(functionName, identifier, lastResponseContent, ContextType.FEEDBACK, model)
-                                                                    .flatMap(ignored -> Mono.<String>error(new RuntimeException(e))));
-                                                }
-                                                if (feedbackResult.isValid()) return Mono.empty();
-                                                else return Mono.defer(() -> {
-                                                    Mono<String> result = exchangeMessages(functionName, identifier, lastFeedbackContent, ContextType.PROMPT, model);
-                                                    return result.flatMap(r -> Mono.error(new RuntimeException("Feedback on results exists\n" + lastFeedbackContent)));
-                                                });
+                                .flatMap(lastResponseContent -> exchangeMessages(functionName, identifier, lastResponseContent, ContextType.FEEDBACK, model)
+                                        .flatMap(lastFeedbackContent -> {
+                                            FeedbackResponse feedbackResult;
+                                            try {
+                                                feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
+                                            } catch (JsonProcessingException e) {
+                                                return promptManager.getContext().deleteLastFeedbackMessage(getNamespace(functionName), identifier, 2)
+                                                        .then(exchangeMessages(functionName, identifier, lastResponseContent, ContextType.FEEDBACK, model)
+                                                                .flatMap(ignored -> Mono.<String>error(new RuntimeException(e))));
+                                            }
+                                            if (feedbackResult.isValid()) return Mono.empty();
+                                            else return Mono.defer(() -> {
+                                                Mono<String> result = exchangeMessages(functionName, identifier, lastFeedbackContent, ContextType.PROMPT, model);
+                                                return result.flatMap(r -> Mono.error(new RuntimeException("Feedback on results exists\n" + lastFeedbackContent)));
                                             });
-                                })
+                                        }))
                                 .retry(MAX_ATTEMPTS - 1)
                 ))
                 .switchIfEmpty(Mono.defer(() -> getLastPromptResponseContent(functionName, identifier)));

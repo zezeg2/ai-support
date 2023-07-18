@@ -97,8 +97,7 @@ public class AIFunction<T> {
      */
     private T parseResponseWithValidate(ExecuteParameters<T> params, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
-        Map<String, Object> argsMap = createArgsMap(params.getArgs());
-        content = resultValidatorChain.validate(functionName, params.getIdentifier(), argsMap, content);
+        content = resultValidatorChain.validate(functionName, params.getIdentifier(), content);
         try {
             return mapper.readValue(content, returnType);
         } catch (JsonProcessingException e) {

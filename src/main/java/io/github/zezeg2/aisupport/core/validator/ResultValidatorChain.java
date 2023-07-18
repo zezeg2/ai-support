@@ -2,7 +2,6 @@ package io.github.zezeg2.aisupport.core.validator;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public class ResultValidatorChain {
 
@@ -12,13 +11,13 @@ public class ResultValidatorChain {
         this.validators = validators;
     }
 
-    public String validate(String functionName, String identifier, Map<String, Object> lastUserInput, String target) {
+    public String validate(String functionName, String identifier, String target) {
         String result = target;
         for (ResultValidator validator : validators) {
             ValidateTarget targetFunction = validator.getClass().getAnnotation(ValidateTarget.class);
             List<String> targetFunctionList = Arrays.stream(targetFunction.names()).toList();
             if (targetFunction.global() || targetFunctionList.contains(functionName)) {
-                result = validator.validate(functionName, identifier, lastUserInput);
+                result = validator.validate(functionName, identifier);
             }
         }
         return result;

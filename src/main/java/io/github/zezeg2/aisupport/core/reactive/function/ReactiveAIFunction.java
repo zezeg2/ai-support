@@ -87,8 +87,7 @@ public class ReactiveAIFunction<T> {
 
     private Mono<T> parseResponseWithValidate(ExecuteParameters<T> params, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
-        Map<String, Object> argsMap = createArgsMap(params.getArgs());
-        return resultValidatorChain.validate(functionName, params.getIdentifier(), argsMap, content).flatMap((stringResult) -> {
+        return resultValidatorChain.validate(functionName, params.getIdentifier(), content).flatMap((stringResult) -> {
             try {
                 return Mono.just(mapper.readValue(stringResult, returnType));
             } catch (JsonProcessingException e) {

@@ -17,7 +17,7 @@ public class TemplateConstants {
  
             Be sure to observe the following constraints when executing commands.
             Constraints:
-            %s- Only respond with your `return` value. Do not include any other explanatory text in your response.
+            %s- Do not include any other explanatory text in your response.
  
             Input Format:
             ```json
@@ -46,7 +46,7 @@ public class TemplateConstants {
             
             Be sure to observe the following constraints when executing commands.
             Constraints:
-            %s- Only respond with your `return` value. Do not include any other explanatory text in your response.
+            %s- Do not include any other explanatory text in your response.
             
             Input Format:
             ```json
@@ -75,31 +75,41 @@ public class TemplateConstants {
      * It includes the feedback format and the inspection items.
      */
     public static final String FEEDBACK_FRAME = """
-            Your task is to inspect the 'assistantOutput' of the provided JSON data. Please provide feedback according to the given `Feedback Format`.
-            
-            Feedback Format:
-            ```json
-            %s
-            ```
+            Your task is to inspect the provided JSON data. Please provide feedback focusing exclusively on any issues or errors found, in accordance with the given 'Result Format'."
             
             The inspection items are as follows.
             %s
             
+            Input Format:
+            ```json
+            %s
+            ```
+            
+            Result Format:
+            ```json
+            %s
+            ```
+
             Do not include any other explanatory text in your response apart from the result.
             """;
 
     public static final String FEEDBACK_FRAME_WITH_ROLE = """
-            Your task is to inspect the 'assistantOutput' of the provided JSON data.  I want you to act as %s Please provide feedback according to the given `Feedback Format`.
+            Your task is to inspect the provided JSON data. I want you to act as %s. Please provide feedback focusing exclusively on any issues or errors found, in accordance with the given 'Result Format'."
+                   
+            The inspection items are as follows.
+            %s
             
-            Feedback Format:
+            Input Format:
             ```json
             %s
             ```
             
-            The inspection items are as follows.
+            Result Format:
+            ```json
             %s
+            ```
             
-            Do not include any other explanatory text in your response apart from the result.
+            Do not include any other explanatory text in your response without the result.
             """;
 
     /**
