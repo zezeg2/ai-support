@@ -21,6 +21,7 @@ public enum GPT4Model implements GPTModel {
      * 8k context, but specific snapshot
      */
     GPT_4_0314("gpt-4-0314", 0.00003d, 0.00006d),
+    GPT_4_0613("gpt-4-0613", 0.00003d, 0.00006d),
 
     /**
      * Same capabilities as the base gpt-4 mode but with 4x the context length. Will be updated with our latest model iteration.
@@ -32,7 +33,8 @@ public enum GPT4Model implements GPTModel {
      * Snapshot of gpt-4-32 from March 14th 2023. Unlike gpt-4-32k, this model will not receive updates, and will only be supported for a three month period ending on June 14th 2023.
      * 32k context, but specific snapshot
      */
-    GPT_4_32_K_0314("gpt-4-32k-0314", 0.00006d, 0.00012d);
+    GPT_4_32_K_0314("gpt-4-32k-0314", 0.00006d, 0.00012d),
+    GPT_4_32_K_0613("gpt-4-32k-0613", 0.00006d, 0.00012d);
 
     @Getter
     private final String value;

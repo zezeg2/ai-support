@@ -76,21 +76,22 @@ public class TemplateConstants {
      */
     public static final String FEEDBACK_FRAME = """
             Your task is to inspect the provided JSON data. Please provide feedback focusing exclusively on any issues or errors found, in accordance with the given 'Result Format'."
-            
+                        
             The inspection items are as follows.
             %s
-            
+                        
             Input Format:
             ```json
             %s
             ```
-            
+                        
             Result Format:
             ```json
             %s
             ```
 
-            Do not include any other explanatory text in your response apart from the result.
+            - Each element within the "problems" array should be concise and clear (limited to 30 words or fewer).
+            - Do not include any other explanatory text in your response without the result.
             """;
 
     public static final String FEEDBACK_FRAME_WITH_ROLE = """
@@ -98,18 +99,18 @@ public class TemplateConstants {
                    
             The inspection items are as follows.
             %s
-            
+                        
             Input Format:
             ```json
             %s
             ```
-            
+                        
             Result Format:
             ```json
             %s
             ```
-            
-            Do not include any other explanatory text in your response without the result.
+            - Each element within the "problems" array should be concise and clear (limited to 30 words or fewer).
+            - Do not include any other explanatory text in your response without the result.
             """;
 
     /**
