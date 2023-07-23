@@ -20,13 +20,13 @@ import java.util.List;
 @Data
 @Builder
 @Document
-public class FeedbackMessages implements Serializable {
+public class FeedbackMessageContext implements Serializable, MessageContext {
 
     @Id
     private String identifier;
     private String functionName;
     private String validatorName;
-    private List<ChatMessage> content;
+    private List<ChatMessage> messages;
 
     /**
      * Constructs a new FeedbackMessages instance.
@@ -34,17 +34,17 @@ public class FeedbackMessages implements Serializable {
      * @param identifier    The identifier of the feedback messages.
      * @param functionName  The name of the function.
      * @param validatorName The name of the validator.
-     * @param content       The list of chat messages.
+     * @param messages      The list of chat messages.
      */
     @JsonCreator
-    public FeedbackMessages(@JsonProperty("identifier") String identifier,
-                            @JsonProperty("functionName") String functionName,
-                            @JsonProperty("validatorName") String validatorName,
-                            @JsonProperty("content") List<ChatMessage> content) {
+    public FeedbackMessageContext(@JsonProperty("identifier") String identifier,
+                                  @JsonProperty("functionName") String functionName,
+                                  @JsonProperty("validatorName") String validatorName,
+                                  @JsonProperty("messages") List<ChatMessage> messages) {
         this.identifier = identifier;
         this.functionName = functionName;
         this.validatorName = validatorName;
-        this.content = content;
+        this.messages = messages;
     }
 }
 

@@ -2,9 +2,9 @@ package io.github.zezeg2.aisupport.context.reactive;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
-import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessageContext;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
-import io.github.zezeg2.aisupport.core.function.prompt.PromptMessages;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -37,30 +37,30 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<PromptMessages> getPromptChatMessages(String namespace, String identifier) {
-        return reactiveMongoTemplate.findOne(Query.query(Criteria.where("identifier").is(identifier)), PromptMessages.class, namespace)
+    public Mono<PromptMessageContext> getPromptChatMessages(String namespace, String identifier) {
+        return reactiveMongoTemplate.findOne(Query.query(Criteria.where("identifier").is(identifier)), PromptMessageContext.class, namespace)
                 .switchIfEmpty(Mono.defer(() -> {
-                    PromptMessages promptMessages = PromptMessages.builder()
+                    PromptMessageContext promptContext = PromptMessageContext.builder()
                             .identifier(identifier)
                             .functionName(namespace)
-                            .content(new ArrayList<>()).build();
-                    reactiveMongoTemplate.save(promptMessages, namespace);
-                    return Mono.just(promptMessages);
+                            .messages(new ArrayList<>()).build();
+                    reactiveMongoTemplate.save(promptContext, namespace);
+                    return Mono.just(promptContext);
                 }));
     }
 
     @Override
-    public Mono<FeedbackMessages> getFeedbackChatMessages(String namespace, String identifier) {
-        return reactiveMongoTemplate.findOne(Query.query(Criteria.where("identifier").is(identifier)), FeedbackMessages.class, namespace)
+    public Mono<FeedbackMessageContext> getFeedbackChatMessages(String namespace, String identifier) {
+        return reactiveMongoTemplate.findOne(Query.query(Criteria.where("identifier").is(identifier)), FeedbackMessageContext.class, namespace)
                 .switchIfEmpty(Mono.defer(() -> {
                     String[] split = namespace.split(":");
-                    FeedbackMessages feedbackMessages = FeedbackMessages.builder()
+                    FeedbackMessageContext feedbackContext = FeedbackMessageContext.builder()
                             .identifier(identifier)
                             .functionName(split[0])
                             .validatorName(split[1])
-                            .content(new ArrayList<>()).build();
-                    reactiveMongoTemplate.save(feedbackMessages, namespace);
-                    return Mono.just(feedbackMessages);
+                            .messages(new ArrayList<>()).build();
+                    reactiveMongoTemplate.save(feedbackContext, namespace);
+                    return Mono.just(feedbackContext);
                 }));
     }
 
@@ -68,10 +68,10 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     public Mono<Void> savePromptMessages(String namespace, String identifier, ChatMessage message) {
         return getPromptChatMessages(namespace, identifier)
                 .doOnNext(promptMessages -> {
-                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-                        promptMessages.getContent().get(0).setContent(message.getContent());
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
+                        promptMessages.getMessages().get(0).setContent(message.getContent());
                     } else {
-                        promptMessages.getContent().add(message);
+                        promptMessages.getMessages().add(message);
                     }
                 })
                 .flatMap(promptMessages -> reactiveMongoTemplate.save(promptMessages, namespace))
@@ -79,7 +79,7 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Void> savePromptMessages(PromptMessages messages) {
+    public Mono<Void> savePromptMessages(PromptMessageContext messages) {
         return reactiveMongoTemplate.save(messages, messages.getFunctionName()).then();
     }
 
@@ -87,10 +87,10 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     public Mono<Void> saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         return getFeedbackChatMessages(namespace, identifier)
                 .doOnNext(feedbackMessages -> {
-                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-                        feedbackMessages.getContent().get(0).setContent(message.getContent());
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
+                        feedbackMessages.getMessages().get(0).setContent(message.getContent());
                     } else {
-                        feedbackMessages.getContent().add(message);
+                        feedbackMessages.getMessages().add(message);
                     }
                 })
                 .flatMap(feedbackMessages -> reactiveMongoTemplate.save(feedbackMessages, namespace))
@@ -98,16 +98,16 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Void> saveFeedbackMessages(FeedbackMessages messages) {
+    public Mono<Void> saveFeedbackMessages(FeedbackMessageContext messages) {
         return reactiveMongoTemplate.save(messages, messages.getFunctionName() + ":" + messages.getValidatorName()).then();
     }
 
     @Override
     public Mono<Void> deleteLastPromptMessage(String namespace, String identifier, Integer n) {
         return getPromptChatMessages(namespace, identifier)
-                .filter(promptMessages -> !promptMessages.getContent().isEmpty())
+                .filter(promptMessages -> !promptMessages.getMessages().isEmpty())
                 .doOnNext(promptMessages -> {
-                    List<ChatMessage> content = promptMessages.getContent();
+                    List<ChatMessage> content = promptMessages.getMessages();
                     if (!content.isEmpty()) {
                         int removeIndex = Math.max(0, content.size() - n);
                         content.subList(removeIndex, content.size()).clear();
@@ -119,9 +119,9 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     @Override
     public Mono<Void> deleteLastFeedbackMessage(String namespace, String identifier, Integer n) {
         return getFeedbackChatMessages(namespace, identifier)
-                .filter(feedbackMessages -> !feedbackMessages.getContent().isEmpty())
+                .filter(feedbackMessages -> !feedbackMessages.getMessages().isEmpty())
                 .doOnNext(feedbackMessages -> {
-                    List<ChatMessage> content = feedbackMessages.getContent();
+                    List<ChatMessage> content = feedbackMessages.getMessages();
                     int removeIndex = Math.max(0, content.size() - n);
                     content.subList(removeIndex, content.size()).clear();
                 })

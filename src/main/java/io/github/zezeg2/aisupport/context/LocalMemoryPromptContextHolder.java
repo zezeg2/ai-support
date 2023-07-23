@@ -2,9 +2,7 @@ package io.github.zezeg2.aisupport.context;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
-import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
-import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
-import io.github.zezeg2.aisupport.core.function.prompt.PromptMessages;
+import io.github.zezeg2.aisupport.core.function.prompt.*;
 
 import java.util.List;
 import java.util.Map;
@@ -14,8 +12,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class LocalMemoryPromptContextHolder implements PromptContextHolder {
     private static final Map<String, Prompt> promptRegistry = new ConcurrentHashMap<>();
-    private static final Map<String, List<PromptMessages>> promptMessagesRegistry = new ConcurrentHashMap<>();
-    private static final Map<String, List<FeedbackMessages>> feedbackMessagesRegistry = new ConcurrentHashMap<>();
+    private static final Map<ContextType, Map<String, CopyOnWriteArrayList<MessageContext>>> contextRegistry =
+            new ConcurrentHashMap<>(Map.of(ContextType.PROMPT, new ConcurrentHashMap<>(), ContextType.FEEDBACK, new ConcurrentHashMap<>()));
+
 
     @Override
     public boolean contains(String namespace) {
@@ -33,75 +32,51 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public PromptMessages getPromptChatMessages(String namespace, String identifier) {
-        return promptMessagesRegistry.get(namespace).stream()
-                .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst()
-                .orElse(PromptMessages.builder().identifier(identifier).content(new CopyOnWriteArrayList<>()).build());
+    public <T extends MessageContext> T getContext(ContextType contextType, String namespace, String identifier) {
+        Map<String, CopyOnWriteArrayList<MessageContext>> selectedRegistry = contextRegistry.get(contextType);
+        if (!selectedRegistry.containsKey(namespace)) selectedRegistry.put(namespace, new CopyOnWriteArrayList<>());
+        return (T) selectedRegistry.get(namespace).stream()
+                .filter(context -> context.getIdentifier().equals(identifier)).findFirst()
+                .orElse(contextType == ContextType.PROMPT ? PromptMessageContext.builder().identifier(identifier).messages(new CopyOnWriteArrayList<>()).build()
+                        : FeedbackMessageContext.builder().identifier(identifier).messages(new CopyOnWriteArrayList<>()).build());
     }
 
     @Override
-    public FeedbackMessages getFeedbackChatMessages(String namespace, String identifier) {
-        return feedbackMessagesRegistry.get(namespace).stream()
-                .filter(feedbackMessages -> feedbackMessages.getIdentifier().equals(identifier)).findFirst()
-                .orElse(FeedbackMessages.builder().identifier(identifier).content(new CopyOnWriteArrayList<>()).build());
-    }
-
-    @Override
-    public void savePromptMessages(String namespace, String identifier, ChatMessage message) {
-        if (!promptMessagesRegistry.containsKey(namespace)) {
-            promptMessagesRegistry.put(namespace, new CopyOnWriteArrayList<>());
+    public void saveMessage(ContextType contextType, String namespace, String identifier, ChatMessage message) {
+        if (!contextRegistry.get(contextType).containsKey(namespace)) {
+            contextRegistry.get(contextType).put(namespace, new CopyOnWriteArrayList<>());
         }
-        PromptMessages promptChatMessages = getPromptChatMessages(namespace, identifier);
-        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptChatMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-            promptChatMessages.getContent().get(0).setContent(message.getContent());
+        MessageContext messageContext = getContext(contextType, namespace, identifier);
+        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && messageContext.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
+            messageContext.getMessages().get(0).setContent(message.getContent());
         } else {
-            promptChatMessages.getContent().add(message);
+            messageContext.getMessages().add(message);
         }
 
-        if (promptMessagesRegistry.get(namespace).stream()
-                .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst().isEmpty()) {
-            promptMessagesRegistry.get(namespace).add(promptChatMessages);
-        }
-    }
-
-    @Override
-    public void savePromptMessages(PromptMessages messages) {
-        PromptMessages origin = promptMessagesRegistry.get(messages.getFunctionName()).stream().filter(promptMessages -> promptMessages.getIdentifier().equals(messages.getIdentifier())).findFirst().orElseThrow();
-        origin.setContent(messages.getContent());
-    }
-
-    @Override
-    public void saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
-        if (!feedbackMessagesRegistry.containsKey(namespace)) {
-            feedbackMessagesRegistry.put(namespace, new CopyOnWriteArrayList<>());
-        }
-        FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
-        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-            feedbackMessages.getContent().get(0).setContent(message.getContent());
-        } else {
-            feedbackMessages.getContent().add(message);
-        }
-
-        if (feedbackMessagesRegistry.get(namespace).stream()
-                .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst().isEmpty()) {
-            feedbackMessagesRegistry.get(namespace).add(feedbackMessages);
+        if (contextRegistry.get(contextType).get(namespace).stream()
+                .filter(ctx -> ctx.getIdentifier().equals(identifier)).findFirst().isEmpty()) {
+            contextRegistry.get(contextType).get(namespace).add(messageContext);
         }
     }
 
+
     @Override
-    public void saveFeedbackMessages(FeedbackMessages messages) {
-        FeedbackMessages origin = feedbackMessagesRegistry.get(messages.getFunctionName() + ":" + messages.getValidatorName()).stream().filter(feedbackMessages -> feedbackMessages.getIdentifier().equals(messages.getIdentifier())).findFirst().orElseThrow();
-        origin.setContent(messages.getContent());
+    public void saveContext(ContextType contextType, MessageContext messageContext) {
+        String key = contextType == ContextType.PROMPT ? messageContext.getFunctionName() : messageContext.getFunctionName() + ":" + ((FeedbackMessageContext) messageContext).getValidatorName();
+        MessageContext origin = contextRegistry.get(contextType).get(key).stream()
+                .filter(ctx -> ctx.getIdentifier().equals(messageContext.getIdentifier()))
+                .findFirst().orElseThrow();
+        origin.setMessages(messageContext.getMessages());
     }
 
     @Override
-    public void deleteLastPromptMessage(String namespace, String identifier, Integer n) {
-        List<PromptMessages> promptMessagesList = promptMessagesRegistry.get(namespace);
-        if (promptMessagesList != null) {
-            Optional<PromptMessages> promptMessagesOptional = promptMessagesList.stream()
-                    .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst();
-            promptMessagesOptional.ifPresent(promptMessages -> {
-                List<ChatMessage> content = promptMessages.getContent();
+    public void deleteMessagesFromLast(ContextType contextType, String namespace, String identifier, Integer n) {
+        List<MessageContext> baseMessageContextList = contextRegistry.get(contextType).get(namespace);
+        if (baseMessageContextList != null) {
+            Optional<MessageContext> baseContextOptional = baseMessageContextList.stream()
+                    .filter(baseContext -> baseContext.getIdentifier().equals(identifier)).findFirst();
+            baseContextOptional.ifPresent(baseContext -> {
+                List<ChatMessage> content = baseContext.getMessages();
                 if (!content.isEmpty()) {
                     int removeIndex = Math.max(0, content.size() - n);
                     content.subList(removeIndex, content.size()).clear();
@@ -109,21 +84,4 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
             });
         }
     }
-
-    @Override
-    public void deleteLastFeedbackMessage(String namespace, String identifier, Integer n) {
-        List<FeedbackMessages> feedbackMessagesList = feedbackMessagesRegistry.get(namespace);
-        if (feedbackMessagesList != null) {
-            Optional<FeedbackMessages> feedbackMessagesOptional = feedbackMessagesList.stream()
-                    .filter(feedbackMessages -> feedbackMessages.getIdentifier().equals(identifier)).findFirst();
-            feedbackMessagesOptional.ifPresent(feedbackMessages -> {
-                List<ChatMessage> content = feedbackMessages.getContent();
-                if (!content.isEmpty()) {
-                    int removeIndex = Math.max(0, content.size() - n);
-                    content.subList(removeIndex, content.size()).clear();
-                }
-            });
-        }
-    }
-
 }

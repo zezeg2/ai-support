@@ -2,9 +2,9 @@ package io.github.zezeg2.aisupport.context.reactive;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
-import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessageContext;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
-import io.github.zezeg2.aisupport.core.function.prompt.PromptMessages;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -15,8 +15,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptContextHolder {
     private static final Map<String, Prompt> promptRegistry = new ConcurrentHashMap<>();
-    private static final Map<String, List<PromptMessages>> promptMessagesRegistry = new ConcurrentHashMap<>();
-    private static final Map<String, List<FeedbackMessages>> feedbackMessagesRegistry = new ConcurrentHashMap<>();
+    private static final Map<String, List<PromptMessageContext>> promptMessagesRegistry = new ConcurrentHashMap<>();
+    private static final Map<String, List<FeedbackMessageContext>> feedbackMessagesRegistry = new ConcurrentHashMap<>();
 
     @Override
     public Mono<Boolean> contains(String namespace) {
@@ -34,17 +34,17 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
     }
 
     @Override
-    public Mono<PromptMessages> getPromptChatMessages(String namespace, String identifier) {
+    public Mono<PromptMessageContext> getPromptChatMessages(String namespace, String identifier) {
         return Mono.justOrEmpty(promptMessagesRegistry.get(namespace).stream()
                 .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst()
-                .orElse(PromptMessages.builder().identifier(identifier).content(new CopyOnWriteArrayList<>()).build()));
+                .orElse(PromptMessageContext.builder().identifier(identifier).messages(new CopyOnWriteArrayList<>()).build()));
     }
 
     @Override
-    public Mono<FeedbackMessages> getFeedbackChatMessages(String namespace, String identifier) {
+    public Mono<FeedbackMessageContext> getFeedbackChatMessages(String namespace, String identifier) {
         return Mono.justOrEmpty(feedbackMessagesRegistry.get(namespace).stream()
                 .filter(feedbackMessages -> feedbackMessages.getIdentifier().equals(identifier)).findFirst()
-                .orElse(FeedbackMessages.builder().identifier(identifier).content(new CopyOnWriteArrayList<>()).build()));
+                .orElse(FeedbackMessageContext.builder().identifier(identifier).messages(new CopyOnWriteArrayList<>()).build()));
     }
 
     @Override
@@ -55,10 +55,10 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
                     }
                 }).then(getPromptChatMessages(namespace, identifier))
                 .flatMap(promptMessages -> {
-                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-                        promptMessages.getContent().get(0).setContent(message.getContent());
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
+                        promptMessages.getMessages().get(0).setContent(message.getContent());
                     } else {
-                        promptMessages.getContent().add(message);
+                        promptMessages.getMessages().add(message);
                     }
                     return Mono.just(promptMessages);
                 })
@@ -72,10 +72,10 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
     }
 
     @Override
-    public Mono<Void> savePromptMessages(PromptMessages messages) {
+    public Mono<Void> savePromptMessages(PromptMessageContext messages) {
         return getPromptChatMessages(messages.getFunctionName(), messages.getIdentifier())
                 .flatMap(promptMessages -> {
-                    promptMessages.setContent(messages.getContent());
+                    promptMessages.setMessages(messages.getMessages());
                     return Mono.empty();
                 });
     }
@@ -88,10 +88,10 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
                     }
                 }).then(getFeedbackChatMessages(namespace, identifier))
                 .flatMap(feedbackMessages -> {
-                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-                        feedbackMessages.getContent().get(0).setContent(message.getContent());
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
+                        feedbackMessages.getMessages().get(0).setContent(message.getContent());
                     } else {
-                        feedbackMessages.getContent().add(message);
+                        feedbackMessages.getMessages().add(message);
                     }
                     return Mono.just(feedbackMessages);
                 })
@@ -105,10 +105,10 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
     }
 
     @Override
-    public Mono<Void> saveFeedbackMessages(FeedbackMessages messages) {
+    public Mono<Void> saveFeedbackMessages(FeedbackMessageContext messages) {
         return getFeedbackChatMessages(messages.getFunctionName() + ":" + messages.getValidatorName(), messages.getIdentifier())
                 .flatMap(promptMessages -> {
-                    promptMessages.setContent(messages.getContent());
+                    promptMessages.setMessages(messages.getMessages());
                     return Mono.empty();
                 });
     }
@@ -116,12 +116,12 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
     @Override
     public Mono<Void> deleteLastPromptMessage(String namespace, String identifier, Integer n) {
         return Mono.fromRunnable(() -> {
-            List<PromptMessages> promptMessagesList = promptMessagesRegistry.get(namespace);
-            if (promptMessagesList != null) {
-                Optional<PromptMessages> promptMessagesOptional = promptMessagesList.stream()
+            List<PromptMessageContext> promptContextList = promptMessagesRegistry.get(namespace);
+            if (promptContextList != null) {
+                Optional<PromptMessageContext> promptMessagesOptional = promptContextList.stream()
                         .filter(promptMessages -> promptMessages.getIdentifier().equals(identifier)).findFirst();
                 promptMessagesOptional.ifPresent(promptMessages -> {
-                    List<ChatMessage> content = promptMessages.getContent();
+                    List<ChatMessage> content = promptMessages.getMessages();
                     if (!content.isEmpty()) {
                         int removeIndex = Math.max(0, content.size() - n);
                         content.subList(removeIndex, content.size()).clear();
@@ -134,12 +134,12 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
     @Override
     public Mono<Void> deleteLastFeedbackMessage(String namespace, String identifier, Integer n) {
         return Mono.fromRunnable(() -> {
-            List<FeedbackMessages> feedbackMessagesList = feedbackMessagesRegistry.get(namespace);
-            if (feedbackMessagesList != null) {
-                Optional<FeedbackMessages> feedbackMessagesOptional = feedbackMessagesList.stream()
+            List<FeedbackMessageContext> feedbackContextList = feedbackMessagesRegistry.get(namespace);
+            if (feedbackContextList != null) {
+                Optional<FeedbackMessageContext> feedbackMessagesOptional = feedbackContextList.stream()
                         .filter(feedbackMessages -> feedbackMessages.getIdentifier().equals(identifier)).findFirst();
                 feedbackMessagesOptional.ifPresent(feedbackMessages -> {
-                    List<ChatMessage> content = feedbackMessages.getContent();
+                    List<ChatMessage> content = feedbackMessages.getMessages();
                     if (!content.isEmpty()) {
                         int removeIndex = Math.max(0, content.size() - n);
                         content.subList(removeIndex, content.size()).clear();

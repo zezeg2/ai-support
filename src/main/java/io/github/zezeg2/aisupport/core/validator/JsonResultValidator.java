@@ -17,7 +17,7 @@ public class JsonResultValidator extends ResultValidator {
 
     @Override
     protected String addTemplateContents(String functionName) {
-        String resultFormat = promptManager.getContext().get(functionName).getResultFormat();
+        String resultFormat = promptManager.getContextHolder().get(functionName).getResultFormat();
         return TemplateConstants.JSON_VALIDATE_TEMPLATE.formatted(resultFormat);
     }
 }

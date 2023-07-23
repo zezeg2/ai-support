@@ -2,9 +2,7 @@ package io.github.zezeg2.aisupport.context;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
-import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
-import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
-import io.github.zezeg2.aisupport.core.function.prompt.PromptMessages;
+import io.github.zezeg2.aisupport.core.function.prompt.*;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -36,77 +34,52 @@ public class MongoPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public PromptMessages getPromptChatMessages(String namespace, String identifier) {
-        PromptMessages result = mongoTemplate.findOne(Query.query(Criteria.where("identifier").is(identifier)), PromptMessages.class, namespace);
-        return result != null ? result : PromptMessages.builder()
-                .identifier(identifier)
-                .functionName(namespace)
-                .content(new ArrayList<>()).build();
-    }
+    public <T extends MessageContext> T getContext(ContextType contextType, String namespace, String identifier) {
+        T result = (T) mongoTemplate.findOne(
+                Query.query(Criteria.where("identifier").is(identifier)),
+                contextType.getContextClass(),
+                namespace
+        );
 
-    @Override
-    public FeedbackMessages getFeedbackChatMessages(String namespace, String identifier) {
-        FeedbackMessages result = mongoTemplate.findOne(Query.query(Criteria.where("identifier").is(identifier)), FeedbackMessages.class, namespace);
-        String[] split = namespace.split(":");
-        return result != null ? result : FeedbackMessages.builder()
-                .identifier(identifier)
-                .functionName(split[0])
-                .validatorName(split[1])
-                .content(new ArrayList<>()).build();
-    }
-
-    @Override
-    public void savePromptMessages(String namespace, String identifier, ChatMessage message) {
-        PromptMessages promptMessages = getPromptChatMessages(namespace, identifier);
-        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-            promptMessages.getContent().get(0).setContent(message.getContent());
-        } else {
-            promptMessages.getContent().add(message);
+        if (result == null) {
+            String[] split = namespace.split(":");
+            result = contextType == ContextType.PROMPT
+                    ? (T) PromptMessageContext.builder().identifier(identifier).functionName(namespace).messages(new ArrayList<>()).build()
+                    : (T) FeedbackMessageContext.builder().identifier(identifier).functionName(split[0]).validatorName(split[1]).messages(new ArrayList<>()).build();
+            saveContext(contextType, result);
         }
-        mongoTemplate.save(promptMessages, namespace);
+        return result;
     }
 
     @Override
-    public void savePromptMessages(PromptMessages messages) {
-        mongoTemplate.save(messages, messages.getFunctionName());
-    }
-
-    @Override
-    public void saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
-        FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
-        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-            feedbackMessages.getContent().get(0).setContent(message.getContent());
+    public void saveMessage(ContextType contextType, String namespace, String identifier, ChatMessage message) {
+        MessageContext baseMessageContext = getContext(contextType, namespace, identifier);
+        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && baseMessageContext.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
+            baseMessageContext.getMessages().get(0).setContent(message.getContent());
         } else {
-            feedbackMessages.getContent().add(message);
+            baseMessageContext.getMessages().add(message);
         }
-        feedbackMessages.getContent().add(message);
-        mongoTemplate.save(feedbackMessages, namespace);
+        mongoTemplate.save(baseMessageContext, namespace);
     }
 
     @Override
-    public void saveFeedbackMessages(FeedbackMessages messages) {
-        mongoTemplate.save(messages, messages.getFunctionName() + ":" + messages.getValidatorName());
+    public void saveContext(ContextType contextType, MessageContext messageContext) {
+        if (contextType == ContextType.PROMPT) {
+            mongoTemplate.save(messageContext, messageContext.getFunctionName());
+        } else {
+            mongoTemplate.save(messageContext, messageContext.getFunctionName() + ":" + ((FeedbackMessageContext) messageContext).getValidatorName());
+        }
     }
 
     @Override
-    public void deleteLastPromptMessage(String namespace, String identifier, Integer n) {
-        PromptMessages promptMessages = getPromptChatMessages(namespace, identifier);
-        List<ChatMessage> content = promptMessages.getContent();
+    public void deleteMessagesFromLast(ContextType contextType, String namespace, String identifier, Integer n) {
+        MessageContext baseMessageContext = getContext(contextType, namespace, identifier);
+
+        List<ChatMessage> content = baseMessageContext.getMessages();
         if (!content.isEmpty()) {
             int removeIndex = Math.max(0, content.size() - n);
             content.subList(removeIndex, content.size()).clear();
         }
-        mongoTemplate.save(promptMessages, namespace);
-    }
-
-    @Override
-    public void deleteLastFeedbackMessage(String namespace, String identifier, Integer n) {
-        FeedbackMessages feedbackMessages = getFeedbackChatMessages(namespace, identifier);
-        List<ChatMessage> content = feedbackMessages.getContent();
-        if (!content.isEmpty()) {
-            int removeIndex = Math.max(0, content.size() - n);
-            content.subList(removeIndex, content.size()).clear();
-        }
-        mongoTemplate.save(feedbackMessages, namespace);
+        mongoTemplate.save(baseMessageContext, namespace);
     }
 }

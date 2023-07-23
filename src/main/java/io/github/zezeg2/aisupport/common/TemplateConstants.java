@@ -135,8 +135,6 @@ public class TemplateConstants {
      */
     public static String CONSTRAINT_VALIDATE_TEMPLATE = """
             Evaluate compliance with the given constraints
-            ---
             %s
-            ---
             """;
 }

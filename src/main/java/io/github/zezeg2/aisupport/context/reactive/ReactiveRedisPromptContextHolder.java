@@ -4,9 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
-import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessageContext;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
-import io.github.zezeg2.aisupport.core.function.prompt.PromptMessages;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ReactiveHashOperations;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
@@ -55,23 +55,23 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<PromptMessages> getPromptChatMessages(String namespace, String identifier) {
+    public Mono<PromptMessageContext> getPromptChatMessages(String namespace, String identifier) {
         return hashOperations.get(namespace, identifier)
                 .flatMap(serializedPromptMessages -> {
                     try {
-                        return Mono.just(mapper.readValue(serializedPromptMessages, PromptMessages.class));
+                        return Mono.just(mapper.readValue(serializedPromptMessages, PromptMessageContext.class));
                     } catch (IOException e) {
                         return Mono.error(new RuntimeException("Error deserializing the prompt messages", e));
                     }
                 })
                 .switchIfEmpty(Mono.defer(() -> {
-                    PromptMessages promptMessages = PromptMessages.builder()
+                    PromptMessageContext promptContext = PromptMessageContext.builder()
                             .identifier(identifier)
                             .functionName(namespace)
-                            .content(new ArrayList<>()).build();
+                            .messages(new ArrayList<>()).build();
                     try {
-                        hashOperations.put(namespace, identifier, mapper.writeValueAsString(promptMessages));
-                        return Mono.just(promptMessages);
+                        hashOperations.put(namespace, identifier, mapper.writeValueAsString(promptContext));
+                        return Mono.just(promptContext);
                     } catch (JsonProcessingException e) {
                         return Mono.error(new RuntimeException("Error serializing the prompt messages", e));
                     }
@@ -79,25 +79,25 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<FeedbackMessages> getFeedbackChatMessages(String namespace, String identifier) {
+    public Mono<FeedbackMessageContext> getFeedbackChatMessages(String namespace, String identifier) {
         String[] split = namespace.split(":");
         return hashOperations.get(namespace, identifier)
                 .flatMap(serializedFeedbackMessages -> {
                     try {
-                        return Mono.just(mapper.readValue(serializedFeedbackMessages, FeedbackMessages.class));
+                        return Mono.just(mapper.readValue(serializedFeedbackMessages, FeedbackMessageContext.class));
                     } catch (IOException e) {
                         return Mono.error(new RuntimeException("Error deserializing the feedback messages", e));
                     }
                 })
                 .switchIfEmpty(Mono.defer(() -> {
-                    FeedbackMessages feedbackMessages = FeedbackMessages.builder()
+                    FeedbackMessageContext feedbackContext = FeedbackMessageContext.builder()
                             .identifier(identifier)
                             .functionName(split[0])
                             .validatorName(split[1])
-                            .content(new ArrayList<>()).build();
+                            .messages(new ArrayList<>()).build();
                     try {
-                        hashOperations.put(namespace, identifier, mapper.writeValueAsString(feedbackMessages));
-                        return Mono.just(feedbackMessages);
+                        hashOperations.put(namespace, identifier, mapper.writeValueAsString(feedbackContext));
+                        return Mono.just(feedbackContext);
                     } catch (JsonProcessingException e) {
                         return Mono.error(new RuntimeException("Error serializing the feedback messages", e));
                     }
@@ -108,10 +108,10 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     public Mono<Void> savePromptMessages(String namespace, String identifier, ChatMessage message) {
         return getPromptChatMessages(namespace, identifier)
                 .doOnNext(promptMessages -> {
-                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-                        promptMessages.getContent().get(0).setContent(message.getContent());
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && promptMessages.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
+                        promptMessages.getMessages().get(0).setContent(message.getContent());
                     } else {
-                        promptMessages.getContent().add(message);
+                        promptMessages.getMessages().add(message);
                     }
                 })
                 .flatMap(promptMessages -> {
@@ -124,7 +124,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Void> savePromptMessages(PromptMessages messages) {
+    public Mono<Void> savePromptMessages(PromptMessageContext messages) {
         try {
             return hashOperations.put(messages.getFunctionName(), messages.getIdentifier(), mapper.writeValueAsString(messages)).then();
         } catch (JsonProcessingException e) {
@@ -136,10 +136,10 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     public Mono<Void> saveFeedbackMessages(String namespace, String identifier, ChatMessage message) {
         return getFeedbackChatMessages(namespace, identifier)
                 .doOnNext(feedbackMessages -> {
-                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getContent().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-                        feedbackMessages.getContent().get(0).setContent(message.getContent());
+                    if (message.getRole().equals(ROLE.SYSTEM.getValue()) && feedbackMessages.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
+                        feedbackMessages.getMessages().get(0).setContent(message.getContent());
                     } else {
-                        feedbackMessages.getContent().add(message);
+                        feedbackMessages.getMessages().add(message);
                     }
                 })
                 .flatMap(feedbackMessages -> {
@@ -152,7 +152,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public Mono<Void> saveFeedbackMessages(FeedbackMessages messages) {
+    public Mono<Void> saveFeedbackMessages(FeedbackMessageContext messages) {
         try {
             return hashOperations.put(messages.getFunctionName() + ":" + messages.getValidatorName(), messages.getIdentifier(), mapper.writeValueAsString(messages)).then();
         } catch (JsonProcessingException e) {
@@ -163,9 +163,9 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     @Override
     public Mono<Void> deleteLastPromptMessage(String namespace, String identifier, Integer n) {
         return getPromptChatMessages(namespace, identifier)
-                .filter(promptMessages -> !promptMessages.getContent().isEmpty())
+                .filter(promptMessages -> !promptMessages.getMessages().isEmpty())
                 .doOnNext(promptMessages -> {
-                    List<ChatMessage> content = promptMessages.getContent();
+                    List<ChatMessage> content = promptMessages.getMessages();
                     if (!content.isEmpty()) {
                         int removeIndex = Math.max(0, content.size() - n);
                         content.subList(removeIndex, content.size()).clear();
@@ -183,9 +183,9 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     @Override
     public Mono<Void> deleteLastFeedbackMessage(String namespace, String identifier, Integer n) {
         return getFeedbackChatMessages(namespace, identifier)
-                .filter(feedbackMessages -> !feedbackMessages.getContent().isEmpty())
+                .filter(feedbackMessages -> !feedbackMessages.getMessages().isEmpty())
                 .doOnNext(feedbackMessages -> {
-                    List<ChatMessage> content = feedbackMessages.getContent();
+                    List<ChatMessage> content = feedbackMessages.getMessages();
                     int removeIndex = Math.max(0, content.size() - n);
                     content.subList(removeIndex, content.size()).clear();
                 })

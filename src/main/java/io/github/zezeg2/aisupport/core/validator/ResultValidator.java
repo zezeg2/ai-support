@@ -11,7 +11,7 @@ import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.config.properties.MODEL;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
-import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessageContext;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,9 +37,9 @@ public abstract class ResultValidator {
     }
 
     protected void init(String functionName, String identifier) {
-        FeedbackMessages feedbackChatMessages = promptManager.getContext().getFeedbackChatMessages(getNamespace(functionName), identifier);
-        if (feedbackChatMessages.getContent().isEmpty()) {
-            promptManager.addMessage(getNamespace(functionName), identifier, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
+        FeedbackMessageContext feedbackChatMessages = promptManager.getContextHolder().getContext(ContextType.FEEDBACK, getNamespace(functionName), identifier);
+        if (feedbackChatMessages.getMessages().isEmpty()) {
+            promptManager.addMessageToContext(getNamespace(functionName), identifier, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
         }
     }
 
@@ -67,7 +67,7 @@ public abstract class ResultValidator {
             try {
                 feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
             } catch (JsonProcessingException e) {
-                promptManager.getContext().deleteLastFeedbackMessage(getNamespace(functionName), identifier, 2);
+                promptManager.getContextHolder().deleteMessagesFromLast(ContextType.FEEDBACK, getNamespace(functionName), identifier, 2);
                 continue;
             }
 
@@ -82,29 +82,22 @@ public abstract class ResultValidator {
     }
 
     protected String exchangeMessages(String functionName, String identifier, String message, ContextType contextType, AIModel model) {
-        promptManager.addMessage(functionName, identifier, ROLE.USER, message, contextType);
-        ChatMessage responseMessage = switch (contextType) {
-            case PROMPT -> {
-                double topP = promptManager.getContext().get(functionName).getTopP();
-                yield promptManager.exchangePromptMessages(functionName, identifier, model, topP, true).getChoices().get(0).getMessage();
-            }
-            case FEEDBACK -> {
-                double topP = this.getClass().getAnnotation(ValidateTarget.class).topP();
-                yield promptManager.exchangeFeedbackMessages(functionName, identifier, model, topP, true).getChoices().get(0).getMessage();
-            }
-        };
+        promptManager.addMessageToContext(functionName, identifier, ROLE.USER, message, contextType);
+        double topP = contextType == ContextType.PROMPT ? promptManager.getContextHolder().get(functionName).getTopP()
+                : this.getClass().getAnnotation(ValidateTarget.class).topP();
+        ChatMessage responseMessage = promptManager.exchangeMessages(contextType, functionName, identifier, model, topP, true).getChoices().get(0).getMessage();
         return responseMessage.getContent();
     }
 
     protected String getLastPromptResponseContent(String functionName, String identifier) {
-        List<ChatMessage> promptMessageList = promptManager.getContext().getPromptChatMessages(functionName, identifier).getContent();
+        List<ChatMessage> promptMessageList = promptManager.getContextHolder().getContext(ContextType.PROMPT, functionName, identifier).getMessages();
         return promptMessageList.get(promptMessageList.size() - 1).getContent();
     }
 
     protected abstract String addTemplateContents(String functionName);
 
     protected Prompt getPrompt(String functionName) {
-        return promptManager.getContext().get(functionName);
+        return promptManager.getContextHolder().get(functionName);
     }
 
     protected boolean ignoreCondition(String functionName, String identifier) {

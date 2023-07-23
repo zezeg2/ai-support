@@ -10,11 +10,21 @@ public enum ContextType {
     /**
      * The prompt context
      */
-    PROMPT,
+    PROMPT(PromptMessageContext.class),
 
     /**
      * The feedback context
      */
-    FEEDBACK
+    FEEDBACK(FeedbackMessageContext.class);
+    private final Class<? extends MessageContext> contextClass;
+
+    ContextType(Class<? extends MessageContext> contextClass) {
+        this.contextClass = contextClass;
+    }
+
+    public Class<? extends MessageContext> getContextClass() {
+        return contextClass;
+    }
+
 }
 

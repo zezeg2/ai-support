@@ -1,9 +1,9 @@
 package io.github.zezeg2.aisupport.context.reactive;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
-import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessages;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessageContext;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
-import io.github.zezeg2.aisupport.core.function.prompt.PromptMessages;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 import reactor.core.publisher.Mono;
 
 /**
@@ -45,7 +45,7 @@ public interface ReactivePromptContextHolder {
      * @param identifier The identifier of the prompt chat messages.
      * @return A Mono emitting the prompt chat messages associated with the namespace and identifier, or null if not found.
      */
-    Mono<PromptMessages> getPromptChatMessages(String namespace, String identifier);
+    Mono<PromptMessageContext> getPromptChatMessages(String namespace, String identifier);
 
     /**
      * Retrieves the feedback chat messages for the given namespace and identifier.
@@ -54,7 +54,7 @@ public interface ReactivePromptContextHolder {
      * @param identifier The identifier of the feedback chat messages.
      * @return A Mono emitting the feedback chat messages associated with the namespace and identifier, or null if not found.
      */
-    Mono<FeedbackMessages> getFeedbackChatMessages(String namespace, String identifier);
+    Mono<FeedbackMessageContext> getFeedbackChatMessages(String namespace, String identifier);
 
     /**
      * Saves a prompt chat message for the given namespace and identifier.
@@ -66,7 +66,7 @@ public interface ReactivePromptContextHolder {
      */
     Mono<Void> savePromptMessages(String namespace, String identifier, ChatMessage message);
 
-    Mono<Void> savePromptMessages(PromptMessages messages);
+    Mono<Void> savePromptMessages(PromptMessageContext messages);
 
     /**
      * Saves a feedback chat message for the given namespace and identifier.
@@ -78,7 +78,7 @@ public interface ReactivePromptContextHolder {
      */
     Mono<Void> saveFeedbackMessages(String namespace, String identifier, ChatMessage message);
 
-    Mono<Void> saveFeedbackMessages(FeedbackMessages messages);
+    Mono<Void> saveFeedbackMessages(FeedbackMessageContext messages);
 
     /**
      * Deletes the last N prompt chat messages for the given namespace and identifier.

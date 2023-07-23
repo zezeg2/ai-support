@@ -19,6 +19,6 @@ public class ReactiveJsonResultValidator extends ReactiveResultValidator {
 
     @Override
     protected Mono<String> addTemplateContents(String functionName) {
-        return promptManager.getContext().get(functionName).map(prompt -> TemplateConstants.JSON_VALIDATE_TEMPLATE.formatted(prompt.getResultFormat()));
+        return promptManager.getContextHolder().get(functionName).map(prompt -> TemplateConstants.JSON_VALIDATE_TEMPLATE.formatted(prompt.getResultFormat()));
     }
 }

@@ -20,26 +20,26 @@ import java.util.List;
 @Data
 @Builder
 @Document
-public class PromptMessages implements Serializable {
+public class PromptMessageContext implements Serializable, MessageContext {
 
     @Id
     private String identifier;
     private String functionName;
-    private List<ChatMessage> content;
+    private List<ChatMessage> messages;
 
     /**
      * Constructs a new PromptMessages instance.
      *
      * @param identifier   The identifier of the prompt messages.
      * @param functionName The name of the function.
-     * @param content      The list of chat messages.
+     * @param messages     The list of chat messages.
      */
     @JsonCreator
-    public PromptMessages(@JsonProperty("identifier") String identifier,
-                          @JsonProperty("functionName") String functionName,
-                          @JsonProperty("content") List<ChatMessage> content) {
+    public PromptMessageContext(@JsonProperty("identifier") String identifier,
+                                @JsonProperty("functionName") String functionName,
+                                @JsonProperty("messages") List<ChatMessage> messages) {
         this.identifier = identifier;
         this.functionName = functionName;
-        this.content = content;
+        this.messages = messages;
     }
 }

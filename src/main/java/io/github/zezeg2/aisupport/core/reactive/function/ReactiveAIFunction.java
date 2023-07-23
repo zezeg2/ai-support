@@ -45,26 +45,26 @@ public class ReactiveAIFunction<T> {
         List<Argument<?>> args = params.getArgs();
         String identifier = params.getIdentifier();
         T example = params.getExample();
-        return promptManager.getContext().get(functionName)
+        return promptManager.getContextHolder().get(functionName)
                 .switchIfEmpty(Mono.just(new Prompt(functionName, command, constraints, args, returnType, topP))
-                        .flatMap(prompt -> promptManager.getContext().savePrompt(functionName, prompt).thenReturn(prompt)))
-                .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
-                        .map(promptMessages -> promptMessages.getContent().isEmpty())
+                        .flatMap(prompt -> promptManager.getContextHolder().savePrompt(functionName, prompt).thenReturn(prompt)))
+                .flatMap(prompt -> promptManager.getContextHolder().getPromptChatMessages(functionName, identifier)
+                        .map(promptMessages -> promptMessages.getMessages().isEmpty())
                         .flatMap(isEmpty -> isEmpty ? example == null ?
                                 promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT) :
                                 promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT) :
                                 Mono.empty())
                         .thenReturn(prompt)
                 )
-                .flatMap(prompt -> promptManager.getContext().getPromptChatMessages(functionName, identifier)
+                .flatMap(prompt -> promptManager.getContextHolder().getPromptChatMessages(functionName, identifier)
                         .flatMap(promptMessages -> {
                             if (example == null) return Mono.empty();
-                            ChatMessage systemMessage = promptMessages.getContent().stream().filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue())).findFirst().orElseThrow();
+                            ChatMessage systemMessage = promptMessages.getMessages().stream().filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue())).findFirst().orElseThrow();
                             String generatedSystemMessageContent = prompt.generate(mapper, example);
                             if (systemMessage.getContent().equals(generatedSystemMessageContent))
                                 return Mono.empty();
                             systemMessage.setContent(generatedSystemMessageContent);
-                            return promptManager.getContext().savePromptMessages(functionName, identifier, systemMessage);
+                            return promptManager.getContextHolder().savePromptMessages(functionName, identifier, systemMessage);
                         })
                 )
                 .then(promptManager.addMessage(functionName, identifier, ROLE.USER, createArgsString(args), ContextType.PROMPT));
