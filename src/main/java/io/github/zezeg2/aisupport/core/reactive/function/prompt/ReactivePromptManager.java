@@ -4,7 +4,7 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
-import io.github.zezeg2.aisupport.common.JsonUtils;
+import io.github.zezeg2.aisupport.common.util.JsonUtil;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
@@ -23,49 +23,21 @@ public class ReactivePromptManager {
     protected final ReactivePromptContextHolder contextHolder;
     protected final ContextProperties contextProperties;
 
-    public Mono<Void> addMessage(String namespace, String identifier, ROLE role, String message, ContextType contextType) {
-        return addMessageToContext(namespace, identifier, role, message, contextType);
+    public Mono<Void> addMessageToContext(String namespace, String identifier, ROLE role, String message, ContextType contextType) {
+        return Mono.defer(() -> contextHolder.saveMessage(contextType, namespace, identifier, new ChatMessage(role.getValue(), message)));
     }
 
-    protected Mono<Void> addMessageToContext(String namespace, String identifier, ROLE role, String message, ContextType contextType) {
-        return Mono.just(identifier).flatMap(id -> switch (contextType) {
-            case PROMPT -> contextHolder.savePromptMessages(namespace, id, new ChatMessage(role.getValue(), message));
-            case FEEDBACK ->
-                    contextHolder.saveFeedbackMessages(namespace, id, new ChatMessage(role.getValue(), message));
-        });
-
-    }
-
-    public Mono<ChatCompletionResult> exchangePromptMessages(String namespace, String identifier, AIModel model, double topP, boolean save) {
-        return Mono.just(identifier)
-                .flatMap(id -> contextHolder.getPromptChatMessages(namespace, id))
-                .flatMap(contextMessages -> getChatCompletionResult(namespace, identifier, model, topP, save, contextMessages.getMessages(), ContextType.PROMPT));
-    }
-
-    public Mono<ChatCompletionResult> exchangeFeedbackMessages(String namespace, String identifier, AIModel model, double topP, boolean save) {
-        return Mono.just(identifier)
-                .flatMap(id -> contextHolder.getFeedbackChatMessages(namespace, id))
-                .flatMap(contextMessages -> getChatCompletionResult(namespace, identifier, model, topP, save, contextMessages.getMessages(), ContextType.FEEDBACK));
+    public Mono<ChatCompletionResult> exchangeMessages(ContextType contextType, String namespace, String identifier, AIModel model, double topP, boolean save) {
+        return contextHolder.getContext(contextType, namespace, identifier)
+                .flatMap(context -> getChatCompletionResult(namespace, identifier, model, topP, save, context.getMessages(), contextType));
     }
 
     protected Mono<ChatCompletionResult> getChatCompletionResult(String namespace, String identifier, AIModel model, double topP, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
         return createChatCompletion(model, contextMessages, topP)
                 .flatMap(response -> {
                     ChatMessage responseMessage = response.getChoices().get(0).getMessage();
-                    responseMessage.setContent(JsonUtils.extractJsonFromMessage(responseMessage.getContent()));
-                    return Mono.just(response);
-                })
-                .flatMap(response -> {
-                    if (save) {
-                        return Mono.just(identifier)
-                                .flatMap(id -> switch (contextType) {
-                                    case PROMPT ->
-                                            contextHolder.savePromptMessages(namespace, id, response.getChoices().get(0).getMessage());
-                                    case FEEDBACK ->
-                                            contextHolder.saveFeedbackMessages(namespace, id, response.getChoices().get(0).getMessage());
-                                })
-                                .thenReturn(response);
-                    }
+                    if (save)
+                        return addMessageToContext(namespace, identifier, ROLE.ASSISTANT, JsonUtil.extractJsonFromMessage(responseMessage.getContent()), contextType).thenReturn(response);
                     return Mono.just(response);
                 });
     }

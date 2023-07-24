@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.common;
+package io.github.zezeg2.aisupport.common.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
@@ -10,7 +10,7 @@ import java.util.Map;
  *
  * @since 1.0
  */
-public class JsonUtils {
+public class JsonUtil {
 
     private final static ObjectMapper mapper = new ObjectMapper();
 

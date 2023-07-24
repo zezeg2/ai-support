@@ -10,6 +10,7 @@ import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
+import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.ExecuteParameters;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
@@ -18,18 +19,13 @@ import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidato
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @RequiredArgsConstructor
 public class ReactiveAIFunction<T> {
     private final String functionName;
     private final String command;
-
     private final List<Constraint> constraints;
-
     private final Class<T> returnType;
     private final ObjectMapper mapper;
     private final ReactivePromptManager promptManager;
@@ -45,29 +41,27 @@ public class ReactiveAIFunction<T> {
         List<Argument<?>> args = params.getArgs();
         String identifier = params.getIdentifier();
         T example = params.getExample();
-        return promptManager.getContextHolder().get(functionName)
+        ReactivePromptContextHolder contextHolder = promptManager.getContextHolder();
+
+        return contextHolder.get(functionName)
                 .switchIfEmpty(Mono.just(new Prompt(functionName, command, constraints, args, returnType, topP))
-                        .flatMap(prompt -> promptManager.getContextHolder().savePrompt(functionName, prompt).thenReturn(prompt)))
-                .flatMap(prompt -> promptManager.getContextHolder().getPromptChatMessages(functionName, identifier)
-                        .map(promptMessages -> promptMessages.getMessages().isEmpty())
-                        .flatMap(isEmpty -> isEmpty ? example == null ?
-                                promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT) :
-                                promptManager.addMessage(functionName, identifier, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT) :
-                                Mono.empty())
-                        .thenReturn(prompt)
-                )
-                .flatMap(prompt -> promptManager.getContextHolder().getPromptChatMessages(functionName, identifier)
-                        .flatMap(promptMessages -> {
+                        .flatMap(prompt -> contextHolder.savePrompt(functionName, prompt).thenReturn(prompt)))
+                .flatMap(prompt -> contextHolder.getContext(ContextType.PROMPT, functionName, identifier)
+                        .flatMap(messageContext -> {
+                            if (messageContext.getMessages().isEmpty()) {
+                                return example == null ?
+                                        promptManager.addMessageToContext(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT) :
+                                        promptManager.addMessageToContext(functionName, identifier, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT);
+                            }
                             if (example == null) return Mono.empty();
-                            ChatMessage systemMessage = promptMessages.getMessages().stream().filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue())).findFirst().orElseThrow();
-                            String generatedSystemMessageContent = prompt.generate(mapper, example);
-                            if (systemMessage.getContent().equals(generatedSystemMessageContent))
-                                return Mono.empty();
-                            systemMessage.setContent(generatedSystemMessageContent);
-                            return promptManager.getContextHolder().savePromptMessages(functionName, identifier, systemMessage);
+                            else {
+                                Optional<ChatMessage> systemMessage = messageContext.getMessages().stream().filter(message -> message.getRole().equals(ROLE.SYSTEM.getValue())).findFirst();
+                                systemMessage.ifPresent(message -> message.setContent(prompt.generate(mapper, example)));
+                                return contextHolder.saveContext(ContextType.PROMPT, messageContext);
+                            }
                         })
                 )
-                .then(promptManager.addMessage(functionName, identifier, ROLE.USER, createArgsString(args), ContextType.PROMPT));
+                .then(promptManager.addMessageToContext(functionName, identifier, ROLE.USER, createArgsString(args), ContextType.PROMPT));
     }
 
 
@@ -100,7 +94,7 @@ public class ReactiveAIFunction<T> {
         if (params.getModel() == null) params.setModel(getDefaultModel());
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
         return init(params)
-                .then(promptManager.exchangePromptMessages(functionName, params.getIdentifier(), params.getModel(), topP, true)
+                .then(promptManager.exchangeMessages(ContextType.PROMPT, functionName, params.getIdentifier(), params.getModel(), topP, true)
                         .flatMap(chatCompletionResult -> parseResponseWithValidate(params, chatCompletionResult)));
     }
 }

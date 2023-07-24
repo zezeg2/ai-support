@@ -1,7 +1,7 @@
 package io.github.zezeg2.aisupport.core.reactive.validator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.zezeg2.aisupport.common.TemplateConstants;
+import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.core.validator.ValidateTarget;

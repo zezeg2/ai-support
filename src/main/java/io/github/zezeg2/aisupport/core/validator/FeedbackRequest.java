@@ -1,6 +1,6 @@
 package io.github.zezeg2.aisupport.core.validator;
 
-import io.github.zezeg2.aisupport.common.BaseSupportType;
+import io.github.zezeg2.aisupport.common.type.BaseSupportType;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

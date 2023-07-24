@@ -2,9 +2,10 @@ package io.github.zezeg2.aisupport.common.enums;
 
 public enum ROLE {
     SYSTEM("system"),
-    USER("user");
+    USER("user"),
+    ASSISTANT("assistant");
 
-    private String value;
+    private final String value;
 
     ROLE(String value) {
         this.value = value;

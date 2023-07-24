@@ -1,5 +1,7 @@
-package io.github.zezeg2.aisupport.common;
+package io.github.zezeg2.aisupport.common.util;
 
+import io.github.zezeg2.aisupport.common.type.BaseSupportType;
+import io.github.zezeg2.aisupport.common.type.Supportable;
 import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.argument.MapArgument;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
@@ -37,7 +39,7 @@ public class BuildFormatUtil {
     }
 
     public static String getArgumentsFormatMapString(List<Argument<?>> args) {
-        return JsonUtils.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args));
+        return JsonUtil.convertMapToJson(BuildFormatUtil.getArgumentsFormatMap(args));
     }
 
     /**
@@ -170,7 +172,7 @@ public class BuildFormatUtil {
      */
     public static String getFormatString(Class<?> returnType) {
         if (isBaseSupportType(returnType)) {
-            return getTempInstance(returnType).getFormat();
+            return getTempInstance(returnType).getFormatString();
         } else {
             return returnType.getSimpleName();
         }

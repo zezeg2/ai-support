@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.common;
+package io.github.zezeg2.aisupport.common.type;
 
 import lombok.Getter;
 

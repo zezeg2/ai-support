@@ -1,6 +1,9 @@
-package io.github.zezeg2.aisupport.common;
+package io.github.zezeg2.aisupport.common.type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.github.zezeg2.aisupport.common.annotation.FieldDesc;
+import io.github.zezeg2.aisupport.common.annotation.FormatIgnore;
+import io.github.zezeg2.aisupport.common.annotation.KeyValueDesc;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -69,9 +72,9 @@ public interface Supportable {
             fieldDescriptions.put(field.getName(), listDescriptions);
         } else if (fieldValue instanceof Map<?, ?>) {
             Type[] actualTypeArguments = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
-            MapFieldDesc mapFieldDesc = field.getAnnotation(MapFieldDesc.class);
-            String mapKeyDescription = mapFieldDesc == null || mapFieldDesc.key().equals("") ? getSimpleTypeName(actualTypeArguments[0]) + " Key" : mapFieldDesc.key();
-            String mapValueDescription = mapFieldDesc == null || mapFieldDesc.value().equals("") ? getSimpleTypeName(actualTypeArguments[1]) + " Value" : mapFieldDesc.value();
+            KeyValueDesc keyValueDesc = field.getAnnotation(KeyValueDesc.class);
+            String mapKeyDescription = keyValueDesc == null || keyValueDesc.key().equals("") ? getSimpleTypeName(actualTypeArguments[0]) + " Key" : keyValueDesc.key();
+            String mapValueDescription = keyValueDesc == null || keyValueDesc.value().equals("") ? getSimpleTypeName(actualTypeArguments[1]) + " Value" : keyValueDesc.value();
             @SuppressWarnings("unchecked")
             Map<String, Object> mapDescription = getMapDescription(field.getName(), (Map<String, Object>) fieldValue, mapKeyDescription, mapValueDescription);
             fieldDescriptions.put(field.getName(), mapDescription.get(field.getName()));

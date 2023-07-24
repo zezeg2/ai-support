@@ -62,8 +62,8 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
 
     @Override
     public void saveContext(ContextType contextType, MessageContext messageContext) {
-        String key = contextType == ContextType.PROMPT ? messageContext.getFunctionName() : messageContext.getFunctionName() + ":" + ((FeedbackMessageContext) messageContext).getValidatorName();
-        MessageContext origin = contextRegistry.get(contextType).get(key).stream()
+        String namcespace = contextType == ContextType.PROMPT ? messageContext.getFunctionName() : messageContext.getFunctionName() + ":" + ((FeedbackMessageContext) messageContext).getValidatorName();
+        MessageContext origin = contextRegistry.get(contextType).get(namcespace).stream()
                 .filter(ctx -> ctx.getIdentifier().equals(messageContext.getIdentifier()))
                 .findFirst().orElseThrow();
         origin.setMessages(messageContext.getMessages());
@@ -71,12 +71,12 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
 
     @Override
     public void deleteMessagesFromLast(ContextType contextType, String namespace, String identifier, Integer n) {
-        List<MessageContext> baseMessageContextList = contextRegistry.get(contextType).get(namespace);
-        if (baseMessageContextList != null) {
-            Optional<MessageContext> baseContextOptional = baseMessageContextList.stream()
-                    .filter(baseContext -> baseContext.getIdentifier().equals(identifier)).findFirst();
-            baseContextOptional.ifPresent(baseContext -> {
-                List<ChatMessage> content = baseContext.getMessages();
+        List<MessageContext> messageContextList = contextRegistry.get(contextType).get(namespace);
+        if (messageContextList != null) {
+            Optional<MessageContext> messageContextOptional = messageContextList.stream()
+                    .filter(messageContext -> messageContext.getIdentifier().equals(identifier)).findFirst();
+            messageContextOptional.ifPresent(messageContext -> {
+                List<ChatMessage> content = messageContext.getMessages();
                 if (!content.isEmpty()) {
                     int removeIndex = Math.max(0, content.size() - n);
                     content.subList(removeIndex, content.size()).clear();

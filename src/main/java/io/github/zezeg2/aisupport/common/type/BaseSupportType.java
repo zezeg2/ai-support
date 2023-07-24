@@ -1,8 +1,9 @@
-package io.github.zezeg2.aisupport.common;
+package io.github.zezeg2.aisupport.common.type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.zezeg2.aisupport.common.annotation.FormatIgnore;
 
 import java.io.Serializable;
 
@@ -27,24 +28,12 @@ public abstract class BaseSupportType implements Supportable, Serializable {
      * @throws RuntimeException If an exception occurs during the conversion process.
      */
     @JsonIgnore
-    public String getFormat() {
+    public String getFormatString() {
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(getFormatMap());
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert map to JSON", e);
         }
-    }
-
-    /**
-     * Retrieves the value of the first entry in the format map.
-     * It returns the value associated with the first key in the format map.
-     *
-     * @return The value of the first entry in the format map.
-     * @throws IllegalAccessException If there is an error accessing the format map.
-     */
-    @JsonIgnore
-    public Object getFormatValue() throws IllegalAccessException {
-        return getFormatMap().entrySet().stream().findFirst().get().getValue();
     }
 
     @Override

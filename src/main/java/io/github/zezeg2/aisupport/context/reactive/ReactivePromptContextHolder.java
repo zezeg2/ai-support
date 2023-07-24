@@ -1,9 +1,9 @@
 package io.github.zezeg2.aisupport.context.reactive;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
-import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessageContext;
+import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
+import io.github.zezeg2.aisupport.core.function.prompt.MessageContext;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
-import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 import reactor.core.publisher.Mono;
 
 /**
@@ -38,65 +38,12 @@ public interface ReactivePromptContextHolder {
      */
     Mono<Prompt> get(String namespace);
 
-    /**
-     * Retrieves the prompt chat messages for the given namespace and identifier.
-     *
-     * @param namespace  The namespace of the prompt.
-     * @param identifier The identifier of the prompt chat messages.
-     * @return A Mono emitting the prompt chat messages associated with the namespace and identifier, or null if not found.
-     */
-    Mono<PromptMessageContext> getPromptChatMessages(String namespace, String identifier);
 
-    /**
-     * Retrieves the feedback chat messages for the given namespace and identifier.
-     *
-     * @param namespace  The namespace of the prompt.
-     * @param identifier The identifier of the feedback chat messages.
-     * @return A Mono emitting the feedback chat messages associated with the namespace and identifier, or null if not found.
-     */
-    Mono<FeedbackMessageContext> getFeedbackChatMessages(String namespace, String identifier);
+    <T extends MessageContext> Mono<T> getContext(ContextType contextType, String namespace, String identifier);
 
-    /**
-     * Saves a prompt chat message for the given namespace and identifier.
-     *
-     * @param namespace  The namespace of the prompt.
-     * @param identifier The identifier of the prompt chat messages.
-     * @param message    The chat message to save.
-     * @return A Mono representing the completion of the save operation.
-     */
-    Mono<Void> savePromptMessages(String namespace, String identifier, ChatMessage message);
+    Mono<Void> saveMessage(ContextType contextType, String namespace, String identifier, ChatMessage message);
 
-    Mono<Void> savePromptMessages(PromptMessageContext messages);
+    Mono<Void> saveContext(ContextType contextType, MessageContext messageContext);
 
-    /**
-     * Saves a feedback chat message for the given namespace and identifier.
-     *
-     * @param namespace  The namespace of the prompt.
-     * @param identifier The identifier of the feedback chat messages.
-     * @param message    The chat message to save.
-     * @return A Mono representing the completion of the save operation.
-     */
-    Mono<Void> saveFeedbackMessages(String namespace, String identifier, ChatMessage message);
-
-    Mono<Void> saveFeedbackMessages(FeedbackMessageContext messages);
-
-    /**
-     * Deletes the last N prompt chat messages for the given namespace and identifier.
-     *
-     * @param namespace  The namespace of the prompt.
-     * @param identifier The identifier of the prompt chat messages.
-     * @param n          The number of messages to delete.
-     * @return A Mono representing the completion of the delete operation.
-     */
-    Mono<Void> deleteLastPromptMessage(String namespace, String identifier, Integer n);
-
-    /**
-     * Deletes the last N feedback chat messages for the given namespace and identifier.
-     *
-     * @param namespace  The namespace of the prompt.
-     * @param identifier The identifier of the feedback chat messages.
-     * @param n          The number of messages to delete.
-     * @return A Mono representing the completion of the delete operation.
-     */
-    Mono<Void> deleteLastFeedbackMessage(String namespace, String identifier, Integer n);
+    Mono<Void> deleteMessagesFromLast(ContextType contextType, String namespace, String identifier, Integer n);
 }

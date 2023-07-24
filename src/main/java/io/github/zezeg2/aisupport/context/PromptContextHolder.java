@@ -1,7 +1,9 @@
 package io.github.zezeg2.aisupport.context;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
-import io.github.zezeg2.aisupport.core.function.prompt.*;
+import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
+import io.github.zezeg2.aisupport.core.function.prompt.MessageContext;
+import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 
 /**
  * The PromptContextHolder interface defines the contract for managing prompt-related information in the context.

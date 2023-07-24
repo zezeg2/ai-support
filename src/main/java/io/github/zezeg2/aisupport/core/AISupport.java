@@ -2,7 +2,7 @@ package io.github.zezeg2.aisupport.core;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.zezeg2.aisupport.common.BaseSupportType;
+import io.github.zezeg2.aisupport.common.type.BaseSupportType;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.function.AIFunction;

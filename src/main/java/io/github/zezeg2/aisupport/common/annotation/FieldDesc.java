@@ -1,4 +1,6 @@
-package io.github.zezeg2.aisupport.common;
+package io.github.zezeg2.aisupport.common.annotation;
+
+import io.github.zezeg2.aisupport.common.type.Supportable;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,7 +15,7 @@ import java.lang.annotation.Target;
  * @since 1.0
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD})
 public @interface FieldDesc {
 
     /**

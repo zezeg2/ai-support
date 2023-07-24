@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.common;
+package io.github.zezeg2.aisupport.common.util;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  *
  * @since 1.0
  */
-public class ReflectionUtils {
+public class ReflectionUtil {
 
     /**
      * Retrieves a map of parameter types for a given class.

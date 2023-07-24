@@ -10,7 +10,9 @@ import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
+import io.github.zezeg2.aisupport.context.PromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
+import io.github.zezeg2.aisupport.core.function.prompt.MessageContext;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.core.validator.ResultValidatorChain;
@@ -51,25 +53,24 @@ public class AIFunction<T> {
         List<Argument<?>> args = params.getArgs();
         String identifier = params.getIdentifier();
         T example = params.getExample();
+        PromptContextHolder contextHolder = promptManager.getContextHolder();
 
-        Prompt prompt = promptManager.getContextHolder().get(functionName);
+        MessageContext messageContext = contextHolder.getContext(ContextType.PROMPT, functionName, identifier);
+        Prompt prompt = contextHolder.get(functionName);
         if (prompt == null) {
             prompt = new Prompt(functionName, command, constraints, args, returnType, topP);
-            promptManager.getContextHolder().savePrompt(functionName, prompt);
+            contextHolder.savePrompt(functionName, prompt);
         }
-        if (promptManager.getContextHolder().getContext(ContextType.PROMPT, functionName, identifier).getMessages().isEmpty()) {
+        if (messageContext.getMessages().isEmpty()) {
             if (example == null)
                 promptManager.addMessageToContext(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT);
             else
                 promptManager.addMessageToContext(functionName, identifier, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT);
         }
         if (example != null) {
-            ChatMessage systemMessage = promptManager.getContextHolder().getContext(ContextType.PROMPT, functionName, identifier).getMessages().stream().filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue())).findFirst().orElseThrow();
-            String generatedSystemMessageContent = prompt.generate(mapper, example);
-            if (!systemMessage.getContent().equals(generatedSystemMessageContent)) {
-                systemMessage.setContent(generatedSystemMessageContent);
-                promptManager.getContextHolder().saveMessage(ContextType.PROMPT, functionName, identifier, systemMessage);
-            }
+            ChatMessage systemMessage = messageContext.getMessages().stream().filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue())).findFirst().orElseThrow();
+            systemMessage.setContent(prompt.generate(mapper, example));
+            contextHolder.saveContext(ContextType.PROMPT, messageContext);
         }
         promptManager.addMessageToContext(functionName, identifier, ROLE.USER, createArgsString(args), ContextType.PROMPT);
     }

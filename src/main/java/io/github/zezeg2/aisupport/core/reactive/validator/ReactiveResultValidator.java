@@ -2,8 +2,8 @@ package io.github.zezeg2.aisupport.core.reactive.validator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.zezeg2.aisupport.common.BuildFormatUtil;
-import io.github.zezeg2.aisupport.common.TemplateConstants;
+import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
+import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
@@ -40,20 +40,20 @@ public abstract class ReactiveResultValidator {
     }
 
     protected Mono<Void> init(String functionName, String identifier) {
-        return Mono.just(identifier)
-                .flatMap(id -> promptManager.getContextHolder().getFeedbackChatMessages(getNamespace(functionName), id)
-                        .flatMap(feedbackChatMessages -> {
-                            if (feedbackChatMessages.getMessages().isEmpty()) {
-                                return buildTemplate(functionName)
-                                        .flatMap(template -> promptManager.addMessage(getNamespace(functionName), identifier, ROLE.SYSTEM, template, ContextType.FEEDBACK));
-                            }
-                            return Mono.empty();
-                        }));
+        return Mono.defer(() -> promptManager.getContextHolder().getContext(ContextType.FEEDBACK, getNamespace(functionName), identifier)
+                .flatMap(context -> {
+                    if (context.getMessages().isEmpty()) {
+                        return buildTemplate(functionName)
+                                .flatMap(template -> promptManager.addMessageToContext(getNamespace(functionName), identifier, ROLE.SYSTEM, template, ContextType.FEEDBACK));
+                    }
+                    return Mono.empty();
+                }));
     }
+
 
     private Mono<String> buildTemplate(String functionName) {
         return addTemplateContents(functionName).flatMap(content -> getPrompt(functionName).map(Prompt::getResultFormat).flatMap(resultFormat -> Mono.just(this.role == null ? TemplateConstants.FEEDBACK_FRAME.formatted(content, resultFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class)) :
-                TemplateConstants.FEEDBACK_FRAME_WITH_ROLE.formatted(this.role, content, resultFormat,  BuildFormatUtil.getFormatString(FeedbackResponse.class)))));
+                TemplateConstants.FEEDBACK_FRAME_WITH_ROLE.formatted(this.role, content, resultFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class)))));
     }
 
     public Mono<String> validate(String functionName, String identifier) {
@@ -68,14 +68,14 @@ public abstract class ReactiveResultValidator {
     public Mono<String> validate(String functionName, String identifier, AIModel model) {
         return init(functionName, identifier)
                 .then(Mono.defer(() ->
-                        getLastPromptResponseContent(functionName, identifier)
-                                .flatMap(lastResponseContent -> exchangeMessages(functionName, identifier, lastResponseContent, ContextType.FEEDBACK, model)
+                        getLastPromptResponseContent(functionName, identifier).log()
+                                .flatMap(lastResponseContent -> exchangeMessages(functionName, identifier, lastResponseContent, ContextType.FEEDBACK, model).log()
                                         .flatMap(lastFeedbackContent -> {
                                             FeedbackResponse feedbackResult;
                                             try {
                                                 feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
                                             } catch (JsonProcessingException e) {
-                                                return promptManager.getContextHolder().deleteLastFeedbackMessage(getNamespace(functionName), identifier, 2)
+                                                return promptManager.getContextHolder().deleteMessagesFromLast(ContextType.FEEDBACK, getNamespace(functionName), identifier, 2)
                                                         .then(exchangeMessages(functionName, identifier, lastResponseContent, ContextType.FEEDBACK, model)
                                                                 .flatMap(ignored -> Mono.<String>error(new RuntimeException(e))));
                                             }
@@ -92,23 +92,23 @@ public abstract class ReactiveResultValidator {
 
 
     protected Mono<String> exchangeMessages(String functionName, String identifier, String message, ContextType contextType, AIModel model) {
-        return promptManager.addMessage(contextType.equals(ContextType.PROMPT) ? functionName : getNamespace(functionName), identifier, ROLE.USER, message, contextType)
+        return promptManager.addMessageToContext(contextType.equals(ContextType.PROMPT) ? functionName : getNamespace(functionName), identifier, ROLE.USER, message, contextType)
                 .then(switch (contextType) {
                     case PROMPT -> promptManager.getContextHolder().get(functionName)
                             .map(Prompt::getTopP)
-                            .flatMap(topP -> promptManager.exchangePromptMessages(functionName, identifier, model, topP, true)
+                            .flatMap(topP -> promptManager.exchangeMessages(contextType, functionName, identifier, model, topP, true)
                                     .map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent()));
                     case FEEDBACK ->
-                            promptManager.exchangeFeedbackMessages(getNamespace(functionName), identifier, model, this.getClass().getAnnotation(ValidateTarget.class).topP(), true)
+                            promptManager.exchangeMessages(contextType, getNamespace(functionName), identifier, model, this.getClass().getAnnotation(ValidateTarget.class).topP(), true)
                                     .map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
                 });
     }
 
     protected Mono<String> getLastPromptResponseContent(String functionName, String identifier) {
-        return Mono.just(identifier)
-                .flatMap(id -> promptManager.getContextHolder().getPromptChatMessages(functionName, id))
-                .flatMap(promptMessageList -> Mono.just(promptMessageList.getMessages().get(promptMessageList.getMessages().size() - 1).getContent()));
+        return Mono.defer(() -> promptManager.getContextHolder().getContext(ContextType.PROMPT, functionName, identifier)
+                .flatMap(context -> Mono.just(context.getMessages().get(context.getMessages().size() - 1).getContent())));
     }
+
 
     protected abstract Mono<String> addTemplateContents(String functionName);
 

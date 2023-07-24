@@ -4,7 +4,7 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
-import io.github.zezeg2.aisupport.common.JsonUtils;
+import io.github.zezeg2.aisupport.common.util.JsonUtil;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
@@ -62,7 +62,7 @@ public class PromptManager {
     protected ChatCompletionResult getChatCompletionResult(String namespace, String identifier, AIModel model, double topP, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
         ChatCompletionResult response = createChatCompletion(model, contextMessages, topP);
         ChatMessage responseMessage = response.getChoices().get(0).getMessage();
-        responseMessage.setContent(JsonUtils.extractJsonFromMessage(responseMessage.getContent()));
+        responseMessage.setContent(JsonUtil.extractJsonFromMessage(responseMessage.getContent()));
         if (save) contextHolder.saveMessage(contextType, namespace, identifier, responseMessage);
         return response;
     }
