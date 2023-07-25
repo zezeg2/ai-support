@@ -23,6 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * The AIFunction class represents a generic AI function that interacts with a chat-based AI system.
+ * It is responsible for executing AI tasks, managing prompts, and validating results.
+ *
+ * @param <T> The type of the return value for the AI function.
+ */
 @RequiredArgsConstructor
 public class AIFunction<T> {
     private final String functionName;
@@ -68,13 +74,21 @@ public class AIFunction<T> {
                 promptManager.addMessageToContext(functionName, identifier, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT);
         }
         if (example != null) {
-            ChatMessage systemMessage = messageContext.getMessages().stream().filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue())).findFirst().orElseThrow();
+            ChatMessage systemMessage = messageContext.getMessages().stream()
+                    .filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))
+                    .findFirst().orElseThrow();
             systemMessage.setContent(prompt.generate(mapper, example));
             contextHolder.saveContext(ContextType.PROMPT, messageContext);
         }
         promptManager.addMessageToContext(functionName, identifier, ROLE.USER, createArgsString(args), ContextType.PROMPT);
     }
 
+    /**
+     * Creates a string representation of the arguments for the AI function.
+     *
+     * @param args The list of arguments for the AI function.
+     * @return The string representation of the arguments.
+     */
     private String createArgsString(List<Argument<?>> args) {
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(createArgsMap(args));
@@ -83,6 +97,12 @@ public class AIFunction<T> {
         }
     }
 
+    /**
+     * Creates a map of argument names and values for the AI function.
+     *
+     * @param args The list of arguments for the AI function.
+     * @return The map of argument names and values.
+     */
     private Map<String, Object> createArgsMap(List<Argument<?>> args) {
         Map<String, Object> valueMap = new LinkedHashMap<>();
         args.forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
@@ -104,7 +124,6 @@ public class AIFunction<T> {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     /**
@@ -121,3 +140,4 @@ public class AIFunction<T> {
         return parseResponseWithValidate(params, response);
     }
 }
+

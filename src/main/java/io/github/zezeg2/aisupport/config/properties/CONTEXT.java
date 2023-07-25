@@ -4,8 +4,6 @@ package io.github.zezeg2.aisupport.config.properties;
  * This enum represents the available contexts for data storage and retrieval.
  * <p>
  * The contexts include LOCAL, REDIS, and MONGO.
- *
- * @since 1.0
  */
 public enum CONTEXT {
 

@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
-import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
 import io.github.zezeg2.aisupport.common.argument.Argument;
+import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
+import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,8 +21,6 @@ import java.util.List;
  * The Prompt class represents a prompt entity used in the system.
  * It contains information such as the function name, command, reference types, function code, constraints,
  * input format, result format, feedback format, and topP value.
- *
- * @since 1.0
  */
 @Data
 @Document
@@ -66,6 +64,17 @@ public class Prompt implements Serializable {
         this.topP = topP;
     }
 
+    /**
+     * Constructs a new Prompt instance with the specified properties and automatically generates
+     * format strings for constraints, input arguments, return type, and feedback.
+     *
+     * @param functionName The name of the function associated with the prompt.
+     * @param command      The command of the prompt.
+     * @param constraints  The list of Constraint objects representing the constraints of the prompt.
+     * @param args         The list of Argument objects representing the input arguments.
+     * @param returnType   The Class object representing the return type.
+     * @param topP         The topP value associated with the prompt.
+     */
     public Prompt(String functionName, String command, List<Constraint> constraints, List<Argument<?>> args, Class<?> returnType, double topP) {
         this.functionName = functionName;
         this.command = command;

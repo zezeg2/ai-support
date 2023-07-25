@@ -4,9 +4,9 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
-import io.github.zezeg2.aisupport.common.util.JsonUtil;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
+import io.github.zezeg2.aisupport.common.util.JsonUtil;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.context.PromptContextHolder;
 import lombok.Getter;
@@ -16,8 +16,6 @@ import java.util.List;
 
 /**
  * The PromptManager class is responsible for managing prompts and exchanging messages in a chat-based AI system.
- *
- * @since 1.0
  */
 @Getter
 @RequiredArgsConstructor
@@ -40,14 +38,23 @@ public class PromptManager {
         contextHolder.saveMessage(contextType, namespace, identifier, new ChatMessage(role.getValue(), message));
     }
 
+    /**
+     * Exchange messages in the chat-based AI system and retrieve the chat completion result.
+     *
+     * @param contextType The type of context (prompt or feedback).
+     * @param namespace   The namespace of the prompt.
+     * @param identifier  The identifier of the chat context.
+     * @param model       The AI model to use for the chat completion.
+     * @param topP        The top-p value for generating diverse completions.
+     * @param save        Specifies whether to save the generated response in the prompt context.
+     * @return The chat completion result.
+     */
     public ChatCompletionResult exchangeMessages(ContextType contextType, String namespace, String identifier, AIModel model, double topP, boolean save) {
         List<ChatMessage> contextMessages = contextHolder.getContext(ContextType.FEEDBACK, namespace, identifier).getMessages();
         return getChatCompletionResult(namespace, identifier, model, topP, save, contextMessages, contextType);
     }
 
     /**
-     * Retrieves the chat completion result using the AI model and chat messages.
-     * /**
      * Retrieves the chat completion result using the AI model and chat messages.
      *
      * @param namespace       The namespace of the prompt.
@@ -83,3 +90,4 @@ public class PromptManager {
                 .build());
     }
 }
+

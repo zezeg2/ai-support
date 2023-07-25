@@ -4,8 +4,6 @@ package io.github.zezeg2.aisupport.config.properties;
  * This enum represents the available environments for program execution.
  * <p>
  * The environments include SYNCHRONOUS and EVENTLOOP.
- *
- * @since 1.0
  */
 public enum ENVIRONMENT {
 

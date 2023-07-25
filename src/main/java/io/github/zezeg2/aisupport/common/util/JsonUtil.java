@@ -7,8 +7,8 @@ import java.util.Map;
 
 /**
  * Utility class for JSON-related operations.
- *
- * @since 1.0
+ * <p>
+ * description
  */
 public class JsonUtil {
 
@@ -43,11 +43,11 @@ public class JsonUtil {
      * @return The JSON representation of the input map.
      * @throws CustomJsonException If an exception occurs during the conversion process.
      */
-    public static String convertMapToJson(Map<String, Object> inputDescMap) throws CustomJsonException {
+    public static String convertMapToJson(Map<String, Object> inputDescMap) {
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(inputDescMap);
         } catch (Exception e) {
-            throw new CustomJsonException("Failed to convert map to JSON", e);
+            throw new CustomJsonException(e);
         }
     }
 }

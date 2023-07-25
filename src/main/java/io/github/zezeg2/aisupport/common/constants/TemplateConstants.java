@@ -2,8 +2,6 @@ package io.github.zezeg2.aisupport.common.constants;
 
 /**
  * The TemplateConstants class provides constants for template strings used in generating prompts and templates.
- *
- * @since 1.0
  */
 public class TemplateConstants {
 
@@ -94,6 +92,10 @@ public class TemplateConstants {
             - Do not include any other explanatory text in your response without the result.
             """;
 
+    /**
+     * The template string for the feedback frame with a role.
+     * It includes the role of the reviewer, feedback format, and the inspection items.
+     */
     public static final String FEEDBACK_FRAME_WITH_ROLE = """
             Your task is to review the provided JSON data. Please act as a %s and provide feedback solely on any issues or errors found, following the given 'Result Format.'
                    

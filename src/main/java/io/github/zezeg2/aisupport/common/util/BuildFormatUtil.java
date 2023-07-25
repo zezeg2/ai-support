@@ -1,13 +1,13 @@
 package io.github.zezeg2.aisupport.common.util;
 
-import io.github.zezeg2.aisupport.common.type.BaseSupportType;
-import io.github.zezeg2.aisupport.common.type.Supportable;
 import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.argument.MapArgument;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
 import io.github.zezeg2.aisupport.common.enums.STRUCTURE;
-import io.github.zezeg2.aisupport.common.exceptions.NotSupportedConstructException;
+import io.github.zezeg2.aisupport.common.exceptions.CustomInstantiationException;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportedTypeException;
+import io.github.zezeg2.aisupport.common.type.BaseSupportType;
+import io.github.zezeg2.aisupport.common.type.Supportable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
@@ -18,8 +18,6 @@ import java.util.stream.Collectors;
 /**
  * The BuildFormatUtil class provides utility methods for generating format maps and strings
  * for arguments and return types.
- *
- * @since 1.0
  */
 public class BuildFormatUtil {
 
@@ -85,7 +83,7 @@ public class BuildFormatUtil {
             }
             inputDescMap.put(argument.getFieldName(), transformedMap);
         } else {
-            throw new NotSupportedConstructException();
+            throw new RuntimeException("This is NotSupported Construct");
         }
     }
 
@@ -96,15 +94,14 @@ public class BuildFormatUtil {
      * @return The temporary instance of the BaseSupportType.
      */
     private static BaseSupportType getTempInstance(Class<?> type) {
-        BaseSupportType supportable;
+        BaseSupportType baseSupportType;
         try {
-            supportable = (BaseSupportType) type.getConstructor().newInstance();
+            baseSupportType = (BaseSupportType) type.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
-            String errorMessage = "Error occurred while generating description map: " + e.getMessage();
-            throw new RuntimeException(errorMessage, e);
+            throw new CustomInstantiationException(e);
         }
-        return supportable;
+        return baseSupportType;
     }
 
     /**

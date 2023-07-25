@@ -12,29 +12,47 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * The FeedbackMessages class represents a collection of feedback messages used in the system.
- * It contains an identifier, function name, validator name, and a list of chat messages.
+ * The FeedbackMessageContext class represents a concrete implementation of the MessageContext interface
+ * for feedback messages in a chat-based AI system.
  *
- * @since 1.0
+ * <p>The FeedbackMessageContext class is annotated with various annotations to support serialization and database operations.
+ * It implements the Serializable interface to enable object serialization.
+ *
+ * <p>Use the constructor to create a new FeedbackMessageContext instance with the specified properties.
  */
 @Data
 @Builder
 @Document
 public class FeedbackMessageContext implements Serializable, MessageContext {
 
+    /**
+     * The identifier of this FeedbackMessageContext.
+     */
     @Id
     private String identifier;
+
+    /**
+     * The function name associated with this FeedbackMessageContext.
+     */
     private String functionName;
+
+    /**
+     * The validator name associated with this FeedbackMessageContext.
+     */
     private String validatorName;
+
+    /**
+     * The list of chat messages stored in this FeedbackMessageContext.
+     */
     private List<ChatMessage> messages;
 
     /**
-     * Constructs a new FeedbackMessages instance.
+     * Constructs a new FeedbackMessageContext instance with the specified properties.
      *
-     * @param identifier    The identifier of the feedback messages.
-     * @param functionName  The name of the function.
-     * @param validatorName The name of the validator.
-     * @param messages      The list of chat messages.
+     * @param identifier    The identifier of the FeedbackMessageContext.
+     * @param functionName  The function name associated with the FeedbackMessageContext.
+     * @param validatorName The validator name associated with the FeedbackMessageContext.
+     * @param messages      The list of chat messages to be stored in the FeedbackMessageContext.
      */
     @JsonCreator
     public FeedbackMessageContext(@JsonProperty("identifier") String identifier,
@@ -47,4 +65,3 @@ public class FeedbackMessageContext implements Serializable, MessageContext {
         this.messages = messages;
     }
 }
-

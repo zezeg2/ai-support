@@ -11,8 +11,6 @@ import java.util.stream.Collectors;
 /**
  * The ReflectionUtils class provides utility methods for working with reflection in Java.
  * It includes methods for retrieving parameter types and their simplified names.
- *
- * @since 1.0
  */
 public class ReflectionUtil {
 

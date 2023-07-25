@@ -11,8 +11,6 @@ import java.util.*;
 /**
  * The ConstructResolver interface provides methods for resolving and generating class maps.
  * It is used to convert class information into a string representation.
- *
- * @since 1.0
  */
 public interface ConstructResolver {
 

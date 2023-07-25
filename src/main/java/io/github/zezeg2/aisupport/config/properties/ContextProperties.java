@@ -7,8 +7,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * Configuration properties for the context and environment settings.
  * These properties define the default values for the context and environment,
  * which can be customized using the "ai-supporter.context" prefix.
- *
- * @since 1.0
  */
 @ConfigurationProperties(prefix = "ai-supporter.context")
 @Data

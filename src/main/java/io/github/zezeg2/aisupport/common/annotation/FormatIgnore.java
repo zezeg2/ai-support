@@ -13,7 +13,6 @@ import java.lang.annotation.Target;
  *
  * @version 1.0
  * @see Supportable
- * @since 1.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)

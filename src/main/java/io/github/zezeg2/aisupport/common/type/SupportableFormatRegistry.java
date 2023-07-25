@@ -10,8 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * The SupportableFormatRegistry class is a registry for storing and retrieving format maps of Supportable objects.
  * It provides methods for saving and retrieving format maps associated with Supportable classes.
  * This class allows you to save memory by not creating an object each time you create a format string(Supportable.getFormatMap()).
- *
- * @since 1.0
  */
 public class SupportableFormatRegistry {
 

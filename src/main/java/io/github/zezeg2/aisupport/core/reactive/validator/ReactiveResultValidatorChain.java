@@ -9,17 +9,40 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
+/**
+ * The ReactiveResultValidatorChain class represents a chain of ReactiveResultValidator instances that are used to validate AI model results in a chat-based AI system using reactive programming.
+ * It allows chaining multiple ReactiveResultValidator instances together and performing validation based on specified target functions.
+ */
 public class ReactiveResultValidatorChain {
 
+    /**
+     * The list of ReactiveResultValidator instances forming the chain.
+     */
     protected final List<ReactiveResultValidator> validators;
 
+    /**
+     * Constructs a ReactiveResultValidatorChain with the given list of validators.
+     * The validators are sorted based on the "order" value specified in their ValidateTarget annotations.
+     *
+     * @param validators The list of ReactiveResultValidator instances to be used in the chain.
+     */
     public ReactiveResultValidatorChain(List<ReactiveResultValidator> validators) {
         this.validators = validators.stream()
                 .sorted(Comparator.comparingInt(v -> v.getClass().getAnnotation(ValidateTarget.class).order()))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Validates the AI model results for the specified function and identifier using the validators in the chain.
+     * The validation is performed based on the target function's annotations defined in the validators.
+     * If a target function is marked as "global" or is explicitly listed in the validator's target names,
+     * the corresponding validator is used to validate the results.
+     *
+     * @param functionName The name of the function to validate.
+     * @param identifier   The identifier of the chat context.
+     * @param target       The target result to validate.
+     * @return A Mono<String> representing the validated result as a string.
+     */
     public Mono<String> validate(String functionName, String identifier, String target) {
         if (validators.isEmpty()) {
             return Mono.just(target);
@@ -34,6 +57,15 @@ public class ReactiveResultValidatorChain {
                 .concatMap(validator -> validator.validate(functionName, identifier)).last();
     }
 
+    /**
+     * Retrieves the list of ReactiveResultValidator instances that are applicable to the specified function name.
+     * The applicable validators are filtered based on the target function's annotations defined in the validators.
+     * If a target function is marked as "global" or is explicitly listed in the validator's target names,
+     * the corresponding validator is included in the returned list.
+     *
+     * @param functionName The name of the function for which to retrieve applicable validators.
+     * @return The list of applicable ReactiveResultValidator instances.
+     */
     public List<ReactiveResultValidator> peekValidators(String functionName) {
         return validators.stream().filter(validator -> {
             ValidateTarget targetFunction = validator.getClass().getAnnotation(ValidateTarget.class);

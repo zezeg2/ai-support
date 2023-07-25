@@ -7,8 +7,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * Configuration properties for the OpenAI API settings.
  * These properties define the default values for the API token, timeout,
  * and the model to be used, which can be customized using the "ai-supporter.api" prefix.
- *
- * @since 1.0
  */
 @ConfigurationProperties(prefix = "ai-supporter.api")
 @Data

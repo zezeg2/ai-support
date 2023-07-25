@@ -11,11 +11,12 @@ import java.io.Serializable;
  * The BaseSupportType class provides a base implementation of the Supportable interface
  * and includes additional functionality for formatting and retrieving values.
  * It is an abstract class that implements Serializable.
- *
- * @since 1.0
  */
 public abstract class BaseSupportType implements Supportable, Serializable {
 
+    /**
+     * ObjectMapper used for converting objects to JSON strings.
+     */
     @FormatIgnore
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -36,6 +37,13 @@ public abstract class BaseSupportType implements Supportable, Serializable {
         }
     }
 
+
+    /**
+     * Returns the JSON string representation of the implementing class using default pretty printer.
+     *
+     * @return The JSON string representation of the implementing class.
+     * @throws RuntimeException If an exception occurs during the JSON serialization process.
+     */
     @Override
     public String toString() {
         try {

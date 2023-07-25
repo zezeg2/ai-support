@@ -12,27 +12,41 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * The PromptMessages class represents a collection of prompt messages used in the system.
- * It contains an identifier, function name, and a list of chat messages.
+ * The PromptMessageContext class represents a concrete implementation of the MessageContext interface.
+ * It is used for storing chat messages and related information in a chat-based AI system.
  *
- * @since 1.0
+ * <p>The PromptMessageContext class is annotated with various annotations to support serialization and database operations.
+ * It implements the Serializable interface to enable object serialization.
+ *
+ * <p>Use the constructor to create a new PromptMessageContext instance with the specified properties.
  */
 @Data
 @Builder
 @Document
 public class PromptMessageContext implements Serializable, MessageContext {
 
+    /**
+     * The identifier of this PromptMessageContext.
+     */
     @Id
     private String identifier;
+
+    /**
+     * The function name associated with this PromptMessageContext.
+     */
     private String functionName;
+
+    /**
+     * The list of chat messages stored in this PromptMessageContext.
+     */
     private List<ChatMessage> messages;
 
     /**
-     * Constructs a new PromptMessages instance.
+     * Constructs a new PromptMessageContext instance with the specified properties.
      *
-     * @param identifier   The identifier of the prompt messages.
-     * @param functionName The name of the function.
-     * @param messages     The list of chat messages.
+     * @param identifier   The identifier of the PromptMessageContext.
+     * @param functionName The function name associated with the PromptMessageContext.
+     * @param messages     The list of chat messages to be stored in the PromptMessageContext.
      */
     @JsonCreator
     public PromptMessageContext(@JsonProperty("identifier") String identifier,

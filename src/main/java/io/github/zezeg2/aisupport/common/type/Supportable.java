@@ -14,8 +14,6 @@ import java.util.*;
  * The Supportable interface provides functionality for generating formatted descriptions
  * of classes implementing this interface. It defines methods for extracting field descriptions
  * and converting them to a map structure.
- *
- * @since 1.0
  */
 public interface Supportable {
     /**

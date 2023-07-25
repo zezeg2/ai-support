@@ -12,7 +12,6 @@ import java.lang.annotation.Target;
  * It can be applied to fields and accepts two optional properties: "key" and "value".
  *
  * @see Supportable
- * @since 1.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})

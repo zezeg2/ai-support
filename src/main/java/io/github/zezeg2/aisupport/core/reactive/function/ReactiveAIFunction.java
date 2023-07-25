@@ -21,6 +21,12 @@ import reactor.core.publisher.Mono;
 
 import java.util.*;
 
+/**
+ * The ReactiveAIFunction class represents a reactive version of an AI function that interacts with a chat-based AI system.
+ * It is responsible for executing AI tasks, managing prompts, and validating results using reactive programming principles.
+ *
+ * @param <T> The type of the return value for the AI function.
+ */
 @RequiredArgsConstructor
 public class ReactiveAIFunction<T> {
     private final String functionName;
@@ -33,10 +39,21 @@ public class ReactiveAIFunction<T> {
     private final OpenAIProperties openAIProperties;
     private final double topP;
 
+    /**
+     * Retrieves the default AI model.
+     *
+     * @return The default AI model.
+     */
     private AIModel getDefaultModel() {
         return ModelMapper.map(openAIProperties.getModel());
     }
 
+    /**
+     * Initializes the ReactiveAIFunction with the specified execution parameters using reactive operations.
+     *
+     * @param params The execution parameters.
+     * @return A Mono that represents the completion of the initialization process.
+     */
     private Mono<Void> init(ExecuteParameters<T> params) {
         List<Argument<?>> args = params.getArgs();
         String identifier = params.getIdentifier();
@@ -55,7 +72,9 @@ public class ReactiveAIFunction<T> {
                             }
                             if (example == null) return Mono.empty();
                             else {
-                                Optional<ChatMessage> systemMessage = messageContext.getMessages().stream().filter(message -> message.getRole().equals(ROLE.SYSTEM.getValue())).findFirst();
+                                Optional<ChatMessage> systemMessage = messageContext.getMessages().stream()
+                                        .filter(message -> message.getRole().equals(ROLE.SYSTEM.getValue()))
+                                        .findFirst();
                                 systemMessage.ifPresent(message -> message.setContent(prompt.generate(mapper, example)));
                                 return contextHolder.saveContext(ContextType.PROMPT, messageContext);
                             }
@@ -64,7 +83,12 @@ public class ReactiveAIFunction<T> {
                 .then(promptManager.addMessageToContext(functionName, identifier, ROLE.USER, createArgsString(args), ContextType.PROMPT));
     }
 
-
+    /**
+     * Creates a string representation of the arguments for the AI function.
+     *
+     * @param args The list of arguments for the AI function.
+     * @return The string representation of the arguments.
+     */
     private String createArgsString(List<Argument<?>> args) {
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(createArgsMap(args));
@@ -73,23 +97,44 @@ public class ReactiveAIFunction<T> {
         }
     }
 
+    /**
+     * Creates a map of argument names and values for the AI function.
+     *
+     * @param args The list of arguments for the AI function.
+     * @return The map of argument names and values.
+     */
     private Map<String, Object> createArgsMap(List<Argument<?>> args) {
         Map<String, Object> valueMap = new LinkedHashMap<>();
         args.forEach(argument -> valueMap.put(argument.getFieldName(), argument.getValue()));
         return valueMap;
     }
 
+    /**
+     * Parses the response from the AI model and validates it using the result validator chain in a reactive manner.
+     *
+     * @param params   The execution parameters.
+     * @param response The chat completion result.
+     * @return A Mono that emits the parsed and validated response object.
+     */
     private Mono<T> parseResponseWithValidate(ExecuteParameters<T> params, ChatCompletionResult response) {
         String content = response.getChoices().get(0).getMessage().getContent();
-        return resultValidatorChain.validate(functionName, params.getIdentifier(), content).flatMap((stringResult) -> {
-            try {
-                return Mono.just(mapper.readValue(stringResult, returnType));
-            } catch (JsonProcessingException e) {
-                return Mono.error(new RuntimeException(e));
-            }
-        }).onErrorResume(Mono::error);
+        return resultValidatorChain.validate(functionName, params.getIdentifier(), content)
+                .flatMap((stringResult) -> {
+                    try {
+                        return Mono.just(mapper.readValue(stringResult, returnType));
+                    } catch (JsonProcessingException e) {
+                        return Mono.error(new RuntimeException(e));
+                    }
+                })
+                .onErrorResume(Mono::error);
     }
 
+    /**
+     * Executes the ReactiveAIFunction with the specified execution parameters using reactive operations.
+     *
+     * @param params The execution parameters.
+     * @return A Mono that emits the result of the execution.
+     */
     public Mono<T> execute(ExecuteParameters<T> params) {
         if (params.getModel() == null) params.setModel(getDefaultModel());
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
@@ -98,3 +143,4 @@ public class ReactiveAIFunction<T> {
                         .flatMap(chatCompletionResult -> parseResponseWithValidate(params, chatCompletionResult)));
     }
 }
+

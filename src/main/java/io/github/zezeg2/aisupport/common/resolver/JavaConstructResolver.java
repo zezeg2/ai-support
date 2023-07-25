@@ -6,8 +6,6 @@ import java.util.Map;
 /**
  * The JavaConstructResolver class implements the ConstructResolver interface
  * and provides a string representation of class maps in Java syntax.
- *
- * @since 1.0
  */
 public class JavaConstructResolver implements ConstructResolver {
 
