@@ -2,12 +2,18 @@ apply plugin: 'maven-publish'
 apply plugin: 'signing'
 apply from: 'publish.gradle'
 
-task sourcesJar(type: Jar) {
-    archiveClassifier.set("sources")
+task sourcesJar(type: Jar, dependsOn: delombok) {
+    from delombok
+    archiveClassifier.set('sources')
 }
 
-task javadocJar(type: Jar) {
-    archiveClassifier.set("javadoc")
+//task javadocJar(type: Jar) {
+//    archiveClassifier.set('javadoc')
+//}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    from javadoc.destinationDir
+    archiveClassifier.set('javadoc')
 }
 
 artifacts {

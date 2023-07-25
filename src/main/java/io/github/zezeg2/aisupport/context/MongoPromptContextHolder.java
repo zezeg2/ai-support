@@ -53,13 +53,13 @@ public class MongoPromptContextHolder implements PromptContextHolder {
 
     @Override
     public void saveMessage(ContextType contextType, String namespace, String identifier, ChatMessage message) {
-        MessageContext baseMessageContext = getContext(contextType, namespace, identifier);
-        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && baseMessageContext.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-            baseMessageContext.getMessages().get(0).setContent(message.getContent());
+        MessageContext messageContext = getContext(contextType, namespace, identifier);
+        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && messageContext.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
+            messageContext.getMessages().get(0).setContent(message.getContent());
         } else {
-            baseMessageContext.getMessages().add(message);
+            messageContext.getMessages().add(message);
         }
-        mongoTemplate.save(baseMessageContext, namespace);
+        mongoTemplate.save(messageContext, namespace);
     }
 
     @Override
@@ -73,13 +73,13 @@ public class MongoPromptContextHolder implements PromptContextHolder {
 
     @Override
     public void deleteMessagesFromLast(ContextType contextType, String namespace, String identifier, Integer n) {
-        MessageContext baseMessageContext = getContext(contextType, namespace, identifier);
+        MessageContext messageContext = getContext(contextType, namespace, identifier);
 
-        List<ChatMessage> content = baseMessageContext.getMessages();
+        List<ChatMessage> content = messageContext.getMessages();
         if (!content.isEmpty()) {
             int removeIndex = Math.max(0, content.size() - n);
             content.subList(removeIndex, content.size()).clear();
         }
-        mongoTemplate.save(baseMessageContext, namespace);
+        mongoTemplate.save(messageContext, namespace);
     }
 }

@@ -63,7 +63,7 @@ public class MapArgument<T> extends BaseArgument<Map<String, T>> {
     }
 
     /**
-     * Gets the name of the type of data stored in the map argument (Map<String, T>).
+     * Gets the name of the type of data stored in the map argument ({@code Map<String, T>}).
      *
      * @return The name of the type of data stored in the map argument.
      */

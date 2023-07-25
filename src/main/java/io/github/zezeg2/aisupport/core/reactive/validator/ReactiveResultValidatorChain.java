@@ -41,7 +41,7 @@ public class ReactiveResultValidatorChain {
      * @param functionName The name of the function to validate.
      * @param identifier   The identifier of the chat context.
      * @param target       The target result to validate.
-     * @return A Mono<String> representing the validated result as a string.
+     * @return A {@code Mono<String>} representing the validated result as a string.
      */
     public Mono<String> validate(String functionName, String identifier, String target) {
         if (validators.isEmpty()) {
