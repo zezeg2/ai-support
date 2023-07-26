@@ -77,4 +77,6 @@ public interface ReactivePromptContextHolder {
      * @return A Mono representing the completion of the delete operation.
      */
     Mono<Void> deleteMessagesFromLast(ContextType contextType, String namespace, String identifier, Integer n);
+
+    <T extends MessageContext> Mono<T> createMessageContext(ContextType contextType, String namespace, String identifier);
 }

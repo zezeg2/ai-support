@@ -1,7 +1,6 @@
 package io.github.zezeg2.aisupport.context;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
-import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.core.function.prompt.*;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -14,8 +13,11 @@ public class MongoPromptContextHolder implements PromptContextHolder {
 
     private final MongoTemplate mongoTemplate;
 
-    public MongoPromptContextHolder(MongoTemplate mongoTemplate) {
+    private final SequenceGenerator sequenceGenerator;
+
+    public MongoPromptContextHolder(MongoTemplate mongoTemplate, SequenceGenerator sequenceGenerator) {
         this.mongoTemplate = mongoTemplate;
+        this.sequenceGenerator = sequenceGenerator;
     }
 
     @Override
@@ -34,52 +36,33 @@ public class MongoPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public <T extends MessageContext> T getContext(ContextType contextType, String namespace, String identifier) {
-        T result = (T) mongoTemplate.findOne(
-                Query.query(Criteria.where("identifier").is(identifier)),
-                contextType.getContextClass(),
-                namespace
-        );
+    public <T extends MessageContext> T createMessageContext(ContextType contextType, String namespace, String identifier) {
+        String[] split = namespace.split(":");
+        long seq = sequenceGenerator.generateSequence(MessageContext.getSequenceName(contextType == ContextType.PROMPT ? namespace : namespace.replace(":", "_"), identifier), identifier);
+        T messageContext = (T) (contextType == ContextType.PROMPT
+                ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).build()
+                : FeedbackMessageContext.builder().seq(seq).functionName(split[0]).validatorName(split[1]).identifier(identifier).messages(new ArrayList<>()).build());
 
-        if (result == null) {
-            String[] split = namespace.split(":");
-            result = contextType == ContextType.PROMPT
-                    ? (T) PromptMessageContext.builder().identifier(identifier).functionName(namespace).messages(new ArrayList<>()).build()
-                    : (T) FeedbackMessageContext.builder().identifier(identifier).functionName(split[0]).validatorName(split[1]).messages(new ArrayList<>()).build();
-            saveContext(contextType, result);
-        }
-        return result;
-    }
-
-    @Override
-    public void saveMessage(ContextType contextType, String namespace, String identifier, ChatMessage message) {
-        MessageContext messageContext = getContext(contextType, namespace, identifier);
-        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && messageContext.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-            messageContext.getMessages().get(0).setContent(message.getContent());
-        } else {
-            messageContext.getMessages().add(message);
-        }
         mongoTemplate.save(messageContext, namespace);
+        return messageContext;
     }
 
     @Override
-    public void saveContext(ContextType contextType, MessageContext messageContext) {
+    public void saveMessageContext(ContextType contextType, MessageContext messageContext) {
         if (contextType == ContextType.PROMPT) {
             mongoTemplate.save(messageContext, messageContext.getFunctionName());
         } else {
-            mongoTemplate.save(messageContext, messageContext.getFunctionName() + ":" + ((FeedbackMessageContext) messageContext).getValidatorName());
+            mongoTemplate.save(messageContext, messageContext.getNamespace());
         }
     }
 
     @Override
-    public void deleteMessagesFromLast(ContextType contextType, String namespace, String identifier, Integer n) {
-        MessageContext messageContext = getContext(contextType, namespace, identifier);
-
+    public void deleteMessagesFromLast(ContextType contextType, MessageContext messageContext, Integer n) {
         List<ChatMessage> content = messageContext.getMessages();
         if (!content.isEmpty()) {
             int removeIndex = Math.max(0, content.size() - n);
             content.subList(removeIndex, content.size()).clear();
         }
-        mongoTemplate.save(messageContext, namespace);
+        mongoTemplate.save(messageContext, messageContext.getNamespace());
     }
 }

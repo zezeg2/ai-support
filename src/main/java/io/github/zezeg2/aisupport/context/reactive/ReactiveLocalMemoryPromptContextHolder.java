@@ -84,4 +84,23 @@ public class ReactiveLocalMemoryPromptContextHolder implements ReactivePromptCon
             return Mono.empty();
         });
     }
+
+    @Override
+    public <T extends MessageContext> Mono<T> createMessageContext(ContextType contextType, String namespace, String identifier) {
+        return Mono.defer(() -> {
+            Map<String, CopyOnWriteArrayList<MessageContext>> selectedRegistry = contextRegistry.get(contextType);
+            if (!selectedRegistry.containsKey(namespace)) selectedRegistry.put(namespace, new CopyOnWriteArrayList<>());
+            String[] split = namespace.split(":");
+            CopyOnWriteArrayList<MessageContext> messageContextList = selectedRegistry.get(identifier);
+            Long seq = (long) messageContextList.size();
+
+            T messageContext = (T) (contextType == ContextType.PROMPT
+                    ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new CopyOnWriteArrayList<>()).build()
+                    : FeedbackMessageContext.builder().seq(seq).functionName(split[0]).validatorName(split[1]).identifier(identifier).messages(new CopyOnWriteArrayList<>()).build());
+
+            messageContextList.add(messageContext);
+            return Mono.just(messageContext);
+        });
+    }
+
 }

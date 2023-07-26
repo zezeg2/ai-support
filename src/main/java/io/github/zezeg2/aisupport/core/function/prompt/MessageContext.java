@@ -51,4 +51,10 @@ public interface MessageContext {
      * @param messages The list of chat messages to set.
      */
     void setMessages(List<ChatMessage> messages);
+
+    String getNamespace();
+
+    static String getSequenceName(String namespace, String identifier) {
+        return (namespace + "_" + identifier + "_context_seq").toLowerCase();
+    }
 }

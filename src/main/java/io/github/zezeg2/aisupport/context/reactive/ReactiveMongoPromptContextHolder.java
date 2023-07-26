@@ -14,8 +14,11 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
 
     private final ReactiveMongoTemplate reactiveMongoTemplate;
 
-    public ReactiveMongoPromptContextHolder(ReactiveMongoTemplate reactiveMongoTemplate) {
+    private final ReactiveSequenceGenerator sequenceGenerator;
+
+    public ReactiveMongoPromptContextHolder(ReactiveMongoTemplate reactiveMongoTemplate, ReactiveSequenceGenerator sequenceGenerator) {
         this.reactiveMongoTemplate = reactiveMongoTemplate;
+        this.sequenceGenerator = sequenceGenerator;
     }
 
     @Override
@@ -81,5 +84,19 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
                 })
                 .flatMap(contextMessages -> reactiveMongoTemplate.save(contextMessages, namespace).then());
     }
+
+    @Override
+    public <T extends MessageContext> Mono<T> createMessageContext(ContextType contextType, String namespace, String identifier) {
+        return Mono.just(namespace)
+                .map(n -> n.split(":"))
+                .zipWith(sequenceGenerator.generateSequence(MessageContext.getSequenceName(
+                                        contextType == ContextType.PROMPT ? namespace : namespace.replace(":", "_"), identifier), identifier)
+                                .map(Long::valueOf),
+                        (split, seq) -> (T) (contextType == ContextType.PROMPT
+                                ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).build()
+                                : FeedbackMessageContext.builder().seq(seq).functionName(split[0]).validatorName(split[1]).identifier(identifier).messages(new ArrayList<>()).build()))
+                .flatMap(messageContext -> reactiveMongoTemplate.save(messageContext, namespace));
+    }
+
 
 }

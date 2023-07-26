@@ -3,7 +3,6 @@ package io.github.zezeg2.aisupport.context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatMessage;
-import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.core.function.prompt.*;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -11,14 +10,15 @@ import org.springframework.data.redis.core.RedisTemplate;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class RedisPromptContextHolder implements PromptContextHolder {
 
+    private final RedisTemplate<String, String> template;
     private final HashOperations<String, String, String> hashOperations;
     private final ObjectMapper mapper;
 
     public RedisPromptContextHolder(RedisTemplate<String, String> template, ObjectMapper mapper) {
+        this.template = template;
         this.hashOperations = template.opsForHash();
         this.mapper = mapper;
     }
@@ -50,40 +50,23 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public <T extends MessageContext> T getContext(ContextType contextType, String namespace, String identifier) {
-        String result = hashOperations.get(namespace, identifier);
-        if (result == null) {
-            String[] split = namespace.split(":");
-            T context = contextType == ContextType.PROMPT ? (T) PromptMessageContext.builder().functionName(namespace).identifier(identifier).messages(new CopyOnWriteArrayList<>()).build()
-                    : (T) FeedbackMessageContext.builder().identifier(identifier).functionName(split[0]).validatorName(split[1]).messages(new ArrayList<>()).build();
-            saveContext(contextType, context);
-            return context;
-        } else {
-            try {
-                return (T) mapper.readValue(result, contextType.getContextClass());
-            } catch (IOException e) {
-                throw new RuntimeException("Error deserializing the messages", e);
-            }
-        }
-    }
+    public <T extends MessageContext> T createMessageContext(ContextType contextType, String namespace, String identifier) {
+        String[] split = namespace.split(":");
+        Long seq = template.opsForValue().increment(identifier + ":seq");
 
-    @Override
-    public void saveMessage(ContextType contextType, String namespace, String identifier, ChatMessage message) {
-        MessageContext messageContext = getContext(contextType, namespace, identifier);
-        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && messageContext.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-            messageContext.getMessages().get(0).setContent(message.getContent());
-        } else {
-            messageContext.getMessages().add(message);
-        }
+        T messageContext = (T) (contextType == ContextType.PROMPT
+                ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).build()
+                : FeedbackMessageContext.builder().seq(seq).functionName(split[0]).validatorName(split[1]).identifier(identifier).messages(new ArrayList<>()).build());
         try {
-            hashOperations.put(namespace, identifier, mapper.writeValueAsString(messageContext));
+            hashOperations.put(namespace + ":" + seq, identifier, mapper.writeValueAsString(messageContext));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error serializing the messages", e);
         }
+        return messageContext;
     }
 
     @Override
-    public void saveContext(ContextType contextType, MessageContext messageContext) {
+    public void saveMessageContext(ContextType contextType, MessageContext messageContext) {
         String key = contextType == ContextType.PROMPT ? messageContext.getFunctionName() : messageContext.getFunctionName() + ":" + ((FeedbackMessageContext) messageContext).getValidatorName();
         try {
             hashOperations.put(key, messageContext.getIdentifier(), mapper.writeValueAsString(messageContext));
@@ -93,15 +76,14 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     }
 
     @Override
-    public void deleteMessagesFromLast(ContextType contextType, String namespace, String identifier, Integer n) {
-        MessageContext messageContext = getContext(contextType, namespace, identifier);
+    public void deleteMessagesFromLast(ContextType contextType, MessageContext messageContext, Integer n) {
         List<ChatMessage> content = messageContext.getMessages();
         if (!content.isEmpty()) {
             int removeIndex = Math.max(0, content.size() - n);
             content.subList(removeIndex, content.size()).clear();
         }
         try {
-            hashOperations.put(namespace, identifier, mapper.writeValueAsString(messageContext));
+            hashOperations.put(messageContext.getNamespace(), messageContext.getIdentifier(), mapper.writeValueAsString(messageContext));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error serializing the context messages after deletion", e);
         }

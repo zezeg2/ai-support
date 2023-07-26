@@ -24,13 +24,16 @@ import java.util.List;
 @Builder
 @Document
 public class PromptMessageContext implements Serializable, MessageContext {
+    /**
+     * The current value of the sequence.
+     */
+    @Id
+    private Long seq;
 
     /**
      * The identifier of this PromptMessageContext.
      */
-    @Id
     private String identifier;
-
     /**
      * The function name associated with this PromptMessageContext.
      */
@@ -50,10 +53,17 @@ public class PromptMessageContext implements Serializable, MessageContext {
      */
     @JsonCreator
     public PromptMessageContext(@JsonProperty("identifier") String identifier,
+                                @JsonProperty("seq") long seq,
                                 @JsonProperty("functionName") String functionName,
                                 @JsonProperty("messages") List<ChatMessage> messages) {
         this.identifier = identifier;
+        this.seq = seq;
         this.functionName = functionName;
         this.messages = messages;
+    }
+
+    @Override
+    public String getNamespace() {
+        return functionName;
     }
 }

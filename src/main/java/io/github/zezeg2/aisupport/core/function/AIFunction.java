@@ -2,8 +2,6 @@ package io.github.zezeg2.aisupport.core.function;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.theokanning.openai.completion.chat.ChatCompletionResult;
-import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
@@ -12,9 +10,9 @@ import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.context.PromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
-import io.github.zezeg2.aisupport.core.function.prompt.MessageContext;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 import io.github.zezeg2.aisupport.core.validator.ResultValidatorChain;
 import lombok.RequiredArgsConstructor;
 
@@ -55,32 +53,27 @@ public class AIFunction<T> {
      *
      * @param params The execution parameters.
      */
-    private void init(ExecuteParameters<T> params) {
+    private PromptMessageContext init(ExecuteParameters<T> params) {
         List<Argument<?>> args = params.getArgs();
         String identifier = params.getIdentifier();
         T example = params.getExample();
         PromptContextHolder contextHolder = promptManager.getContextHolder();
 
-        MessageContext messageContext = contextHolder.getContext(ContextType.PROMPT, functionName, identifier);
         Prompt prompt = contextHolder.get(functionName);
         if (prompt == null) {
             prompt = new Prompt(functionName, command, constraints, args, returnType, topP);
             contextHolder.savePrompt(functionName, prompt);
         }
+
+        PromptMessageContext messageContext = contextHolder.createMessageContext(ContextType.PROMPT, functionName, identifier);
         if (messageContext.getMessages().isEmpty()) {
             if (example == null)
-                promptManager.addMessageToContext(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT);
+                promptManager.addMessageToContext(messageContext, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT);
             else
-                promptManager.addMessageToContext(functionName, identifier, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT);
+                promptManager.addMessageToContext(messageContext, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT);
         }
-        if (example != null) {
-            ChatMessage systemMessage = messageContext.getMessages().stream()
-                    .filter(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))
-                    .findFirst().orElseThrow();
-            systemMessage.setContent(prompt.generate(mapper, example));
-            contextHolder.saveContext(ContextType.PROMPT, messageContext);
-        }
-        promptManager.addMessageToContext(functionName, identifier, ROLE.USER, createArgsString(args), ContextType.PROMPT);
+        promptManager.addMessageToContext(messageContext, ROLE.USER, createArgsString(args), ContextType.PROMPT);
+        return messageContext;
     }
 
     /**
@@ -109,16 +102,8 @@ public class AIFunction<T> {
         return valueMap;
     }
 
-    /**
-     * Parses the response from the AI model and validates it using the result validator chain.
-     *
-     * @param params   The execution parameters.
-     * @param response The chat completion result.
-     * @return The parsed and validated response object.
-     */
-    private T parseResponseWithValidate(ExecuteParameters<T> params, ChatCompletionResult response) {
-        String content = response.getChoices().get(0).getMessage().getContent();
-        content = resultValidatorChain.validate(functionName, params.getIdentifier(), content);
+    private T parseResponseWithValidate(PromptMessageContext messageContext) {
+        String content = resultValidatorChain.validate(messageContext);
         try {
             return mapper.readValue(content, returnType);
         } catch (JsonProcessingException e) {
@@ -135,9 +120,9 @@ public class AIFunction<T> {
     public T execute(ExecuteParameters<T> params) {
         if (params.getModel() == null) params.setModel(getDefaultModel());
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
-        init(params);
-        ChatCompletionResult response = promptManager.exchangeMessages(ContextType.PROMPT, functionName, params.getIdentifier(), params.getModel(), topP, true);
-        return parseResponseWithValidate(params, response);
+        PromptMessageContext promptMessageContext = init(params);
+        PromptMessageContext response = promptManager.exchangeMessages(ContextType.PROMPT, promptMessageContext, params.getModel(), topP, true);
+        return parseResponseWithValidate(response);
     }
 }
 

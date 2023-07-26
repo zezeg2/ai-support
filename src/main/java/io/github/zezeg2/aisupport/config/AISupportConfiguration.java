@@ -7,14 +7,8 @@ import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.common.resolver.JavaConstructResolver;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
-import io.github.zezeg2.aisupport.context.LocalMemoryPromptContextHolder;
-import io.github.zezeg2.aisupport.context.MongoPromptContextHolder;
-import io.github.zezeg2.aisupport.context.PromptContextHolder;
-import io.github.zezeg2.aisupport.context.RedisPromptContextHolder;
-import io.github.zezeg2.aisupport.context.reactive.ReactiveLocalMemoryPromptContextHolder;
-import io.github.zezeg2.aisupport.context.reactive.ReactiveMongoPromptContextHolder;
-import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
-import io.github.zezeg2.aisupport.context.reactive.ReactiveRedisPromptContextHolder;
+import io.github.zezeg2.aisupport.context.*;
+import io.github.zezeg2.aisupport.context.reactive.*;
 import io.github.zezeg2.aisupport.core.AISupport;
 import io.github.zezeg2.aisupport.core.ReactiveAISupport;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
@@ -68,7 +62,7 @@ public class AISupportConfiguration {
         return new JavaConstructResolver();
     }
 
-    //SERVLET
+    //DEFAULT
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "synchronous")
     public AISupport defaultAISupport(ObjectMapper mapper, PromptManager promptManager, ResultValidatorChain resultValidateChain) {
@@ -95,8 +89,8 @@ public class AISupportConfiguration {
 
     @Bean
     @ConditionalOnExpression("'${ai-supporter.context.context}' == 'mongo' && '${ai-supporter.context.environment}' == 'synchronous'")
-    public MongoPromptContextHolder mongoPromptContextHolder(MongoTemplate mongoTemplate) {
-        return new MongoPromptContextHolder(mongoTemplate);
+    public MongoPromptContextHolder mongoPromptContextHolder(MongoTemplate mongoTemplate, SequenceGenerator sequenceGenerator) {
+        return new MongoPromptContextHolder(mongoTemplate, sequenceGenerator);
     }
 
     @Bean
@@ -133,8 +127,8 @@ public class AISupportConfiguration {
 
     @Bean
     @ConditionalOnExpression("'${ai-supporter.context.context}' == 'mongo' && '${ai-supporter.context.environment}' == 'eventloop'")
-    public ReactiveMongoPromptContextHolder reactiveMongoPromptContextHolder(ReactiveMongoTemplate mongoTemplate) {
-        return new ReactiveMongoPromptContextHolder(mongoTemplate);
+    public ReactiveMongoPromptContextHolder reactiveMongoPromptContextHolder(ReactiveMongoTemplate mongoTemplate, ReactiveSequenceGenerator sequenceGenerator) {
+        return new ReactiveMongoPromptContextHolder(mongoTemplate, sequenceGenerator);
     }
 
     @Bean

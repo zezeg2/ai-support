@@ -28,50 +28,34 @@ public class PromptManager {
     /**
      * Adds a message to the prompt context.
      *
-     * @param namespace   The namespace of the prompt.
-     * @param identifier  The identifier of the chat context.
-     * @param role        The role of the chat message (e.g., user, assistant).
-     * @param message     The content of the chat message.
-     * @param contextType The type of context (prompt or feedback).
+     * @param messageContext Message context for calling openai chat completion api
+     * @param role           The role of the chat message (e.g., user, assistant).
+     * @param message        The content of the chat message.
+     * @param contextType    The type of context (prompt or feedback).
      */
-    public void addMessageToContext(String namespace, String identifier, ROLE role, String message, ContextType contextType) {
-        contextHolder.saveMessage(contextType, namespace, identifier, new ChatMessage(role.getValue(), message));
+    public void addMessageToContext(MessageContext messageContext, ROLE role, String message, ContextType contextType) {
+        messageContext.getMessages().add(new ChatMessage(role.getValue(), message));
+        contextHolder.saveMessageContext(contextType, messageContext);
     }
 
     /**
      * Exchange messages in the chat-based AI system and retrieve the chat completion result.
      *
-     * @param contextType The type of context (prompt or feedback).
-     * @param namespace   The namespace of the prompt.
-     * @param identifier  The identifier of the chat context.
-     * @param model       The AI model to use for the chat completion.
-     * @param topP        The top-p value for generating diverse completions.
-     * @param save        Specifies whether to save the generated response in the prompt context.
+     * @param contextType    The type of context (prompt or feedback).
+     * @param messageContext Message context for calling openai chat completion api
+     * @param model          The AI model to use for the chat completion.
+     * @param topP           The top-p value for generating diverse completions.
+     * @param save           Specifies whether to save the generated response in the prompt context.
      * @return The chat completion result.
      */
-    public ChatCompletionResult exchangeMessages(ContextType contextType, String namespace, String identifier, AIModel model, double topP, boolean save) {
-        List<ChatMessage> contextMessages = contextHolder.getContext(ContextType.FEEDBACK, namespace, identifier).getMessages();
-        return getChatCompletionResult(namespace, identifier, model, topP, save, contextMessages, contextType);
-    }
 
-    /**
-     * Retrieves the chat completion result using the AI model and chat messages.
-     *
-     * @param namespace       The namespace of the prompt.
-     * @param identifier      The identifier of the chat context.
-     * @param model           The AI model to use for the chat completion.
-     * @param topP            The top-p value for generating diverse completions.
-     * @param save            Specifies whether to save the generated response in the prompt context.
-     * @param contextMessages The list of chat messages from the prompt context.
-     * @param contextType     The type of context (prompt or feedback).
-     * @return The chat completion result.
-     */
-    protected ChatCompletionResult getChatCompletionResult(String namespace, String identifier, AIModel model, double topP, boolean save, List<ChatMessage> contextMessages, ContextType contextType) {
-        ChatCompletionResult response = createChatCompletion(model, contextMessages, topP);
+    public <T extends MessageContext> T exchangeMessages(ContextType contextType, MessageContext messageContext, AIModel model, double topP, boolean save) {
+        ChatCompletionResult response = createChatCompletion(model, messageContext.getMessages(), topP);
         ChatMessage responseMessage = response.getChoices().get(0).getMessage();
         responseMessage.setContent(JsonUtil.extractJsonFromMessage(responseMessage.getContent()));
-        if (save) contextHolder.saveMessage(contextType, namespace, identifier, responseMessage);
-        return response;
+        messageContext.getMessages().add(responseMessage);
+        if (save) contextHolder.saveMessageContext(contextType, messageContext);
+        return (T) messageContext;
     }
 
     /**

@@ -1,12 +1,11 @@
 package io.github.zezeg2.aisupport.context;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
-import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.core.function.prompt.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -31,37 +30,23 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
         return promptRegistry.get(namespace);
     }
 
+
     @Override
-    public <T extends MessageContext> T getContext(ContextType contextType, String namespace, String identifier) {
+    public <T extends MessageContext> T createMessageContext(ContextType contextType, String namespace, String identifier) {
         Map<String, CopyOnWriteArrayList<MessageContext>> selectedRegistry = contextRegistry.get(contextType);
         if (!selectedRegistry.containsKey(namespace)) selectedRegistry.put(namespace, new CopyOnWriteArrayList<>());
-        return (T) selectedRegistry.get(namespace).stream()
-                .filter(context -> context.getIdentifier().equals(identifier)).findFirst()
-                .orElse(contextType == ContextType.PROMPT ? PromptMessageContext.builder().identifier(identifier).messages(new CopyOnWriteArrayList<>()).build()
-                        : FeedbackMessageContext.builder().identifier(identifier).messages(new CopyOnWriteArrayList<>()).build());
+        String[] split = namespace.split(":");
+        CopyOnWriteArrayList<MessageContext> messageContextList = selectedRegistry.get(identifier);
+        Long seq = (long) messageContextList.size();
+        T messageContext = (T) (contextType == ContextType.PROMPT
+                ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).build()
+                : FeedbackMessageContext.builder().seq(seq).functionName(split[0]).validatorName(split[1]).identifier(identifier).messages(new ArrayList<>()).build());
+        messageContextList.add(messageContext);
+        return messageContext;
     }
 
     @Override
-    public void saveMessage(ContextType contextType, String namespace, String identifier, ChatMessage message) {
-        if (!contextRegistry.get(contextType).containsKey(namespace)) {
-            contextRegistry.get(contextType).put(namespace, new CopyOnWriteArrayList<>());
-        }
-        MessageContext messageContext = getContext(contextType, namespace, identifier);
-        if (message.getRole().equals(ROLE.SYSTEM.getValue()) && messageContext.getMessages().stream().anyMatch(chatMessage -> chatMessage.getRole().equals(ROLE.SYSTEM.getValue()))) {
-            messageContext.getMessages().get(0).setContent(message.getContent());
-        } else {
-            messageContext.getMessages().add(message);
-        }
-
-        if (contextRegistry.get(contextType).get(namespace).stream()
-                .filter(ctx -> ctx.getIdentifier().equals(identifier)).findFirst().isEmpty()) {
-            contextRegistry.get(contextType).get(namespace).add(messageContext);
-        }
-    }
-
-
-    @Override
-    public void saveContext(ContextType contextType, MessageContext messageContext) {
+    public void saveMessageContext(ContextType contextType, MessageContext messageContext) {
         String namcespace = contextType == ContextType.PROMPT ? messageContext.getFunctionName() : messageContext.getFunctionName() + ":" + ((FeedbackMessageContext) messageContext).getValidatorName();
         MessageContext origin = contextRegistry.get(contextType).get(namcespace).stream()
                 .filter(ctx -> ctx.getIdentifier().equals(messageContext.getIdentifier()))
@@ -69,19 +54,13 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
         origin.setMessages(messageContext.getMessages());
     }
 
+
     @Override
-    public void deleteMessagesFromLast(ContextType contextType, String namespace, String identifier, Integer n) {
-        List<MessageContext> messageContextList = contextRegistry.get(contextType).get(namespace);
-        if (messageContextList != null) {
-            Optional<MessageContext> messageContextOptional = messageContextList.stream()
-                    .filter(messageContext -> messageContext.getIdentifier().equals(identifier)).findFirst();
-            messageContextOptional.ifPresent(messageContext -> {
-                List<ChatMessage> content = messageContext.getMessages();
-                if (!content.isEmpty()) {
-                    int removeIndex = Math.max(0, content.size() - n);
-                    content.subList(removeIndex, content.size()).clear();
-                }
-            });
+    public void deleteMessagesFromLast(ContextType contextType, MessageContext messageContext, Integer n) {
+        List<ChatMessage> content = messageContext.getMessages();
+        if (!content.isEmpty()) {
+            int removeIndex = Math.max(0, content.size() - n);
+            content.subList(removeIndex, content.size()).clear();
         }
     }
 }

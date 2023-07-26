@@ -26,9 +26,14 @@ import java.util.List;
 public class FeedbackMessageContext implements Serializable, MessageContext {
 
     /**
-     * The identifier of this FeedbackMessageContext.
+     * The current value of the sequence.
      */
     @Id
+    private Long seq;
+
+    /**
+     * The identifier of this PromptMessageContext.
+     */
     private String identifier;
 
     /**
@@ -56,12 +61,19 @@ public class FeedbackMessageContext implements Serializable, MessageContext {
      */
     @JsonCreator
     public FeedbackMessageContext(@JsonProperty("identifier") String identifier,
+                                  @JsonProperty("seq") long seq,
                                   @JsonProperty("functionName") String functionName,
                                   @JsonProperty("validatorName") String validatorName,
                                   @JsonProperty("messages") List<ChatMessage> messages) {
         this.identifier = identifier;
+        this.seq = seq;
         this.functionName = functionName;
         this.validatorName = validatorName;
         this.messages = messages;
+    }
+
+    @Override
+    public String getNamespace() {
+        return functionName + ":" + validatorName;
     }
 }

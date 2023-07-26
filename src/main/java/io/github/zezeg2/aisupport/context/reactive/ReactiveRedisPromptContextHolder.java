@@ -15,11 +15,12 @@ import java.util.List;
 
 @Slf4j
 public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHolder {
-
+    private final ReactiveRedisTemplate<String, String> template;
     private final ReactiveHashOperations<String, String, String> hashOperations;
     private final ObjectMapper mapper;
 
     public ReactiveRedisPromptContextHolder(ReactiveRedisTemplate<String, String> template, ObjectMapper mapper) {
+        this.template = template;
         this.hashOperations = template.opsForHash();
         this.mapper = mapper;
     }
@@ -124,5 +125,24 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
                     }
                 });
     }
+
+    @Override
+    public <T extends MessageContext> Mono<T> createMessageContext(ContextType contextType, String namespace, String identifier) {
+        return Mono.just(namespace)
+                .map(n -> n.split(":"))
+                .zipWith(template.opsForValue().increment(identifier + ":seq"),
+                        (split, seq) -> {
+                            T messageContext = (T) (contextType == ContextType.PROMPT
+                                    ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).build()
+                                    : FeedbackMessageContext.builder().seq(seq).functionName(split[0]).validatorName(split[1]).identifier(identifier).messages(new ArrayList<>()).build());
+                            try {
+                                hashOperations.put(namespace + ":" + seq, identifier, mapper.writeValueAsString(messageContext));
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException("Error serializing the messages", e);
+                            }
+                            return messageContext;
+                        });
+    }
+
 }
 

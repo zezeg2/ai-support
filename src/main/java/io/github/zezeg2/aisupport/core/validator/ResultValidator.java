@@ -10,10 +10,7 @@ import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.MODEL;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
-import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
-import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessageContext;
-import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
-import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
+import io.github.zezeg2.aisupport.core.function.prompt.*;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.util.List;
@@ -58,11 +55,10 @@ public abstract class ResultValidator {
      * @param functionName The name of the function.
      * @param identifier   The identifier of the chat context.
      */
-    protected void init(String functionName, String identifier) {
-        FeedbackMessageContext feedbackChatMessages = promptManager.getContextHolder().getContext(ContextType.FEEDBACK, getNamespace(functionName), identifier);
-        if (feedbackChatMessages.getMessages().isEmpty()) {
-            promptManager.addMessageToContext(getNamespace(functionName), identifier, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
-        }
+    protected MessageContext init(String functionName, String identifier) {
+        FeedbackMessageContext messageContext = promptManager.getContextHolder().createMessageContext(ContextType.FEEDBACK, getNamespace(functionName), identifier);
+        promptManager.addMessageToContext(messageContext, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
+        return messageContext;
     }
 
     /**
@@ -79,38 +75,35 @@ public abstract class ResultValidator {
     /**
      * Validates the AI model results for the specified function and identifier.
      *
-     * @param functionName The name of the function.
-     * @param identifier   The identifier of the chat context.
+     * @param promptMessageContext Prompt message context for calling openai chat completion api
      * @return The validated result as a string.
      */
-    public String validate(String functionName, String identifier) {
+    public String validate(PromptMessageContext promptMessageContext) {
         MODEL annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
         AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
-        if (!ignoreCondition(functionName, identifier)) return validate(functionName, identifier, model);
-        return getLastPromptResponseContent(functionName, identifier);
+        if (!ignoreCondition(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier()))
+            return validate(promptMessageContext, model);
+        return getLastPromptResponseContent(promptMessageContext);
     }
 
     /**
      * Validates the AI model results for the specified function, identifier, and AI model.
      *
-     * @param functionName The name of the function.
-     * @param identifier   The identifier of the chat context.
-     * @param model        The AI model to use for validation.
+     * @param promptMessageContext Prompt Message context for calling openai chat completion api
+     * @param model                The AI model to use for validation.
      * @return The validated result as a string.
      */
-    public String validate(String functionName, String identifier, AIModel model) {
-        String lastFeedbackContent;
-        String lastResponseContent = getLastPromptResponseContent(functionName, identifier);
-        init(functionName, identifier);
-
+    public String validate(PromptMessageContext promptMessageContext, AIModel model) {
+        String lastResponseContent = getLastPromptResponseContent(promptMessageContext);
+        MessageContext feedbackMessageContext = init(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier());
         for (int count = 1; count <= MAX_ATTEMPTS; count++) {
             System.out.println("Try Count : " + count + " ---------------------------------------------------------------------------\n" + lastResponseContent);
-            lastFeedbackContent = exchangeMessages(getNamespace(functionName), identifier, lastResponseContent, ContextType.FEEDBACK, model);
+            String lastFeedbackContent = exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, model);
             FeedbackResponse feedbackResult;
             try {
                 feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
             } catch (JsonProcessingException e) {
-                promptManager.getContextHolder().deleteMessagesFromLast(ContextType.FEEDBACK, getNamespace(functionName), identifier, 2);
+                promptManager.getContextHolder().deleteMessagesFromLast(ContextType.FEEDBACK, feedbackMessageContext, 2);
                 continue;
             }
 
@@ -118,7 +111,7 @@ public abstract class ResultValidator {
                 return lastResponseContent;
             }
             System.out.println("Feedback on results exists\n" + lastFeedbackContent);
-            lastResponseContent = exchangeMessages(functionName, identifier, lastFeedbackContent, ContextType.PROMPT, model);
+            lastResponseContent = exchangeMessages(promptMessageContext, lastFeedbackContent, ContextType.PROMPT, model);
         }
 
         throw new RuntimeException("Maximum Validate count over");
@@ -127,31 +120,29 @@ public abstract class ResultValidator {
     /**
      * Exchanges messages with the AI model and retrieves the response content.
      *
-     * @param functionName The name of the function.
-     * @param identifier   The identifier of the chat context.
-     * @param message      The content of the chat message.
-     * @param contextType  The type of context (prompt or feedback).
-     * @param model        The AI model to use for the chat completion.
+     * @param messageContext Message context for calling openai chat completion api
+     * @param message        The content of the chat message.
+     * @param contextType    The type of context (prompt or feedback).
+     * @param model          The AI model to use for the chat completion.
      * @return The content of the AI model's response as a string.
      */
-
-    protected String exchangeMessages(String functionName, String identifier, String message, ContextType contextType, AIModel model) {
-        promptManager.addMessageToContext(functionName, identifier, ROLE.USER, message, contextType);
-        double topP = contextType == ContextType.PROMPT ? promptManager.getContextHolder().get(functionName).getTopP()
+    protected String exchangeMessages(MessageContext messageContext, String message, ContextType contextType, AIModel model) {
+        promptManager.addMessageToContext(messageContext, ROLE.USER, message, contextType);
+        double topP = contextType == ContextType.PROMPT ? promptManager.getContextHolder().get(messageContext.getFunctionName()).getTopP()
                 : this.getClass().getAnnotation(ValidateTarget.class).topP();
-        ChatMessage responseMessage = promptManager.exchangeMessages(contextType, functionName, identifier, model, topP, true).getChoices().get(0).getMessage();
+        List<ChatMessage> messages = promptManager.exchangeMessages(contextType, messageContext, model, topP, true).getMessages();
+        ChatMessage responseMessage = messages.get(messages.size() - 1);
         return responseMessage.getContent();
     }
 
     /**
      * Gets the content of the last prompt response from the chat context.
      *
-     * @param functionName The name of the function.
-     * @param identifier   The identifier of the chat context.
+     * @param promptMessageContext Prompt message context for calling openai chat completion api
      * @return The content of the last prompt response as a string.
      */
-    protected String getLastPromptResponseContent(String functionName, String identifier) {
-        List<ChatMessage> promptMessageList = promptManager.getContextHolder().getContext(ContextType.PROMPT, functionName, identifier).getMessages();
+    protected String getLastPromptResponseContent(PromptMessageContext promptMessageContext) {
+        List<ChatMessage> promptMessageList = promptMessageContext.getMessages();
         return promptMessageList.get(promptMessageList.size() - 1).getContent();
     }
 
