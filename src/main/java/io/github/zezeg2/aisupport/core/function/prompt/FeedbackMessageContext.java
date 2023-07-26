@@ -60,13 +60,13 @@ public class FeedbackMessageContext implements Serializable, MessageContext {
      * @param messages      The list of chat messages to be stored in the FeedbackMessageContext.
      */
     @JsonCreator
-    public FeedbackMessageContext(@JsonProperty("identifier") String identifier,
-                                  @JsonProperty("seq") long seq,
+    public FeedbackMessageContext(@JsonProperty("seq") long seq,
+                                  @JsonProperty("identifier") String identifier,
                                   @JsonProperty("functionName") String functionName,
                                   @JsonProperty("validatorName") String validatorName,
                                   @JsonProperty("messages") List<ChatMessage> messages) {
-        this.identifier = identifier;
         this.seq = seq;
+        this.identifier = identifier;
         this.functionName = functionName;
         this.validatorName = validatorName;
         this.messages = messages;

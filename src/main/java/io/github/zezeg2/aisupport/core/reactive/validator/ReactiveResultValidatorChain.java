@@ -1,5 +1,7 @@
 package io.github.zezeg2.aisupport.core.reactive.validator;
 
+import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 import io.github.zezeg2.aisupport.core.validator.ValidateTarget;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -38,23 +40,18 @@ public class ReactiveResultValidatorChain {
      * If a target function is marked as "global" or is explicitly listed in the validator's target names,
      * the corresponding validator is used to validate the results.
      *
-     * @param functionName The name of the function to validate.
-     * @param identifier   The identifier of the chat context.
-     * @param target       The target result to validate.
+     * @param promptMessageContext Prompt Message context for calling openai chat completion api.
      * @return A {@code Mono<String>} representing the validated result as a string.
      */
-    public Mono<String> validate(String functionName, String identifier, String target) {
-        if (validators.isEmpty()) {
-            return Mono.just(target);
-        }
 
+    public Mono<String> validate(PromptMessageContext promptMessageContext) {
         return Flux.fromIterable(validators)
                 .filter(validator -> {
                     ValidateTarget targetFunction = validator.getClass().getAnnotation(ValidateTarget.class);
                     List<String> targetFunctionList = Arrays.stream(targetFunction.names()).toList();
-                    return targetFunction.global() || targetFunctionList.contains(functionName);
+                    return targetFunction.global() || targetFunctionList.contains(promptMessageContext.getFunctionName());
                 })
-                .concatMap(validator -> validator.validate(functionName, identifier)).last();
+                .concatMap(validator -> validator.validate(promptMessageContext)).last();
     }
 
     /**

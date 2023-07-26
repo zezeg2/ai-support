@@ -55,10 +55,10 @@ public abstract class ResultValidator {
      * @param functionName The name of the function.
      * @param identifier   The identifier of the chat context.
      */
-    protected MessageContext init(String functionName, String identifier) {
-        FeedbackMessageContext messageContext = promptManager.getContextHolder().createMessageContext(ContextType.FEEDBACK, getNamespace(functionName), identifier);
-        promptManager.addMessageToContext(messageContext, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
-        return messageContext;
+    protected FeedbackMessageContext init(String functionName, String identifier) {
+        FeedbackMessageContext feedbackMessageContext = promptManager.getContextHolder().createMessageContext(ContextType.FEEDBACK, getNamespace(functionName), identifier);
+        promptManager.addMessageToContext(feedbackMessageContext, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
+        return feedbackMessageContext;
     }
 
     /**
@@ -120,7 +120,7 @@ public abstract class ResultValidator {
     /**
      * Exchanges messages with the AI model and retrieves the response content.
      *
-     * @param messageContext Message context for calling openai chat completion api
+     * @param messageContext Message context for calling openai chat completion api.
      * @param message        The content of the chat message.
      * @param contextType    The type of context (prompt or feedback).
      * @param model          The AI model to use for the chat completion.
@@ -165,7 +165,7 @@ public abstract class ResultValidator {
     }
 
     /**
-     * Determines whether the validation should be ignored based on the function and identifier.
+     * Determines whether the validation should be ignored based on prompt or message context information
      *
      * @param functionName The name of the function.
      * @param identifier   The identifier of the chat context.

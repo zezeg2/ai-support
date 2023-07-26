@@ -2,8 +2,6 @@ package io.github.zezeg2.aisupport.core.reactive.function;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.theokanning.openai.completion.chat.ChatCompletionResult;
-import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
@@ -14,12 +12,16 @@ import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.ExecuteParameters;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.core.reactive.validator.ReactiveResultValidatorChain;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * The ReactiveAIFunction class represents a reactive version of an AI function that interacts with a chat-based AI system.
@@ -54,33 +56,25 @@ public class ReactiveAIFunction<T> {
      * @param params The execution parameters.
      * @return A Mono that represents the completion of the initialization process.
      */
-    private Mono<Void> init(ExecuteParameters<T> params) {
+    private Mono<PromptMessageContext> init(ExecuteParameters<T> params) {
         List<Argument<?>> args = params.getArgs();
         String identifier = params.getIdentifier();
         T example = params.getExample();
         ReactivePromptContextHolder contextHolder = promptManager.getContextHolder();
-
         return contextHolder.get(functionName)
                 .switchIfEmpty(Mono.just(new Prompt(functionName, command, constraints, args, returnType, topP))
                         .flatMap(prompt -> contextHolder.savePrompt(functionName, prompt).thenReturn(prompt)))
-                .flatMap(prompt -> contextHolder.getContext(ContextType.PROMPT, functionName, identifier)
-                        .flatMap(messageContext -> {
-                            if (messageContext.getMessages().isEmpty()) {
-                                return example == null ?
-                                        promptManager.addMessageToContext(functionName, identifier, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT) :
-                                        promptManager.addMessageToContext(functionName, identifier, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT);
+                .flatMap(prompt -> contextHolder.<PromptMessageContext>createMessageContext(ContextType.PROMPT, functionName, identifier)
+                        .flatMap(promptMessageContext -> {
+                            if (example == null) {
+                                promptManager.addMessageToContext(promptMessageContext, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT);
+                            } else {
+                                promptManager.addMessageToContext(promptMessageContext, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT);
                             }
-                            if (example == null) return Mono.empty();
-                            else {
-                                Optional<ChatMessage> systemMessage = messageContext.getMessages().stream()
-                                        .filter(message -> message.getRole().equals(ROLE.SYSTEM.getValue()))
-                                        .findFirst();
-                                systemMessage.ifPresent(message -> message.setContent(prompt.generate(mapper, example)));
-                                return contextHolder.saveContext(ContextType.PROMPT, messageContext);
-                            }
+                            promptManager.addMessageToContext(promptMessageContext, ROLE.USER, createArgsString(args), ContextType.PROMPT);
+                            return Mono.just(promptMessageContext);
                         })
-                )
-                .then(promptManager.addMessageToContext(functionName, identifier, ROLE.USER, createArgsString(args), ContextType.PROMPT));
+                );
     }
 
     /**
@@ -112,16 +106,15 @@ public class ReactiveAIFunction<T> {
     /**
      * Parses the response from the AI model and validates it using the result validator chain in a reactive manner.
      *
-     * @param params   The execution parameters.
-     * @param response The chat completion result.
+     * @param promptMessageContext Prompt message context for calling openai chat completion api.
      * @return A Mono that emits the parsed and validated response object.
      */
-    private Mono<T> parseResponseWithValidate(ExecuteParameters<T> params, ChatCompletionResult response) {
-        String content = response.getChoices().get(0).getMessage().getContent();
-        return resultValidatorChain.validate(functionName, params.getIdentifier(), content)
-                .flatMap((stringResult) -> {
+
+    private Mono<T> parseResponseWithValidate(PromptMessageContext promptMessageContext) {
+        return resultValidatorChain.validate(promptMessageContext)
+                .flatMap((validatedResult) -> {
                     try {
-                        return Mono.just(mapper.readValue(stringResult, returnType));
+                        return Mono.just(mapper.readValue(validatedResult, returnType));
                     } catch (JsonProcessingException e) {
                         return Mono.error(new RuntimeException(e));
                     }
@@ -139,8 +132,8 @@ public class ReactiveAIFunction<T> {
         if (params.getModel() == null) params.setModel(getDefaultModel());
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
         return init(params)
-                .then(promptManager.exchangeMessages(ContextType.PROMPT, functionName, params.getIdentifier(), params.getModel(), topP, true)
-                        .flatMap(chatCompletionResult -> parseResponseWithValidate(params, chatCompletionResult)));
+                .flatMap(promptMessageContext -> promptManager.exchangeMessages(ContextType.PROMPT, promptMessageContext, params.getModel(), topP, true)
+                        .flatMap(chatCompletionResult -> parseResponseWithValidate(promptMessageContext)));
     }
 }
 

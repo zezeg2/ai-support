@@ -65,15 +65,14 @@ public class AIFunction<T> {
             contextHolder.savePrompt(functionName, prompt);
         }
 
-        PromptMessageContext messageContext = contextHolder.createMessageContext(ContextType.PROMPT, functionName, identifier);
-        if (messageContext.getMessages().isEmpty()) {
-            if (example == null)
-                promptManager.addMessageToContext(messageContext, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT);
-            else
-                promptManager.addMessageToContext(messageContext, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT);
-        }
-        promptManager.addMessageToContext(messageContext, ROLE.USER, createArgsString(args), ContextType.PROMPT);
-        return messageContext;
+        PromptMessageContext promptMessageContext = contextHolder.createMessageContext(ContextType.PROMPT, functionName, identifier);
+        if (example == null)
+            promptManager.addMessageToContext(promptMessageContext, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT);
+        else
+            promptManager.addMessageToContext(promptMessageContext, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT);
+
+        promptManager.addMessageToContext(promptMessageContext, ROLE.USER, createArgsString(args), ContextType.PROMPT);
+        return promptMessageContext;
     }
 
     /**
@@ -102,10 +101,16 @@ public class AIFunction<T> {
         return valueMap;
     }
 
-    private T parseResponseWithValidate(PromptMessageContext messageContext) {
-        String content = resultValidatorChain.validate(messageContext);
+    /**
+     * Parses the response from the AI model and validates it using the result validator chain.
+     *
+     * @param promptMessageContext The chat completion result.
+     * @return A Mono that emits the parsed and validated response object.
+     */
+    private T parseResponseWithValidate(PromptMessageContext promptMessageContext) {
+        String validatedResult = resultValidatorChain.validate(promptMessageContext);
         try {
-            return mapper.readValue(content, returnType);
+            return mapper.readValue(validatedResult, returnType);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

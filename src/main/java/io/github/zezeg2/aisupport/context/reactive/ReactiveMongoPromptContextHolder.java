@@ -37,55 +37,6 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public <T extends MessageContext> Mono<T> getContext(ContextType contextType, String namespace, String identifier) {
-        return reactiveMongoTemplate.findOne(
-                        Query.query(Criteria.where("identifier").is(identifier)),
-                        contextType.getContextClass(),
-                        namespace
-                ).map(e -> (T) e)
-                .switchIfEmpty(Mono.defer(() -> {
-                    T newContext;
-                    if (contextType == ContextType.PROMPT) {
-                        newContext = (T) PromptMessageContext.builder().identifier(identifier).functionName(namespace).messages(new ArrayList<>()).build();
-                    } else {
-                        String[] split = namespace.split(":");
-                        newContext = (T) FeedbackMessageContext.builder().identifier(identifier).functionName(split[0]).validatorName(split[1]).messages(new ArrayList<>()).build();
-                    }
-                    reactiveMongoTemplate.save(newContext, namespace);
-                    return Mono.just(newContext);
-                }));
-    }
-
-    @Override
-    public Mono<Void> saveMessage(ContextType contextType, String namespace, String identifier, ChatMessage message) {
-        return getContext(contextType, namespace, identifier)
-                .flatMap(contextMessages -> {
-                    contextMessages.getMessages().add(message);
-                    return reactiveMongoTemplate.save(contextMessages, namespace);
-                })
-                .then();
-    }
-
-    @Override
-    public Mono<Void> saveContext(ContextType contextType, MessageContext messageContext) {
-        return reactiveMongoTemplate.save(messageContext, contextType == ContextType.PROMPT ? messageContext.getFunctionName() : messageContext.getFunctionName() + ":" + ((FeedbackMessageContext) messageContext).getValidatorName()).then();
-    }
-
-    @Override
-    public Mono<Void> deleteMessagesFromLast(ContextType contextType, String namespace, String identifier, Integer n) {
-        return getContext(contextType, namespace, identifier)
-                .filter(contextMessages -> !contextMessages.getMessages().isEmpty())
-                .doOnNext(contextMessages -> {
-                    List<ChatMessage> content = contextMessages.getMessages();
-                    if (!content.isEmpty()) {
-                        int removeIndex = Math.max(0, content.size() - n);
-                        content.subList(removeIndex, content.size()).clear();
-                    }
-                })
-                .flatMap(contextMessages -> reactiveMongoTemplate.save(contextMessages, namespace).then());
-    }
-
-    @Override
     public <T extends MessageContext> Mono<T> createMessageContext(ContextType contextType, String namespace, String identifier) {
         return Mono.just(namespace)
                 .map(n -> n.split(":"))
@@ -98,5 +49,20 @@ public class ReactiveMongoPromptContextHolder implements ReactivePromptContextHo
                 .flatMap(messageContext -> reactiveMongoTemplate.save(messageContext, namespace));
     }
 
+    @Override
+    public Mono<Void> saveMessageContext(ContextType contextType, MessageContext messageContext) {
+        return reactiveMongoTemplate.save(messageContext, messageContext.getNamespace()).then();
+    }
 
+    @Override
+    public Mono<Void> deleteMessagesFromLast(ContextType contextType, MessageContext messageContext, Integer n) {
+        return Mono.defer(() -> {
+            List<ChatMessage> content = messageContext.getMessages();
+            if (!content.isEmpty()) {
+                int removeIndex = Math.max(0, content.size() - n);
+                content.subList(removeIndex, content.size()).clear();
+            }
+            return reactiveMongoTemplate.save(messageContext, messageContext.getNamespace()).then();
+        });
+    }
 }

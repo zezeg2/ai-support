@@ -7,10 +7,6 @@ task sourcesJar(type: Jar, dependsOn: delombok) {
     archiveClassifier.set('sources')
 }
 
-//task javadocJar(type: Jar) {
-//    archiveClassifier.set('javadoc')
-//}
-
 task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
     archiveClassifier.set('javadoc')

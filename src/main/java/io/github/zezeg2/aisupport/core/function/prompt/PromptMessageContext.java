@@ -37,6 +37,7 @@ public class PromptMessageContext implements Serializable, MessageContext {
     /**
      * The function name associated with this PromptMessageContext.
      */
+
     private String functionName;
 
     /**
@@ -52,12 +53,12 @@ public class PromptMessageContext implements Serializable, MessageContext {
      * @param messages     The list of chat messages to be stored in the PromptMessageContext.
      */
     @JsonCreator
-    public PromptMessageContext(@JsonProperty("identifier") String identifier,
-                                @JsonProperty("seq") long seq,
+    public PromptMessageContext(@JsonProperty("seq") long seq,
+                                @JsonProperty("identifier") String identifier,
                                 @JsonProperty("functionName") String functionName,
                                 @JsonProperty("messages") List<ChatMessage> messages) {
-        this.identifier = identifier;
         this.seq = seq;
+        this.identifier = identifier;
         this.functionName = functionName;
         this.messages = messages;
     }

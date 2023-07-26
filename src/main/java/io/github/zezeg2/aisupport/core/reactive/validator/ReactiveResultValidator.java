@@ -2,6 +2,7 @@ package io.github.zezeg2.aisupport.core.reactive.validator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
@@ -9,8 +10,7 @@ import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.MODEL;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
-import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
-import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
+import io.github.zezeg2.aisupport.core.function.prompt.*;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.core.validator.ValidateTarget;
@@ -63,15 +63,11 @@ public abstract class ReactiveResultValidator {
      * @param identifier   The identifier of the chat context.
      * @return A {@code Mono<Void>} representing the completion of the initialization process.
      */
-    protected Mono<Void> init(String functionName, String identifier) {
-        return Mono.defer(() -> promptManager.getContextHolder().getContext(ContextType.FEEDBACK, getNamespace(functionName), identifier)
-                .flatMap(context -> {
-                    if (context.getMessages().isEmpty()) {
-                        return buildTemplate(functionName)
-                                .flatMap(template -> promptManager.addMessageToContext(getNamespace(functionName), identifier, ROLE.SYSTEM, template, ContextType.FEEDBACK));
-                    }
-                    return Mono.empty();
-                }));
+    protected Mono<FeedbackMessageContext> init(String functionName, String identifier) {
+        return Mono.defer(() -> promptManager.getContextHolder().<FeedbackMessageContext>createMessageContext(ContextType.FEEDBACK, getNamespace(functionName), identifier)
+                .flatMap(feedbackMessageContext -> buildTemplate(functionName)
+                        .flatMap(template -> promptManager.addMessageToContext(feedbackMessageContext, ROLE.SYSTEM, template, ContextType.FEEDBACK))
+                        .thenReturn(feedbackMessageContext)));
     }
 
     /**
@@ -90,16 +86,15 @@ public abstract class ReactiveResultValidator {
      * Validates the AI model results for the specified function and identifier.
      * This method returns a {@code Mono<String>} representing the validated result as a string.
      *
-     * @param functionName The name of the function.
-     * @param identifier   The identifier of the chat context.
+     * @param promptMessageContext Prompt message context for calling openai chat completion api.
      * @return A {@code Mono<String>} representing the validated result as a string.
      */
-    public Mono<String> validate(String functionName, String identifier) {
+    public Mono<String> validate(PromptMessageContext promptMessageContext) {
         MODEL annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
         AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
-        return ignoreCondition(functionName, identifier).flatMap(ignore -> {
-            if (!ignore) return validate(functionName, identifier, model);
-            return getLastPromptResponseContent(functionName, identifier);
+        return ignoreCondition(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier()).flatMap(ignore -> {
+            if (!ignore) return validate(promptMessageContext, model);
+            return getLastPromptResponseContent(promptMessageContext);
         });
     }
 
@@ -107,71 +102,68 @@ public abstract class ReactiveResultValidator {
      * Validates the AI model results for the specified function, identifier, and AI model.
      * This method returns a {@code Mono<String>} representing the validated result as a string.
      *
-     * @param functionName The name of the function.
-     * @param identifier   The identifier of the chat context.
-     * @param model        The AI model to use for validation.
+     * @param promptMessageContext Prompt Message context for calling openai chat completion api.
+     * @param model                The AI model to use for validation.
      * @return A {@code Mono<String>} representing the validated result as a string.
      */
-    public Mono<String> validate(String functionName, String identifier, AIModel model) {
-        return init(functionName, identifier)
-                .then(Mono.defer(() ->
-                        getLastPromptResponseContent(functionName, identifier).log()
-                                .flatMap(lastResponseContent -> exchangeMessages(functionName, identifier, lastResponseContent, ContextType.FEEDBACK, model).log()
+    public Mono<String> validate(PromptMessageContext promptMessageContext, AIModel model) {
+        return init(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier())
+                .flatMap(feedbackMessageContext ->
+                        getLastPromptResponseContent(promptMessageContext).log()
+                                .flatMap(lastResponseContent -> exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, model).log()
                                         .flatMap(lastFeedbackContent -> {
                                             FeedbackResponse feedbackResult;
                                             try {
                                                 feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
                                             } catch (JsonProcessingException e) {
-                                                return promptManager.getContextHolder().deleteMessagesFromLast(ContextType.FEEDBACK, getNamespace(functionName), identifier, 2)
-                                                        .then(exchangeMessages(functionName, identifier, lastResponseContent, ContextType.FEEDBACK, model)
-                                                                .flatMap(ignored -> Mono.<String>error(new RuntimeException(e))));
+                                                return promptManager.getContextHolder().deleteMessagesFromLast(ContextType.FEEDBACK, feedbackMessageContext, 2).then(Mono.error(e));
                                             }
                                             if (feedbackResult.isValid()) return Mono.empty();
-                                            else return Mono.defer(() -> {
-                                                Mono<String> result = exchangeMessages(functionName, identifier, lastFeedbackContent, ContextType.PROMPT, model);
-                                                return result.flatMap(r -> Mono.error(new RuntimeException("Feedback on results exists\n" + lastFeedbackContent)));
-                                            });
+                                            else
+                                                return Mono.defer(() -> exchangeMessages(promptMessageContext, lastFeedbackContent, ContextType.PROMPT, model)
+                                                        .flatMap(r -> Mono.<String>error(new RuntimeException("Feedback on results exists\n" + lastFeedbackContent))));
                                         }))
                                 .retry(MAX_ATTEMPTS - 1)
-                ))
-                .switchIfEmpty(Mono.defer(() -> getLastPromptResponseContent(functionName, identifier)));
+                ).switchIfEmpty(Mono.defer(() -> getLastPromptResponseContent(promptMessageContext)));
     }
 
     /**
      * Exchanges messages with the AI model and retrieves the response content.
      * This method returns a {@code Mono<String>} representing the content of the AI model's response as a string.
      *
-     * @param functionName The name of the function.
-     * @param identifier   The identifier of the chat context.
-     * @param message      The content of the chat message.
-     * @param contextType  The type of context (prompt or feedback).
-     * @param model        The AI model to use for the chat completion.
+     * @param messageContext Message context for calling openai chat completion api.
+     * @param message        The content of the chat message.
+     * @param contextType    The type of context (prompt or feedback).
+     * @param model          The AI model to use for the chat completion.
      * @return A {@code Mono<String>} representing the content of the AI model's response as a string.
      */
-    protected Mono<String> exchangeMessages(String functionName, String identifier, String message, ContextType contextType, AIModel model) {
-        return promptManager.addMessageToContext(contextType.equals(ContextType.PROMPT) ? functionName : getNamespace(functionName), identifier, ROLE.USER, message, contextType)
-                .then(switch (contextType) {
-                    case PROMPT -> promptManager.getContextHolder().get(functionName)
-                            .map(Prompt::getTopP)
-                            .flatMap(topP -> promptManager.exchangeMessages(contextType, functionName, identifier, model, topP, true)
-                                    .map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent()));
-                    case FEEDBACK ->
-                            promptManager.exchangeMessages(contextType, getNamespace(functionName), identifier, model, this.getClass().getAnnotation(ValidateTarget.class).topP(), true)
-                                    .map(chatCompletionResult -> chatCompletionResult.getChoices().get(0).getMessage().getContent());
-                });
+
+    protected Mono<String> exchangeMessages(MessageContext messageContext, String message, ContextType contextType, AIModel model) {
+        return promptManager.addMessageToContext(messageContext, ROLE.USER, message, contextType)
+                .then(Mono.defer(() -> {
+                    Mono<Double> topPMono = contextType == ContextType.PROMPT ? promptManager.getContextHolder().get(messageContext.getFunctionName()).map(Prompt::getTopP)
+                            : Mono.just(this.getClass().getAnnotation(ValidateTarget.class).topP());
+                    return topPMono.flatMap(topP -> promptManager.exchangeMessages(contextType, messageContext, model, topP, true)
+                            .map(context -> {
+                                List<ChatMessage> messages = context.getMessages();
+                                return messages.get(messages.size() - 1).getContent();
+                            }));
+                }));
     }
+
 
     /**
      * Gets the content of the last prompt response from the chat context.
      * This method returns a {@code Mono<String>} representing the content of the last prompt response as a string.
      *
-     * @param functionName The name of the function.
-     * @param identifier   The identifier of the chat context.
+     * @param promptMessageContext Prompt message context for calling openai chat completion api.
      * @return A {@code Mono<String>} representing the content of the last prompt response as a string.
      */
-    protected Mono<String> getLastPromptResponseContent(String functionName, String identifier) {
-        return Mono.defer(() -> promptManager.getContextHolder().getContext(ContextType.PROMPT, functionName, identifier)
-                .flatMap(context -> Mono.just(context.getMessages().get(context.getMessages().size() - 1).getContent())));
+    protected Mono<String> getLastPromptResponseContent(PromptMessageContext promptMessageContext) {
+        return Mono.defer(() -> {
+            List<ChatMessage> promptMessageList = promptMessageContext.getMessages();
+            return Mono.just(promptMessageList.get(promptMessageList.size() - 1).getContent());
+        });
     }
 
     /**
@@ -195,7 +187,7 @@ public abstract class ReactiveResultValidator {
     }
 
     /**
-     * Determines whether the validation should be ignored based on the function and identifier.
+     * Determines whether the validation should be ignored based on prompt or message context information
      * This method returns a {@code Mono<Boolean>} representing whether the validation should be ignored (true) or not (false).
      *
      * @param functionName The name of the function.

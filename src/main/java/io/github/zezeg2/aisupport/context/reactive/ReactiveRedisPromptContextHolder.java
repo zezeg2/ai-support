@@ -53,80 +53,6 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     }
 
     @Override
-    public <T extends MessageContext> Mono<T> getContext(ContextType contextType, String namespace, String identifier) {
-        return hashOperations.get(namespace, identifier)
-                .flatMap(serializedMessages -> {
-                    try {
-                        return Mono.just((T) mapper.readValue(serializedMessages, contextType.getContextClass()));
-                    } catch (IOException e) {
-                        return Mono.error(new RuntimeException("Error deserializing the messages", e));
-                    }
-                })
-                .switchIfEmpty(Mono.defer(() -> {
-                    T context;
-                    if (contextType == ContextType.PROMPT) {
-                        context = (T) PromptMessageContext.builder().identifier(identifier).functionName(namespace).messages(new ArrayList<>()).build();
-                    } else {
-                        String[] split = namespace.split(":");
-                        context = (T) FeedbackMessageContext.builder().identifier(identifier).functionName(split[0]).validatorName(split[1]).messages(new ArrayList<>()).build();
-                    }
-                    try {
-                        hashOperations.put(namespace, identifier, mapper.writeValueAsString(context));
-                        return Mono.just(context);
-                    } catch (JsonProcessingException e) {
-                        return Mono.error(new RuntimeException("Error serializing the messages", e));
-                    }
-                }));
-    }
-
-    @Override
-    public Mono<Void> saveMessage(ContextType contextType, String namespace, String identifier, ChatMessage message) {
-        return getContext(contextType, namespace, identifier)
-                .flatMap(contextMessages -> {
-                    contextMessages.getMessages().add(message);
-                    try {
-                        return hashOperations.put(namespace, identifier, mapper.writeValueAsString(contextMessages)).then();
-                    } catch (JsonProcessingException e) {
-                        return Mono.error(new RuntimeException("Error serializing the messages", e));
-                    }
-                });
-    }
-
-    @Override
-    public Mono<Void> saveContext(ContextType contextType, MessageContext messageContext) {
-        try {
-            String namespace;
-            if (contextType == ContextType.PROMPT) {
-                namespace = messageContext.getFunctionName();
-            } else {
-                FeedbackMessageContext feedbackContext = (FeedbackMessageContext) messageContext;
-                namespace = feedbackContext.getFunctionName() + ":" + feedbackContext.getValidatorName();
-            }
-            return hashOperations.put(namespace, messageContext.getIdentifier(), mapper.writeValueAsString(messageContext)).then();
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error serializing the context messages", e);
-        }
-    }
-
-    @Override
-    public Mono<Void> deleteMessagesFromLast(ContextType contextType, String namespace, String identifier, Integer n) {
-        return getContext(contextType, namespace, identifier)
-                .filter(contextMessages -> !contextMessages.getMessages().isEmpty())
-                .doOnNext(contextMessages -> {
-                    List<ChatMessage> content = contextMessages.getMessages();
-                    int removeIndex = Math.max(0, content.size() - n);
-                    content.subList(removeIndex, content.size()).clear();
-                })
-                .flatMap(contextMessages -> {
-                    try {
-                        return hashOperations.put(namespace, identifier, mapper.writeValueAsString(contextMessages)).then();
-                    } catch (JsonProcessingException e) {
-                        return Mono.error(new RuntimeException("Error serializing the messages after deletion", e));
-                    }
-                });
-    }
-
-    @Override
     public <T extends MessageContext> Mono<T> createMessageContext(ContextType contextType, String namespace, String identifier) {
         return Mono.just(namespace)
                 .map(n -> n.split(":"))
@@ -144,5 +70,27 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
                         });
     }
 
+    @Override
+    public Mono<Void> saveMessageContext(ContextType contextType, MessageContext messageContext) {
+        try {
+            return hashOperations.put(messageContext.getNamespace(), messageContext.getIdentifier(), mapper.writeValueAsString(messageContext)).then();
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error serializing the context messages", e);
+        }
+    }
+
+    @Override
+    public Mono<Void> deleteMessagesFromLast(ContextType contextType, MessageContext messageContext, Integer n) {
+        return Mono.defer(() -> {
+            List<ChatMessage> messageList = messageContext.getMessages();
+            int removeIndex = Math.max(0, messageList.size() - n);
+            messageList.subList(removeIndex, messageList.size()).clear();
+            try {
+                return hashOperations.put(messageContext.getNamespace(), messageContext.getIdentifier(), mapper.writeValueAsString(messageContext)).then();
+            } catch (JsonProcessingException e) {
+                return Mono.error(new RuntimeException("Error serializing the messages after deletion", e));
+            }
+        });
+    }
 }
 
