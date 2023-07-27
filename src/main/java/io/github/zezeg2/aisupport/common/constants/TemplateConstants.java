@@ -73,7 +73,7 @@ public class TemplateConstants {
      * It includes the feedback format and the inspection items.
      */
     public static final String FEEDBACK_FRAME = """
-            Your task is to review the provided JSON data. Please identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these problems. We expect your feedback in the 'Result Format.' Please conduct this review and provide all feedback in English.
+            Your task is to conduct a comprehensive review of the provided JSON data, applying a high level of scrutiny to identify any potential issues, offering insights, and proposing solutions. Please identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these problems. We expect your feedback in the 'Result Format.' Please conduct this review and provide all feedback in English.
                         
             The inspection items are as follows.
             %s
@@ -88,7 +88,7 @@ public class TemplateConstants {
             %s
             ```
 
-            - Each element within the "problems" array should be concise and clear (limited to 30 words or fewer).
+            - Each element within the "problems" array should be concise and clear (limited to 50 words).
             - Do not include any other explanatory text in your response without the result.
             """;
 
@@ -97,7 +97,7 @@ public class TemplateConstants {
      * It includes the role of the reviewer, feedback format, and the inspection items.
      */
     public static final String FEEDBACK_FRAME_WITH_ROLE = """
-            Your task is to review the provided JSON data, acting as a %s. Please identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these problems. We expect your feedback in the 'Result Format.' Please conduct this review and provide all feedback in English."
+            As a(n) %s, your task is to apply your specialized knowledge and skills to meticulously review the provided JSON data, identifying issues, offering insights, and proposing solutions that align with best practices in your field. Please identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these problems. We expect your feedback in the 'Result Format.' Please conduct this review and provide all feedback in English."
                    
             The inspection items are as follows.
             %s
@@ -111,7 +111,7 @@ public class TemplateConstants {
             ```json
             %s
             ```
-            - Each element within the "problems" array should be concise and clear (limited to 30 words or fewer).
+            - Each element within the "problems" array should be concise and clear (limited to 50 words).
             - Do not include any other explanatory text in your response without the result.
             """;
 
