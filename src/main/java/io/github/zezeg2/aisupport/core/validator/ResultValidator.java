@@ -8,9 +8,10 @@ import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
-import io.github.zezeg2.aisupport.config.properties.MODEL;
+import io.github.zezeg2.aisupport.config.properties.Model;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.function.prompt.*;
+import lombok.Setter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.util.List;
@@ -20,7 +21,10 @@ import java.util.List;
  */
 @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "synchronous")
 public abstract class ResultValidator {
-    protected final int MAX_ATTEMPTS = 3;
+    /**
+     * The role of Validator for optimizing validation prompts
+     */
+    @Setter
     protected String role = null;
     protected final PromptManager promptManager;
     protected final ObjectMapper mapper;
@@ -53,7 +57,8 @@ public abstract class ResultValidator {
      * Initializes the feedback context with a system message containing the feedback template.
      *
      * @param functionName The name of the function.
-     * @param identifier   The identifier of the chat context.
+     * @param identifier   The identifier of the caller.
+     * @return A FeedbackMessageContext representing the completion of the feedback message context initialization process.
      */
     protected FeedbackMessageContext init(String functionName, String identifier) {
         FeedbackMessageContext feedbackMessageContext = promptManager.getContextHolder().createMessageContext(ContextType.FEEDBACK, getNamespace(functionName), identifier);
@@ -65,7 +70,7 @@ public abstract class ResultValidator {
      * Builds the feedback template based on the function name and the validator's role (if provided).
      *
      * @param functionName The name of the function.
-     * @return The feedback template as a string.
+     * @return The validate template as a string.
      */
     private String buildTemplate(String functionName) {
         return this.role == null ? TemplateConstants.FEEDBACK_FRAME.formatted(addTemplateContents(functionName), getPrompt(functionName).getResultFormat(), BuildFormatUtil.getFormatString(FeedbackResponse.class)) :
@@ -79,8 +84,8 @@ public abstract class ResultValidator {
      * @return The validated result as a string.
      */
     public String validate(PromptMessageContext promptMessageContext) {
-        MODEL annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
-        AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
+        Model annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
+        AIModel model = annotatedModel.equals(Model.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
         if (!ignoreCondition(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier()))
             return validate(promptMessageContext, model);
         return getLastPromptResponseContent(promptMessageContext);
@@ -96,7 +101,7 @@ public abstract class ResultValidator {
     public String validate(PromptMessageContext promptMessageContext, AIModel model) {
         String lastResponseContent = getLastPromptResponseContent(promptMessageContext);
         MessageContext feedbackMessageContext = init(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier());
-        for (int count = 1; count <= MAX_ATTEMPTS; count++) {
+        for (int count = 1; count <= openAIProperties.getValidateRetry(); count++) {
             System.out.println("Try Count : " + count + " ---------------------------------------------------------------------------\n" + lastResponseContent);
             String lastFeedbackContent = exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, model);
             FeedbackResponse feedbackResult;
@@ -148,6 +153,7 @@ public abstract class ResultValidator {
 
     /**
      * Adds the necessary template contents for feedback.
+     * implement this abstract class to add validate(inspection) items
      *
      * @param functionName The name of the function.
      * @return The template contents for feedback as a string.

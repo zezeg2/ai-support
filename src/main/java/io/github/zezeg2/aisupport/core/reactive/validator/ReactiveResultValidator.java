@@ -8,7 +8,7 @@ import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
-import io.github.zezeg2.aisupport.config.properties.MODEL;
+import io.github.zezeg2.aisupport.config.properties.Model;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.function.prompt.*;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
@@ -25,7 +25,9 @@ import java.util.List;
  */
 @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
 public abstract class ReactiveResultValidator {
-    protected final int MAX_ATTEMPTS = 3;
+    /**
+     * The role of Validator for optimizing validation prompts
+     */
     @Setter
     protected String role = null;
     protected final ReactivePromptManager promptManager;
@@ -60,8 +62,8 @@ public abstract class ReactiveResultValidator {
      * This method returns a {@code Mono<Void>} representing the asynchronous completion of the initialization process.
      *
      * @param functionName The name of the function.
-     * @param identifier   The identifier of the chat context.
-     * @return A {@code Mono<Void>} representing the completion of the initialization process.
+     * @param identifier   The identifier of the caller.
+     * @return A {@code Mono<FeedbackMessageContext>} representing the completion of the feedback message context initialization process in a reactive manner.
      */
     protected Mono<FeedbackMessageContext> init(String functionName, String identifier) {
         return Mono.defer(() -> promptManager.getContextHolder().<FeedbackMessageContext>createMessageContext(ContextType.FEEDBACK, getNamespace(functionName), identifier)
@@ -75,7 +77,7 @@ public abstract class ReactiveResultValidator {
      * This method returns a {@code Mono<String>} representing the asynchronous completion of the template building process.
      *
      * @param functionName The name of the function.
-     * @return A {@code Mono<String>} representing the feedback template as a string.
+     * @return A {@code Mono<String>} representing the validate template as a string.
      */
     private Mono<String> buildTemplate(String functionName) {
         return addTemplateContents(functionName).flatMap(content -> getPrompt(functionName).map(Prompt::getResultFormat).flatMap(resultFormat -> Mono.just(this.role == null ? TemplateConstants.FEEDBACK_FRAME.formatted(content, resultFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class)) :
@@ -90,8 +92,8 @@ public abstract class ReactiveResultValidator {
      * @return A {@code Mono<String>} representing the validated result as a string.
      */
     public Mono<String> validate(PromptMessageContext promptMessageContext) {
-        MODEL annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
-        AIModel model = annotatedModel.equals(MODEL.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
+        Model annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
+        AIModel model = annotatedModel.equals(Model.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
         return ignoreCondition(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier()).flatMap(ignore -> {
             if (!ignore) return validate(promptMessageContext, model);
             return getLastPromptResponseContent(promptMessageContext);
@@ -123,7 +125,7 @@ public abstract class ReactiveResultValidator {
                                                 return Mono.defer(() -> exchangeMessages(promptMessageContext, lastFeedbackContent, ContextType.PROMPT, model)
                                                         .flatMap(r -> Mono.<String>error(new RuntimeException("Feedback on results exists\n" + lastFeedbackContent))));
                                         }))
-                                .retry(MAX_ATTEMPTS - 1)
+                                .retry(openAIProperties.getValidateRetry() - 1)
                 ).switchIfEmpty(Mono.defer(() -> getLastPromptResponseContent(promptMessageContext)));
     }
 
@@ -168,7 +170,8 @@ public abstract class ReactiveResultValidator {
 
     /**
      * Adds the necessary template contents for feedback.
-     * This method returns a {@code Mono<String>} representing the template contents for feedback as a string.
+     * implement this abstract class to add validate(inspection) items
+     * This method returns a {@code Mono<String>} representing the validate(inspection) items for feedback as a string.
      *
      * @param functionName The name of the function.
      * @return A {@code Mono<String>} representing the template contents for feedback as a string.

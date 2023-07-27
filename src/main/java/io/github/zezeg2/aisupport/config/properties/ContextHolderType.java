@@ -5,7 +5,7 @@ package io.github.zezeg2.aisupport.config.properties;
  * <p>
  * The contexts include LOCAL, REDIS, and MONGO.
  */
-public enum CONTEXT {
+public enum ContextHolderType {
 
     /**
      * The LOCAL context represents data storage and retrieval on the local machine.

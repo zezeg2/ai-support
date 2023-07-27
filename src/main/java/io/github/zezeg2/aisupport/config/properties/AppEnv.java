@@ -5,7 +5,7 @@ package io.github.zezeg2.aisupport.config.properties;
  * <p>
  * The environments include SYNCHRONOUS and EVENTLOOP.
  */
-public enum ENVIRONMENT {
+public enum AppEnv {
 
     /**
      * The SYNCHRONOUS environment represents a synchronous execution model.

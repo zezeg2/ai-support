@@ -1,7 +1,7 @@
 package io.github.zezeg2.aisupport.core.validator;
 
 
-import io.github.zezeg2.aisupport.config.properties.MODEL;
+import io.github.zezeg2.aisupport.config.properties.Model;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -46,7 +46,7 @@ public @interface ValidateTarget {
     /**
      * Specifies the model used for validation.
      *
-     * @return The validation model as a {@link MODEL} enumeration.
+     * @return The validation model as a {@link Model} enumeration.
      */
-    MODEL model() default MODEL.NONE;
+    Model model() default Model.NONE;
 }

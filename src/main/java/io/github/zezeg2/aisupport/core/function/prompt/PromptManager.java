@@ -46,7 +46,7 @@ public class PromptManager {
      * @param model          The AI model to use for the chat completion.
      * @param topP           The top-p value for generating diverse completions.
      * @param save           Specifies whether to save the generated response in the prompt context.
-     * @return The chat completion result.
+     * @return The updated chat context contains chat completion result.
      */
 
     public <T extends MessageContext> T exchangeMessages(ContextType contextType, MessageContext messageContext, AIModel model, double topP, boolean save) {

@@ -8,7 +8,6 @@ import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
  * The PromptContextHolder interface defines the contract for managing prompt-related information in the context.
  */
 public interface PromptContextHolder {
-
     /**
      * Checks if the context contains the prompt information for the given namespace.
      *
@@ -33,6 +32,15 @@ public interface PromptContextHolder {
      */
     Prompt get(String namespace);
 
+    /**
+     * Creates a new message context of the specified type for the given namespace and identifier.
+     *
+     * @param contextType The type of context (prompt or feedback).
+     * @param namespace   The namespace of the message context.
+     * @param identifier  The identifier for the message context.
+     * @param <T>         A generic type parameter that extends MessageContext.
+     * @return A message context of the specified type.
+     */
     <T extends MessageContext> T createMessageContext(ContextType contextType, String namespace, String identifier);
 
     /**
@@ -51,5 +59,4 @@ public interface PromptContextHolder {
      * @param n              The number of messages to delete.
      */
     void deleteMessagesFromLast(ContextType contextType, MessageContext messageContext, Integer n);
-
 }

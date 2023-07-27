@@ -33,7 +33,7 @@ public class ResultValidatorChain {
      * the corresponding validator is used to validate the results.
      *
      * @param promptMessageContext Prompt message context for calling openai chat completion api
-     * @return The validated result as a string.
+     * @return The validated result of all validator chain(all validators) as a string.
      */
     public String validate(PromptMessageContext promptMessageContext) {
         List<ChatMessage> messages = promptMessageContext.getMessages();

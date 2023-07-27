@@ -1,6 +1,5 @@
 package io.github.zezeg2.aisupport.core.reactive.validator;
 
-import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 import io.github.zezeg2.aisupport.core.validator.ValidateTarget;
 import reactor.core.publisher.Flux;

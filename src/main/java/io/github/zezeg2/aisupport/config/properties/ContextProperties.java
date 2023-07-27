@@ -16,11 +16,11 @@ public class ContextProperties {
      * The default context for data storage and retrieval.
      * It is initialized with the LOCAL context by default.
      */
-    private CONTEXT context = CONTEXT.LOCAL;
+    private ContextHolderType context = ContextHolderType.LOCAL;
 
     /**
      * The default environment for program execution.
      * It is initialized with the SYNCHRONOUS environment by default.
      */
-    private ENVIRONMENT environment = ENVIRONMENT.SYNCHRONOUS;
+    private AppEnv environment = AppEnv.SYNCHRONOUS;
 }

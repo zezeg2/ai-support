@@ -5,7 +5,7 @@ package io.github.zezeg2.aisupport.config.properties;
  * It includes various versions of GPT-3.5 and GPT-4, each with specific characteristics and context lengths.
  * Additionally, it contains a special value NONE, which should not be used for properties setting and serves a specific purpose within the application.
  */
-public enum MODEL {
+public enum Model {
     GPT_3_5_TURBO,
     GPT_3_5_TURBO_0301,
     GPT_3_5_TURBO_16_K,

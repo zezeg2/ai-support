@@ -40,9 +40,9 @@ public class AIFunction<T> {
     private final double topP;
 
     /**
-     * Retrieves the default AI model.
+     * Retrieves the default AI model set by application properties.
      *
-     * @return The default AI model.
+     * @return The default AI model set by application properties.
      */
     private AIModel getDefaultModel() {
         return ModelMapper.map(openAIProperties.getModel());
@@ -104,7 +104,7 @@ public class AIFunction<T> {
     /**
      * Parses the response from the AI model and validates it using the result validator chain.
      *
-     * @param promptMessageContext The chat completion result.
+     * @param promptMessageContext prompt context contains chat completion result.
      * @return A Mono that emits the parsed and validated response object.
      */
     private T parseResponseWithValidate(PromptMessageContext promptMessageContext) {
@@ -120,7 +120,7 @@ public class AIFunction<T> {
      * Executes the AIFunction with the specified execution parameters.
      *
      * @param params The execution parameters.
-     * @return The result of the execution.
+     * @return The result of the function execution.
      */
     public T execute(ExecuteParameters<T> params) {
         if (params.getModel() == null) params.setModel(getDefaultModel());

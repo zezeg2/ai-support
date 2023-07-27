@@ -19,7 +19,7 @@ public class MongoCollectionSeq {
     private String seqName;
 
     /**
-     * The identifier of document.
+     * Identifier to identify the caller
      */
     private String identifier;
 

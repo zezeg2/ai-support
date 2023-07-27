@@ -28,5 +28,7 @@ public class OpenAIProperties {
      * The default model to be used for generating text.
      * It is initialized with the GPT_3_5_TURBO model by default.
      */
-    private MODEL model = MODEL.GPT_3_5_TURBO;
+    private Model model = Model.GPT_3_5_TURBO;
+
+    private int validateRetry = 3;
 }
