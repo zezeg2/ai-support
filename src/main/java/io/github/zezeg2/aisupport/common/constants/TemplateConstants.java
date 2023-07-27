@@ -73,7 +73,7 @@ public class TemplateConstants {
      * It includes the feedback format and the inspection items.
      */
     public static final String FEEDBACK_FRAME = """
-            Your task is to review the provided JSON data. Please provide feedback solely on any issues or errors found, following the given 'Result Format.'
+            Your task is to review the provided JSON data. Please identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these problems. We expect your feedback in the 'Result Format.' Please conduct this review and provide all feedback in English.
                         
             The inspection items are as follows.
             %s
@@ -97,7 +97,7 @@ public class TemplateConstants {
      * It includes the role of the reviewer, feedback format, and the inspection items.
      */
     public static final String FEEDBACK_FRAME_WITH_ROLE = """
-            Your task is to review the provided JSON data. Please act as a %s and provide feedback solely on any issues or errors found, following the given 'Result Format.'
+            Your task is to review the provided JSON data, acting as a %s. Please identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these problems. We expect your feedback in the 'Result Format.' Please conduct this review and provide all feedback in English."
                    
             The inspection items are as follows.
             %s
