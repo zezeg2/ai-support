@@ -2,10 +2,7 @@ package io.github.zezeg2.aisupport.core.function.prompt;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.argument.Argument;
-import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
 import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
@@ -16,6 +13,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
 import java.util.List;
+
+import static io.github.zezeg2.aisupport.common.constants.TemplateConstants.*;
 
 /**
  * The Prompt class represents a prompt entity used in the system.
@@ -29,6 +28,7 @@ public class Prompt implements Serializable {
 
     @Id
     private String functionName;
+    private String role;
     private String command;
     private String constraints;
     private String inputFormat;
@@ -49,6 +49,7 @@ public class Prompt implements Serializable {
      */
     @JsonCreator
     public Prompt(@JsonProperty("functionName") String functionName,
+                  @JsonProperty("role") String role,
                   @JsonProperty("command") String command,
                   @JsonProperty("constraints") String constraints,
                   @JsonProperty("inputFormat") String inputFormat,
@@ -56,6 +57,7 @@ public class Prompt implements Serializable {
                   @JsonProperty("feedbackFormat") String feedbackFormat,
                   @JsonProperty("topP") double topP) {
         this.functionName = functionName;
+        this.role = role;
         this.command = command;
         this.constraints = constraints;
         this.inputFormat = inputFormat;
@@ -77,6 +79,30 @@ public class Prompt implements Serializable {
      */
     public Prompt(String functionName, String command, List<Constraint> constraints, List<Argument<?>> args, Class<?> returnType, double topP) {
         this.functionName = functionName;
+        this.role = null;
+        this.command = command;
+        this.constraints = BuildFormatUtil.createConstraintsString(constraints);
+        this.inputFormat = BuildFormatUtil.getArgumentsFormatMapString(args);
+        this.resultFormat = BuildFormatUtil.getFormatString(returnType);
+        this.feedbackFormat = BuildFormatUtil.getFormatString(FeedbackResponse.class);
+        this.topP = topP;
+    }
+
+    /**
+     * Constructs a new Prompt instance with the specified properties and automatically generates
+     * format strings for constraints, input arguments, return type, and feedback.
+     *
+     * @param functionName The name of the function associated with the prompt.
+     * @param role         The role of the function associated with the prompt.
+     * @param command      The command of the prompt.
+     * @param constraints  The list of Constraint objects representing the constraints of the prompt.
+     * @param args         The list of Argument objects representing the input arguments.
+     * @param returnType   The Class object representing the return type.
+     * @param topP         The topP value associated with the prompt.
+     */
+    public Prompt(String functionName, String role, String command, List<Constraint> constraints, List<Argument<?>> args, Class<?> returnType, double topP) {
+        this.functionName = functionName;
+        this.role = role;
         this.command = command;
         this.constraints = BuildFormatUtil.createConstraintsString(constraints);
         this.inputFormat = BuildFormatUtil.getArgumentsFormatMapString(args);
@@ -90,24 +116,21 @@ public class Prompt implements Serializable {
      *
      * @return The generated prompt string.
      */
+    @Deprecated
     public String generate() {
-        return String.format(TemplateConstants.PROMPT_TEMPLATE, this.command, this.constraints, this.inputFormat, this.resultFormat, this.feedbackFormat);
+        return String.format(PROMPT_TEMPLATE, this.command, this.constraints, this.inputFormat, this.resultFormat, this.feedbackFormat);
     }
 
     /**
      * Generates the prompt with an example using the template constants.
      *
-     * @param mapper  The object mapper to serialize the example.
      * @param example The example object.
      * @return The generated prompt string with the example.
      * @throws RuntimeException if there is an error during serialization.
      */
-    public String generate(ObjectMapper mapper, Object example) {
-        try {
-            String exampleString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(example);
-            return String.format(TemplateConstants.PROMPT_TEMPLATE_WITH_EXAMPLE, this.command, this.constraints, this.inputFormat, this.resultFormat, exampleString, this.feedbackFormat);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+    public String generate(String example) {
+        String intermediateOutput = PROMPT_TEMPLATE_INTEGRATED.formatted(this.command, this.constraints, this.inputFormat, this.resultFormat, this.feedbackFormat);
+        String statement = role.isEmpty() ? PROMPT_STATEMENT : PROMPT_STATEMENT_WITH_ROLE.formatted(role);
+        return intermediateOutput.formatted(statement, example.isEmpty() ? "" : PROMPT_EXAMPLE.formatted(example));
     }
 }

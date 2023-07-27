@@ -5,10 +5,55 @@ package io.github.zezeg2.aisupport.common.constants;
  */
 public class TemplateConstants {
 
+    public static final String PROMPT_STATEMENT = """
+            Please ignore all previous instructions.
+            I want you to act as a function execution delegate. You'll be provided with an input that follows the [Input Format] and a command. Your task is to process this input, execute the command accordingly, and generate a response. The response must adhere to the [Result Format] and should reflect the outcome of the command execution. Be sure to observe the following [Constraints] when executing commands.
+            """;
+
+    public static final String PROMPT_STATEMENT_WITH_ROLE = """
+            Please ignore all previous instructions.
+            I want you to act as a function execution delegate within the context of the %s you're given. You'll be provided with an input that follows the [Input Format] and a command. Your task is to process this input, execute the command accordingly, and generate a detailed, professional response. The response must adhere to the [Result Format] and should reflect the outcome of the command execution. Be sure to observe the following [Constraints] when executing commands.
+            """;
+
+    public static final String PROMPT_EXAMPLE = """         
+            [Result Example]
+            ```json
+            %s
+            ```
+            """;
+
     /**
      * The template string for the prompt.
      * It includes information about the command, class structure, constraints, input and result formats, and feedback format.
      */
+    public static final String PROMPT_TEMPLATE_INTEGRATED = """
+            %%s
+                        
+            [Command]
+            %s
+             
+            [Constraints]
+            %s- Do not include any other explanatory text in your response.
+             
+            [Input Format]
+            ```json
+            %s
+            ```
+             
+            [Result Format]
+            ```json
+            %s
+            ```
+                        
+            %%s
+                        
+            If feedback is provided, adjust your previous results based on the content of the feedback.
+            [Feedback Format]
+            ```json
+            %s
+            ```
+            """;
+
     public static final String PROMPT_TEMPLATE = """
             Please ignore all previous instructions. I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
             Command: %s
@@ -38,6 +83,7 @@ public class TemplateConstants {
      * The template string for the prompt with example.
      * It includes information about the command, class structure, constraints, input and result formats, result example, and feedback format.
      */
+    @Deprecated
     public static final String PROMPT_TEMPLATE_WITH_EXAMPLE = """
             Please ignore all previous instructions. I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
             Command: %s

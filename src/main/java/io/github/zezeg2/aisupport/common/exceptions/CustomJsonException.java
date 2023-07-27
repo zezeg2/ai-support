@@ -23,7 +23,7 @@ public class CustomJsonException extends RuntimeException {
      * @param cause The underlying cause of the exception.
      */
     public CustomJsonException(Throwable cause) {
-        super("Failed to convert map to JSON", cause);
+        super("Failed to convert object to JSON", cause);
     }
 }
 

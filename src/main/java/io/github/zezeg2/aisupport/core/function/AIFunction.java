@@ -7,6 +7,7 @@ import io.github.zezeg2.aisupport.common.constraint.Constraint;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
+import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.context.PromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
@@ -66,11 +67,11 @@ public class AIFunction<T> {
         }
 
         PromptMessageContext promptMessageContext = contextHolder.createMessageContext(ContextType.PROMPT, functionName, identifier);
-        if (example == null)
-            promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.SYSTEM, prompt.generate());
-        else
-            promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.SYSTEM, prompt.generate(mapper, example));
-
+        try {
+            promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.SYSTEM, prompt.generate(example == null ? "" : mapper.writerWithDefaultPrettyPrinter().writeValueAsString(example)));
+        } catch (JsonProcessingException e) {
+            throw new CustomJsonException(e);
+        }
         promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.USER, createArgsString(args));
         return promptMessageContext;
     }

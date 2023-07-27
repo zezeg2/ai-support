@@ -7,6 +7,7 @@ import io.github.zezeg2.aisupport.common.constraint.Constraint;
 import io.github.zezeg2.aisupport.common.enums.ROLE;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
+import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.ExecuteParameters;
@@ -66,10 +67,10 @@ public class ReactiveAIFunction<T> {
                         .flatMap(prompt -> contextHolder.savePrompt(functionName, prompt).thenReturn(prompt)))
                 .flatMap(prompt -> contextHolder.<PromptMessageContext>createMessageContext(ContextType.PROMPT, functionName, identifier)
                         .flatMap(promptMessageContext -> {
-                            if (example == null) {
-                                promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.SYSTEM, prompt.generate());
-                            } else {
-                                promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.SYSTEM, prompt.generate(mapper, example));
+                            try {
+                                promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.SYSTEM, prompt.generate(example == null ? "" : mapper.writerWithDefaultPrettyPrinter().writeValueAsString(example)));
+                            } catch (JsonProcessingException e) {
+                                return Mono.error(new CustomJsonException(e));
                             }
                             promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.USER, createArgsString(args));
                             return Mono.just(promptMessageContext);
