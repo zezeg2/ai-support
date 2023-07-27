@@ -30,14 +30,14 @@ public class ReactivePromptManager {
     /**
      * Adds a message to the prompt context.
      *
+     * @param contextType    The type of context (prompt or feedback).
      * @param messageContext Message context for calling openai chat completion api.
      * @param role           The role of the chat message (e.g., user, assistant).
      * @param message        The content of the chat message.
-     * @param contextType    The type of context (prompt or feedback).
      * @return A Mono representing the completion of the operation.
      */
 
-    public Mono<Void> addMessageToContext(MessageContext messageContext, ROLE role, String message, ContextType contextType) {
+    public Mono<Void> addMessageToContext(ContextType contextType, MessageContext messageContext, ROLE role, String message) {
         messageContext.getMessages().add(new ChatMessage(role.getValue(), message));
         return contextHolder.saveMessageContext(contextType, messageContext);
     }

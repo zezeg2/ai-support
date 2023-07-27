@@ -67,11 +67,11 @@ public class AIFunction<T> {
 
         PromptMessageContext promptMessageContext = contextHolder.createMessageContext(ContextType.PROMPT, functionName, identifier);
         if (example == null)
-            promptManager.addMessageToContext(promptMessageContext, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT);
+            promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.SYSTEM, prompt.generate());
         else
-            promptManager.addMessageToContext(promptMessageContext, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT);
+            promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.SYSTEM, prompt.generate(mapper, example));
 
-        promptManager.addMessageToContext(promptMessageContext, ROLE.USER, createArgsString(args), ContextType.PROMPT);
+        promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.USER, createArgsString(args));
         return promptMessageContext;
     }
 

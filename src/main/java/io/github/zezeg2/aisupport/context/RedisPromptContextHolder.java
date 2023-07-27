@@ -67,9 +67,8 @@ public class RedisPromptContextHolder implements PromptContextHolder {
 
     @Override
     public void saveMessageContext(ContextType contextType, MessageContext messageContext) {
-        String key = contextType == ContextType.PROMPT ? messageContext.getFunctionName() : messageContext.getFunctionName() + ":" + ((FeedbackMessageContext) messageContext).getValidatorName();
         try {
-            hashOperations.put(key, messageContext.getIdentifier(), mapper.writeValueAsString(messageContext));
+            hashOperations.put(messageContext.getNamespace(), messageContext.getIdentifier(), mapper.writeValueAsString(messageContext));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error serializing the context messages", e);
         }

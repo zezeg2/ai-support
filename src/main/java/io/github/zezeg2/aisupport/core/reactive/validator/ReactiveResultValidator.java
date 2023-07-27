@@ -68,7 +68,7 @@ public abstract class ReactiveResultValidator {
     protected Mono<FeedbackMessageContext> init(String functionName, String identifier) {
         return Mono.defer(() -> promptManager.getContextHolder().<FeedbackMessageContext>createMessageContext(ContextType.FEEDBACK, getNamespace(functionName), identifier)
                 .flatMap(feedbackMessageContext -> buildTemplate(functionName)
-                        .flatMap(template -> promptManager.addMessageToContext(feedbackMessageContext, ROLE.SYSTEM, template, ContextType.FEEDBACK))
+                        .flatMap(template -> promptManager.addMessageToContext(ContextType.FEEDBACK, feedbackMessageContext, ROLE.SYSTEM, template))
                         .thenReturn(feedbackMessageContext)));
     }
 
@@ -141,18 +141,17 @@ public abstract class ReactiveResultValidator {
      */
 
     protected Mono<String> exchangeMessages(MessageContext messageContext, String message, ContextType contextType, AIModel model) {
-        return promptManager.addMessageToContext(messageContext, ROLE.USER, message, contextType)
+        return promptManager.addMessageToContext(contextType, messageContext, ROLE.USER, message)
                 .then(Mono.defer(() -> {
                     Mono<Double> topPMono = contextType == ContextType.PROMPT ? promptManager.getContextHolder().get(messageContext.getFunctionName()).map(Prompt::getTopP)
                             : Mono.just(this.getClass().getAnnotation(ValidateTarget.class).topP());
                     return topPMono.flatMap(topP -> promptManager.exchangeMessages(contextType, messageContext, model, topP, true)
-                            .map(context -> {
+                            .flatMap(context -> {
                                 List<ChatMessage> messages = context.getMessages();
-                                return messages.get(messages.size() - 1).getContent();
+                                return Mono.just(messages.get(messages.size() - 1).getContent());
                             }));
                 }));
     }
-
 
     /**
      * Gets the content of the last prompt response from the chat context.

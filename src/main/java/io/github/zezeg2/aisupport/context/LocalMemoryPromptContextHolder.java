@@ -47,8 +47,7 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
 
     @Override
     public void saveMessageContext(ContextType contextType, MessageContext messageContext) {
-        String namcespace = contextType == ContextType.PROMPT ? messageContext.getFunctionName() : messageContext.getFunctionName() + ":" + ((FeedbackMessageContext) messageContext).getValidatorName();
-        MessageContext origin = contextRegistry.get(contextType).get(namcespace).stream()
+        MessageContext origin = contextRegistry.get(contextType).get(messageContext.getNamespace()).stream()
                 .filter(ctx -> ctx.getIdentifier().equals(messageContext.getIdentifier()))
                 .findFirst().orElseThrow();
         origin.setMessages(messageContext.getMessages());

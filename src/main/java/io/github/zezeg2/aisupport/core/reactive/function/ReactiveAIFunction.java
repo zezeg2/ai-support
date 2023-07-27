@@ -67,11 +67,11 @@ public class ReactiveAIFunction<T> {
                 .flatMap(prompt -> contextHolder.<PromptMessageContext>createMessageContext(ContextType.PROMPT, functionName, identifier)
                         .flatMap(promptMessageContext -> {
                             if (example == null) {
-                                promptManager.addMessageToContext(promptMessageContext, ROLE.SYSTEM, prompt.generate(), ContextType.PROMPT);
+                                promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.SYSTEM, prompt.generate());
                             } else {
-                                promptManager.addMessageToContext(promptMessageContext, ROLE.SYSTEM, prompt.generate(mapper, example), ContextType.PROMPT);
+                                promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.SYSTEM, prompt.generate(mapper, example));
                             }
-                            promptManager.addMessageToContext(promptMessageContext, ROLE.USER, createArgsString(args), ContextType.PROMPT);
+                            promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.USER, createArgsString(args));
                             return Mono.just(promptMessageContext);
                         })
                 );

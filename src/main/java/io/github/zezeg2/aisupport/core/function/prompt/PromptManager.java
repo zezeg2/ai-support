@@ -33,7 +33,7 @@ public class PromptManager {
      * @param message        The content of the chat message.
      * @param contextType    The type of context (prompt or feedback).
      */
-    public void addMessageToContext(MessageContext messageContext, ROLE role, String message, ContextType contextType) {
+    public void addMessageToContext(ContextType contextType, MessageContext messageContext, ROLE role, String message) {
         messageContext.getMessages().add(new ChatMessage(role.getValue(), message));
         contextHolder.saveMessageContext(contextType, messageContext);
     }

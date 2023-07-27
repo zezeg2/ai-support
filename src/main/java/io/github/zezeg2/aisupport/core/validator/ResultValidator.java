@@ -62,7 +62,7 @@ public abstract class ResultValidator {
      */
     protected FeedbackMessageContext init(String functionName, String identifier) {
         FeedbackMessageContext feedbackMessageContext = promptManager.getContextHolder().createMessageContext(ContextType.FEEDBACK, getNamespace(functionName), identifier);
-        promptManager.addMessageToContext(feedbackMessageContext, ROLE.SYSTEM, buildTemplate(functionName), ContextType.FEEDBACK);
+        promptManager.addMessageToContext(ContextType.FEEDBACK, feedbackMessageContext, ROLE.SYSTEM, buildTemplate(functionName));
         return feedbackMessageContext;
     }
 
@@ -132,7 +132,7 @@ public abstract class ResultValidator {
      * @return The content of the AI model's response as a string.
      */
     protected String exchangeMessages(MessageContext messageContext, String message, ContextType contextType, AIModel model) {
-        promptManager.addMessageToContext(messageContext, ROLE.USER, message, contextType);
+        promptManager.addMessageToContext(contextType, messageContext, ROLE.USER, message);
         double topP = contextType == ContextType.PROMPT ? promptManager.getContextHolder().get(messageContext.getFunctionName()).getTopP()
                 : this.getClass().getAnnotation(ValidateTarget.class).topP();
         List<ChatMessage> messages = promptManager.exchangeMessages(contextType, messageContext, model, topP, true).getMessages();
