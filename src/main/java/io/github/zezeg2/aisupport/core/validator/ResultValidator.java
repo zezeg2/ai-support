@@ -72,7 +72,7 @@ public abstract class ResultValidator {
      * @param functionName The name of the function.
      * @return The validate template as a string.
      */
-    private String buildTemplate(String functionName) {
+    protected String buildTemplate(String functionName) {
         return this.role == null ? TemplateConstants.FEEDBACK_FRAME.formatted(addTemplateContents(functionName), getPrompt(functionName).getResultFormat(), BuildFormatUtil.getFormatString(FeedbackResponse.class)) :
                 TemplateConstants.FEEDBACK_FRAME_WITH_ROLE.formatted(this.role, addTemplateContents(functionName), getPrompt(functionName).getResultFormat(), BuildFormatUtil.getFormatString(FeedbackResponse.class));
     }

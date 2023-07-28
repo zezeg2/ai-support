@@ -8,6 +8,7 @@ import io.github.zezeg2.aisupport.common.enums.Role;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
+import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.ExecuteParameters;
@@ -37,11 +38,12 @@ public class ReactiveAIFunction<T> {
     private final String command;
     private final List<Constraint> constraints;
     private final Class<T> returnType;
+    private final double topP;
     private final ObjectMapper mapper;
     private final ReactivePromptManager promptManager;
     private final ReactiveResultValidatorChain resultValidatorChain;
+    private final ConstructResolver resolver;
     private final OpenAIProperties openAIProperties;
-    private final double topP;
 
     /**
      * Retrieves the default AI model.
@@ -64,7 +66,7 @@ public class ReactiveAIFunction<T> {
         T example = params.getExample();
         ReactivePromptContextHolder contextHolder = promptManager.getContextHolder();
         return contextHolder.get(functionName)
-                .switchIfEmpty(Mono.just(new Prompt(functionName, this.role == null ? "" : this.role, command, constraints, args, returnType, topP))
+                .switchIfEmpty(Mono.just(new Prompt(functionName, this.role == null ? "" : this.role, command, constraints, args, returnType, topP, resolver))
                         .flatMap(prompt -> contextHolder.savePrompt(functionName, prompt).thenReturn(prompt)))
                 .flatMap(prompt -> contextHolder.<PromptMessageContext>createMessageContext(ContextType.PROMPT, functionName, identifier)
                         .flatMap(promptMessageContext -> {

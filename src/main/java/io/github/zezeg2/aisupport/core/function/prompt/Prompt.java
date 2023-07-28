@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
+import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import lombok.Data;
@@ -13,6 +14,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static io.github.zezeg2.aisupport.common.constants.TemplateConstants.*;
 
@@ -34,6 +37,7 @@ public class Prompt implements Serializable {
     private String inputFormat;
     private String resultFormat;
     private String feedbackFormat;
+    private String classStructureInfo;
     private double topP;
 
     /**
@@ -55,6 +59,7 @@ public class Prompt implements Serializable {
                   @JsonProperty("inputFormat") String inputFormat,
                   @JsonProperty("resultFormat") String resultFormat,
                   @JsonProperty("feedbackFormat") String feedbackFormat,
+                  @JsonProperty("classStructureInfo") String classStructureInfo,
                   @JsonProperty("topP") double topP) {
         this.functionName = functionName;
         this.role = role;
@@ -63,6 +68,7 @@ public class Prompt implements Serializable {
         this.inputFormat = inputFormat;
         this.resultFormat = resultFormat;
         this.feedbackFormat = feedbackFormat;
+        this.classStructureInfo = classStructureInfo;
         this.topP = topP;
     }
 
@@ -78,7 +84,7 @@ public class Prompt implements Serializable {
      * @param returnType   The Class object representing the return type.
      * @param topP         The topP value associated with the prompt.
      */
-    public Prompt(String functionName, String role, String command, List<Constraint> constraints, List<Argument<?>> args, Class<?> returnType, double topP) {
+    public Prompt(String functionName, String role, String command, List<Constraint> constraints, List<Argument<?>> args, Class<?> returnType, double topP, ConstructResolver resolver) {
         this.functionName = functionName;
         this.role = role;
         this.command = command;
@@ -87,6 +93,9 @@ public class Prompt implements Serializable {
         this.resultFormat = BuildFormatUtil.getFormatString(returnType);
         this.feedbackFormat = BuildFormatUtil.getFormatString(FeedbackResponse.class);
         this.topP = topP;
+        Set<Class<?>> classes = args.stream().map(Argument::getType).collect(Collectors.toSet());
+        if (returnType != null) classes.add(returnType);
+        this.classStructureInfo = resolver.resolve(classes);
     }
 
     /**

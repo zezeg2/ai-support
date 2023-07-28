@@ -34,15 +34,19 @@ public class ReactiveJsonResultValidator extends ReactiveResultValidator {
         super(promptManager, mapper, openAIProperties);
     }
 
-    /**
-     * Adds the necessary template contents for JSON validation feedback in a reactive manner.
-     *
-     * @param functionName The name of the function.
-     * @return A Mono emitting the template contents for JSON validation feedback as a string.
-     */
+    @Override
+    protected Mono<String> buildTemplate(String functionName) {
+        return promptManager.getContextHolder().get(functionName).flatMap(prompt -> {
+            String requiredFormat = prompt.getResultFormat();
+            String structureInfo = prompt.getClassStructureInfo();
+            return Mono.just(TemplateConstants.JSON_VALIDATE_TEMPLATE.formatted(requiredFormat, structureInfo));
+        });
+    }
+
     @Override
     protected Mono<String> addTemplateContents(String functionName) {
-        return promptManager.getContextHolder().get(functionName)
-                .map(prompt -> TemplateConstants.JSON_VALIDATE_TEMPLATE.formatted(prompt.getResultFormat()));
+        return null;
     }
+
+
 }

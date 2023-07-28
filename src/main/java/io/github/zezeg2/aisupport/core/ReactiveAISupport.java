@@ -3,6 +3,7 @@ package io.github.zezeg2.aisupport.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
+import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.common.type.BaseSupportType;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.reactive.function.ReactiveAIFunction;
@@ -22,6 +23,7 @@ public class ReactiveAISupport {
     private final ObjectMapper mapper;
     private final ReactivePromptManager promptManager;
     protected final ReactiveResultValidatorChain resultValidatorChain;
+    protected final ConstructResolver resolver;
     private final OpenAIProperties openAIProperties;
 
     /**
@@ -35,7 +37,7 @@ public class ReactiveAISupport {
      * @return ReactiveAIFunction instance representing the created reactive AI function.
      */
     public <T extends BaseSupportType> ReactiveAIFunction<T> createFunction(Class<T> returnType, String functionName, String command, List<Constraint> constraints) {
-        return new ReactiveAIFunction<>(functionName, null, command, constraints, returnType, mapper, promptManager, resultValidatorChain, openAIProperties, 1d);
+        return new ReactiveAIFunction<>(functionName, null, command, constraints, returnType, 1d, mapper, promptManager, resultValidatorChain, resolver, openAIProperties);
     }
 
     /**
@@ -50,7 +52,7 @@ public class ReactiveAISupport {
      * @return ReactiveAIFunction instance representing the created reactive AI function.
      */
     public <T extends BaseSupportType> ReactiveAIFunction<T> createFunction(Class<T> returnType, String functionName, String command, List<Constraint> constraints, double topP) {
-        return new ReactiveAIFunction<>(functionName, null, command, constraints, returnType, mapper, promptManager, resultValidatorChain, openAIProperties, topP);
+        return new ReactiveAIFunction<>(functionName, null, command, constraints, returnType, topP, mapper, promptManager, resultValidatorChain, resolver, openAIProperties);
     }
 
     /**
@@ -64,7 +66,7 @@ public class ReactiveAISupport {
      * @return ReactiveAIFunction instance representing the created reactive AI function.
      */
     public <T extends BaseSupportType> ReactiveAIFunction<T> createFunction(Class<T> returnType, String functionName, String role, String command, List<Constraint> constraints) {
-        return new ReactiveAIFunction<>(functionName, role, command, constraints, returnType, mapper, promptManager, resultValidatorChain, openAIProperties, 1d);
+        return new ReactiveAIFunction<>(functionName, role, command, constraints, returnType, 1d, mapper, promptManager, resultValidatorChain, resolver, openAIProperties);
     }
 
     /**
@@ -79,7 +81,7 @@ public class ReactiveAISupport {
      * @return ReactiveAIFunction instance representing the created reactive AI function.
      */
     public <T extends BaseSupportType> ReactiveAIFunction<T> createFunction(Class<T> returnType, String functionName, String role, String command, List<Constraint> constraints, double topP) {
-        return new ReactiveAIFunction<>(functionName, role, command, constraints, returnType, mapper, promptManager, resultValidatorChain, openAIProperties, topP);
+        return new ReactiveAIFunction<>(functionName, role, command, constraints, returnType, topP, mapper, promptManager, resultValidatorChain, resolver, openAIProperties);
     }
 }
 

@@ -79,7 +79,7 @@ public abstract class ReactiveResultValidator {
      * @param functionName The name of the function.
      * @return A {@code Mono<String>} representing the validate template as a string.
      */
-    private Mono<String> buildTemplate(String functionName) {
+    protected Mono<String> buildTemplate(String functionName) {
         return addTemplateContents(functionName).flatMap(content -> getPrompt(functionName).map(Prompt::getResultFormat).flatMap(resultFormat -> Mono.just(this.role == null ? TemplateConstants.FEEDBACK_FRAME.formatted(content, resultFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class)) :
                 TemplateConstants.FEEDBACK_FRAME_WITH_ROLE.formatted(this.role, content, resultFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class)))));
     }

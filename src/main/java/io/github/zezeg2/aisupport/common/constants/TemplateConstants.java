@@ -132,10 +132,12 @@ public class TemplateConstants {
      * It includes the feedback format and the inspection items.
      */
     public static final String FEEDBACK_FRAME = """
-            Your task is to conduct a comprehensive review of the provided JSON data, applying a high level of scrutiny to identify any problems and proposing solutions.
-            Please identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these problems. We expect your feedback in the [Result Format]. Please conduct this review and provide all feedback in English.
+            Your task is to conduct a comprehensive review of the provided JSON data. Apply a high level of scrutiny to identify any issues, particularly in the context of the [Inspection Items], and propose solutions.
+            Please identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these problems.
+            Once you've completed your assessment, please provide a feedback result in the "[Result Format]".
                         
-            The inspection items are as follows.
+            Validate these inspection Items
+            [Inspection Items]
             %s
                         
             [Input Format]
@@ -157,10 +159,11 @@ public class TemplateConstants {
      * It includes the role of the reviewer, feedback format, and the inspection items.
      */
     public static final String FEEDBACK_FRAME_WITH_ROLE = """
-            As a(n) %s, your task is to apply your specialized knowledge and skills to meticulously review the provided JSON data, identifying problems and proposing solutions that align with best practices in your field.
-            Please identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these problems. We expect your feedback in the [Result Format]. Please conduct this review and provide all feedback in English."
+            As a(n) %s, your task is to apply your specialized knowledge and skills to meticulously review the provided JSON data, ensuring it aligns with the criteria specified in the [Inspection Items]. Identify any problems and propose solutions that adhere to best practices in your field.
+            Please identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these problems.
+            Once you've completed your assessment, please provide a feedback result in the "[Result Format]".
                    
-            The inspection items are as follows.
+            Follow these inspection criteria:
             %s
                         
             [Input Format]
@@ -181,18 +184,35 @@ public class TemplateConstants {
      * It includes steps for validating the JSON string.
      */
     public static final String JSON_VALIDATE_TEMPLATE = """
-            1. Ensure Parse-ability: Check that the JSON string is valid and can be properly parsed as `Required Format`.
-            2. Verify schema compliance: The JSON string should comply with a given schema, omitting any objects or fields mentioned in the schema but not found in the JSON.
-            3. Escape double quotes: Within JSON string values, double quotes should be correctly escaped to ensure JSON validity.
-            4. Handle incorrectly escaped characters: Check for and handle any incorrectly escaped characters within the JSON string.
-            5. Replace None or NaN values: Any 'None' or 'NaN' values in the JSON string should be replaced with 'null' to facilitate correct parsing.
-            6. Parse the JSON: Parse the cleaned, schema-compliant JSON.
+            Your task is to comprehensively review the provided JSON data.
+            Make sure to identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these issues.\s
+            Once you've completed your assessment, please provide a feedback result in the "[Result Format]".
+             
+            Follow these inspection criteria:
+            1. Parse-ability: Ensure the provided JSON string is valid and can be parsed without errors. If there's an error, provide its details and location.
+            2. Schema Compliance: Refer to the provided [Class Info], confirm if the JSON string complies with the given schema ([Required Format]). If it doesn't, specify the discrepancy.
+            3. Handling Incorrectly Escaped Characters: Identify any incorrectly escaped characters within the JSON string and provide a corrected version.
+            4. Replacement of None or NaN Values: Replace any 'None' or 'NaN' values in the JSON string with 'null' to facilitate correct parsing. If any such values are found, indicate their locations.
                         
             [Required Format]
             ```json
             %s
             ```
+                        
+            [Class Info]
+            ```java
+            %s
+            ```
+                        
+            [Result Format]
+            ```json
+            {
+              "valid": "Boolean indicating if the JSON is perfectly valid (true) or has issues (false)",
+              "problems": [ "List of problems found in the JSON" ]
+            }
+            ```
             """;
+
     /**
      * The template string for Constraint validation.
      */

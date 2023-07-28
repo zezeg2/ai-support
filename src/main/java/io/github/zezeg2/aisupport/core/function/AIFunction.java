@@ -8,6 +8,7 @@ import io.github.zezeg2.aisupport.common.enums.Role;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
+import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.context.PromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
@@ -37,11 +38,13 @@ public class AIFunction<T> {
     private final String command;
     private final List<Constraint> constraints;
     private final Class<T> returnType;
+    private final double topP;
     private final ObjectMapper mapper;
     private final PromptManager promptManager;
     private final ResultValidatorChain resultValidatorChain;
+    private final ConstructResolver resolver;
     private final OpenAIProperties openAIProperties;
-    private final double topP;
+
 
     /**
      * Retrieves the default AI model set by application properties.
@@ -65,7 +68,7 @@ public class AIFunction<T> {
 
         Prompt prompt = contextHolder.get(functionName);
         if (prompt == null) {
-            prompt = new Prompt(functionName, this.role == null ? "" : this.role, command, constraints, args, returnType, topP);
+            prompt = new Prompt(functionName, this.role == null ? "" : this.role, command, constraints, args, returnType, topP, resolver);
             contextHolder.savePrompt(functionName, prompt);
         }
 

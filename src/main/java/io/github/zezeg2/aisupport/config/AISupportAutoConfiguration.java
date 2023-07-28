@@ -65,8 +65,8 @@ public class AISupportAutoConfiguration {
     //DEFAULT
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "synchronous")
-    public AISupport defaultAISupport(ObjectMapper mapper, PromptManager promptManager, ResultValidatorChain resultValidateChain) {
-        return new AISupport(mapper, promptManager, resultValidateChain, openAIProperties);
+    public AISupport defaultAISupport(ObjectMapper mapper, PromptManager promptManager, ResultValidatorChain resultValidateChain, ConstructResolver resolver) {
+        return new AISupport(mapper, promptManager, resultValidateChain, resolver, openAIProperties);
     }
 
     @Bean
@@ -103,8 +103,8 @@ public class AISupportAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "reactive")
-    public ReactiveAISupport reactiveAISupport(ObjectMapper mapper, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain) {
-        return new ReactiveAISupport(mapper, promptManager, resultValidatorChain, openAIProperties);
+    public ReactiveAISupport reactiveAISupport(ObjectMapper mapper, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain, ConstructResolver resolver) {
+        return new ReactiveAISupport(mapper, promptManager, resultValidatorChain, resolver, openAIProperties);
     }
 
     @Bean
