@@ -4,7 +4,7 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
-import io.github.zezeg2.aisupport.common.enums.ROLE;
+import io.github.zezeg2.aisupport.common.enums.Role;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.util.JsonUtil;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
@@ -37,7 +37,7 @@ public class ReactivePromptManager {
      * @return A Mono representing the completion of the operation.
      */
 
-    public Mono<Void> addMessageToContext(ContextType contextType, MessageContext messageContext, ROLE role, String message) {
+    public Mono<Void> addMessageToContext(ContextType contextType, MessageContext messageContext, Role role, String message) {
         messageContext.getMessages().add(new ChatMessage(role.getValue(), message));
         return contextHolder.saveMessageContext(contextType, messageContext);
     }

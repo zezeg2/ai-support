@@ -130,7 +130,7 @@ public class Prompt implements Serializable {
      */
     public String generate(String example) {
         String intermediateOutput = PROMPT_TEMPLATE_INTEGRATED.formatted(this.command, this.constraints, this.inputFormat, this.resultFormat, this.feedbackFormat);
-        String statement = role.isEmpty() ? PROMPT_STATEMENT : PROMPT_STATEMENT_WITH_ROLE.formatted(role);
-        return intermediateOutput.formatted(statement, example.isEmpty() ? "" : PROMPT_EXAMPLE.formatted(example));
+        String statement = role.isEmpty() ? PROMPT_STATEMENT_PARTICLE : PROMPT_STATEMENT_WITH_ROLE_PARTICLE.formatted(role);
+        return intermediateOutput.formatted(statement, example.isEmpty() ? "" : PROMPT_EXAMPLE_PARTICLE.formatted(example));
     }
 }

@@ -10,6 +10,7 @@ import java.util.Arrays;
 /**
  * The GPT4Model enum represents different models of the GPT-4 language model.
  */
+@Getter
 @RequiredArgsConstructor
 public enum GPT4Model implements GPTModel {
 
@@ -24,6 +25,7 @@ public enum GPT4Model implements GPTModel {
      * 8k context, but specific snapshot
      */
     GPT_4_0314("gpt-4-0314", 0.00003d, 0.00006d),
+
     /**
      * Snapshot of gpt-4 from June 13th 2023 with function calling data. Unlike gpt-4, this model will not receive updates, and will be deprecated 3 months after a new version is released.
      */
@@ -45,7 +47,6 @@ public enum GPT4Model implements GPTModel {
      */
     GPT_4_32_K_0613("gpt-4-32k-0613", 0.00006d, 0.00012d);
 
-    @Getter
     private final String value;
 
     // price per token for prompt

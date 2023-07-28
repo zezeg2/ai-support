@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
-import io.github.zezeg2.aisupport.common.enums.ROLE;
+import io.github.zezeg2.aisupport.common.enums.Role;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
@@ -68,7 +68,7 @@ public abstract class ReactiveResultValidator {
     protected Mono<FeedbackMessageContext> init(String functionName, String identifier) {
         return Mono.defer(() -> promptManager.getContextHolder().<FeedbackMessageContext>createMessageContext(ContextType.FEEDBACK, getNamespace(functionName), identifier)
                 .flatMap(feedbackMessageContext -> buildTemplate(functionName)
-                        .flatMap(template -> promptManager.addMessageToContext(ContextType.FEEDBACK, feedbackMessageContext, ROLE.SYSTEM, template))
+                        .flatMap(template -> promptManager.addMessageToContext(ContextType.FEEDBACK, feedbackMessageContext, Role.SYSTEM, template))
                         .thenReturn(feedbackMessageContext)));
     }
 
@@ -141,7 +141,7 @@ public abstract class ReactiveResultValidator {
      */
 
     protected Mono<String> exchangeMessages(MessageContext messageContext, String message, ContextType contextType, AIModel model) {
-        return promptManager.addMessageToContext(contextType, messageContext, ROLE.USER, message)
+        return promptManager.addMessageToContext(contextType, messageContext, Role.USER, message)
                 .then(Mono.defer(() -> {
                     Mono<Double> topPMono = contextType == ContextType.PROMPT ? promptManager.getContextHolder().get(messageContext.getFunctionName()).map(Prompt::getTopP)
                             : Mono.just(this.getClass().getAnnotation(ValidateTarget.class).topP());

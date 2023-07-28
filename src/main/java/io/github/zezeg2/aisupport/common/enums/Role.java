@@ -1,9 +1,12 @@
 package io.github.zezeg2.aisupport.common.enums;
 
+import lombok.Getter;
+
 /**
  * The ROLE enumeration represents the roles of ChatMessage exchanged when using OpenAI's ChatCompletion API.
  */
-public enum ROLE {
+@Getter
+public enum Role {
     /**
      * The SYSTEM role represents a system-level entity in the conversation.
      */
@@ -26,17 +29,8 @@ public enum ROLE {
      *
      * @param value The string value associated with the role.
      */
-    ROLE(String value) {
+    Role(String value) {
         this.value = value;
-    }
-
-    /**
-     * Retrieves the string value associated with the role.
-     *
-     * @return The string value of the role.
-     */
-    public String getValue() {
-        return this.value;
     }
 
     /**

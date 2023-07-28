@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
-import io.github.zezeg2.aisupport.common.enums.ROLE;
+import io.github.zezeg2.aisupport.common.enums.Role;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
@@ -62,7 +62,7 @@ public abstract class ResultValidator {
      */
     protected FeedbackMessageContext init(String functionName, String identifier) {
         FeedbackMessageContext feedbackMessageContext = promptManager.getContextHolder().createMessageContext(ContextType.FEEDBACK, getNamespace(functionName), identifier);
-        promptManager.addMessageToContext(ContextType.FEEDBACK, feedbackMessageContext, ROLE.SYSTEM, buildTemplate(functionName));
+        promptManager.addMessageToContext(ContextType.FEEDBACK, feedbackMessageContext, Role.SYSTEM, buildTemplate(functionName));
         return feedbackMessageContext;
     }
 
@@ -132,7 +132,7 @@ public abstract class ResultValidator {
      * @return The content of the AI model's response as a string.
      */
     protected String exchangeMessages(MessageContext messageContext, String message, ContextType contextType, AIModel model) {
-        promptManager.addMessageToContext(contextType, messageContext, ROLE.USER, message);
+        promptManager.addMessageToContext(contextType, messageContext, Role.USER, message);
         double topP = contextType == ContextType.PROMPT ? promptManager.getContextHolder().get(messageContext.getFunctionName()).getTopP()
                 : this.getClass().getAnnotation(ValidateTarget.class).topP();
         List<ChatMessage> messages = promptManager.exchangeMessages(contextType, messageContext, model, topP, true).getMessages();

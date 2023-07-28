@@ -1,12 +1,15 @@
 package io.github.zezeg2.aisupport.common.enums;
 
+import lombok.Getter;
+
 import java.util.List;
 import java.util.Map;
 
 /**
  * The STRUCTURE enumeration classifies the type of objects based on their underlying class.
  */
-public enum STRUCTURE {
+@Getter
+public enum Wrapper {
     /**
      * The SINGLE structure represents a single object.
      */
@@ -29,17 +32,8 @@ public enum STRUCTURE {
      *
      * @param value The underlying class associated with the structure.
      */
-    STRUCTURE(Class<?> value) {
+    Wrapper(Class<?> value) {
         this.value = value;
-    }
-
-    /**
-     * Retrieves the underlying class associated with the structure.
-     *
-     * @return The Class object representing the underlying class.
-     */
-    public Class<?> getValue() {
-        return this.value;
     }
 
     /**

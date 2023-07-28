@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
-import io.github.zezeg2.aisupport.common.enums.ROLE;
+import io.github.zezeg2.aisupport.common.enums.Role;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
@@ -68,11 +68,11 @@ public class AIFunction<T> {
 
         PromptMessageContext promptMessageContext = contextHolder.createMessageContext(ContextType.PROMPT, functionName, identifier);
         try {
-            promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.SYSTEM, prompt.generate(example == null ? "" : mapper.writerWithDefaultPrettyPrinter().writeValueAsString(example)));
+            promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, Role.SYSTEM, prompt.generate(example == null ? "" : mapper.writerWithDefaultPrettyPrinter().writeValueAsString(example)));
         } catch (JsonProcessingException e) {
             throw new CustomJsonException(e);
         }
-        promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, ROLE.USER, createArgsString(args));
+        promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, Role.USER, createArgsString(args));
         return promptMessageContext;
     }
 

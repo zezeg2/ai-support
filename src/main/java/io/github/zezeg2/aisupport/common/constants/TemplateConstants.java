@@ -5,17 +5,26 @@ package io.github.zezeg2.aisupport.common.constants;
  */
 public class TemplateConstants {
 
-    public static final String PROMPT_STATEMENT = """
+    /**
+     * The prompt statement particle without a role context.
+     */
+    public static final String PROMPT_STATEMENT_PARTICLE = """
             Please ignore all previous instructions.
             I want you to act as a function execution delegate. You'll be provided with an input that follows the [Input Format] and a command. Your task is to process this input, execute the command accordingly, and generate a response. The response must adhere to the [Result Format] and should reflect the outcome of the command execution. Be sure to observe the following [Constraints] when executing commands.
             """;
 
-    public static final String PROMPT_STATEMENT_WITH_ROLE = """
+    /**
+     * The prompt statement particle with a role context.
+     */
+    public static final String PROMPT_STATEMENT_WITH_ROLE_PARTICLE = """
             Please ignore all previous instructions.
             I want you to act as a function execution delegate within the context of the %s you're given. You'll be provided with an input that follows the [Input Format] and a command. Your task is to process this input, execute the command accordingly, and generate a detailed, professional response. The response must adhere to the [Result Format] and should reflect the outcome of the command execution. Be sure to observe the following [Constraints] when executing commands.
             """;
-
-    public static final String PROMPT_EXAMPLE = """         
+    /**
+     * The prompt example particle.
+     * This template provides a result example in JSON format for reference.
+     */
+    public static final String PROMPT_EXAMPLE_PARTICLE = """         
             [Result Example]
             ```json
             %s
@@ -23,8 +32,8 @@ public class TemplateConstants {
             """;
 
     /**
-     * The template string for the prompt.
-     * It includes information about the command, class structure, constraints, input and result formats, and feedback format.
+     * The integrated template string for the prompt.
+     * It includes information about the statement,  command, class structure, constraints, input and result formats, and feedback format.
      */
     public static final String PROMPT_TEMPLATE_INTEGRATED = """
             %%s
@@ -54,6 +63,10 @@ public class TemplateConstants {
             ```
             """;
 
+    /**
+     * The template string for the prompt.
+     * It includes information about the command, class structure, constraints, input and result formats, and feedback format.
+     */
     public static final String PROMPT_TEMPLATE = """
             Please ignore all previous instructions. I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
             Command: %s
@@ -62,18 +75,18 @@ public class TemplateConstants {
             Constraints:
             %s- Do not include any other explanatory text in your response.
              
-            Input Format:
+            [Input Format]
             ```json
             %s
             ```
              
-            Result Format:
+            [Result Format]
             ```json
             %s
             ```
              
             If feedback is provided, adjust your previous results based on the content of the feedback.
-            Feedback Format
+            [Feedback Format]
             ```json
             %s
             ```
@@ -92,23 +105,23 @@ public class TemplateConstants {
             Constraints:
             %s- Do not include any other explanatory text in your response.
                         
-            Input Format:
+            [Input Format]
             ```json
             %s
             ```
                         
-            Result Format:
+            [Result Format]
             ```json
             %s
             ```
                         
-            Result Example:
+            [Result Example]
             ```json
             %s
             ```
                         
             If feedback is provided, adjust your previous results based on the feedback content.
-            Feedback Format
+            [Feedback Format]
             ```json
             %s
             ```
@@ -124,12 +137,12 @@ public class TemplateConstants {
             The inspection items are as follows.
             %s
                         
-            Input Format:
+            [Input Format]
             ```json
             %s
             ```
                         
-            Result Format:
+            [Result Format]
             ```json
             %s
             ```
@@ -148,12 +161,12 @@ public class TemplateConstants {
             The inspection items are as follows.
             %s
                         
-            Input Format:
+            [Input Format]
             ```json
             %s
             ```
                         
-            Result Format:
+            [Result Format]
             ```json
             %s
             ```
@@ -173,7 +186,7 @@ public class TemplateConstants {
             5. Replace None or NaN values: Any 'None' or 'NaN' values in the JSON string should be replaced with 'null' to facilitate correct parsing.
             6. Parse the JSON: Parse the cleaned, schema-compliant JSON.
                         
-            Required Format:
+            [Required Format]
             ```json
             %s
             ```

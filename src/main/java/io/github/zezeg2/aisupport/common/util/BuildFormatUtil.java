@@ -3,7 +3,7 @@ package io.github.zezeg2.aisupport.common.util;
 import io.github.zezeg2.aisupport.common.argument.Argument;
 import io.github.zezeg2.aisupport.common.argument.MapArgument;
 import io.github.zezeg2.aisupport.common.constraint.Constraint;
-import io.github.zezeg2.aisupport.common.enums.STRUCTURE;
+import io.github.zezeg2.aisupport.common.enums.Wrapper;
 import io.github.zezeg2.aisupport.common.exceptions.CustomInstantiationException;
 import io.github.zezeg2.aisupport.common.exceptions.NotSupportedTypeException;
 import io.github.zezeg2.aisupport.common.type.BaseSupportType;
@@ -71,12 +71,12 @@ public class BuildFormatUtil {
                 Map.Entry<String, Object> entry = descMap.entrySet().iterator().next();
                 inputDescMap.put(argument.getFieldName(), entry.getValue());
             }
-        } else if (argWrapping.equals(STRUCTURE.LIST.getValue())) {
+        } else if (argWrapping.equals(Wrapper.LIST.getValue())) {
             if (!descMap.isEmpty()) {
                 Map.Entry<String, Object> entry = descMap.entrySet().iterator().next();
                 inputDescMap.put(argument.getFieldName(), List.of(entry.getValue()));
             }
-        } else if (argWrapping.equals(STRUCTURE.MAP.getValue())) {
+        } else if (argWrapping.equals(Wrapper.MAP.getValue())) {
             Map<String, Map<String, Object>> transformedMap = new LinkedHashMap<>();
             for (String key : ((MapArgument<?>) argument).getValue().keySet()) {
                 transformedMap.put(key, descMap);
