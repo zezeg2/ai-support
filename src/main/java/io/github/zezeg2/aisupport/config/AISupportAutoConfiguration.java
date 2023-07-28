@@ -36,11 +36,11 @@ import java.util.List;
 @Conditional(ConflictingPropertiesCondition.class)
 @EnableConfigurationProperties({ContextProperties.class, OpenAIProperties.class})
 @ComponentScan("io.github.zezeg2.aisupport")
-public class AISupportConfiguration {
+public class AISupportAutoConfiguration {
     private final OpenAIProperties openAIProperties;
     private final ContextProperties contextProperties;
 
-    public AISupportConfiguration(OpenAIProperties openAIProperties, ContextProperties contextProperties) {
+    public AISupportAutoConfiguration(OpenAIProperties openAIProperties, ContextProperties contextProperties) {
         this.openAIProperties = openAIProperties;
         this.contextProperties = contextProperties;
     }
@@ -102,37 +102,37 @@ public class AISupportConfiguration {
     //EVENTLOOP
 
     @Bean
-    @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "reactive")
     public ReactiveAISupport reactiveAISupport(ObjectMapper mapper, ReactivePromptManager promptManager, ReactiveResultValidatorChain resultValidatorChain) {
         return new ReactiveAISupport(mapper, promptManager, resultValidatorChain, openAIProperties);
     }
 
     @Bean
-    @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "reactive")
     public ReactivePromptManager reactivePromptManager(OpenAiService service, ReactivePromptContextHolder context) {
         return new ReactivePromptManager(service, context, contextProperties);
     }
 
     @Bean
-    @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
+    @ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "reactive")
     public ReactiveResultValidatorChain reactiveResultValidatorChain(List<ReactiveResultValidator> validators) {
         return new ReactiveResultValidatorChain(validators);
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'redis' && '${ai-supporter.context.environment}' == 'eventloop'")
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'redis' && '${ai-supporter.context.environment}' == 'reactive'")
     public ReactivePromptContextHolder reactivePromptContextHolder(ReactiveStringRedisTemplate redisTemplate, ObjectMapper mapper) {
         return new ReactiveRedisPromptContextHolder(redisTemplate, mapper);
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'mongo' && '${ai-supporter.context.environment}' == 'eventloop'")
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'mongo' && '${ai-supporter.context.environment}' == 'reactive'")
     public ReactiveMongoPromptContextHolder reactiveMongoPromptContextHolder(ReactiveMongoTemplate mongoTemplate, ReactiveSequenceGenerator sequenceGenerator) {
         return new ReactiveMongoPromptContextHolder(mongoTemplate, sequenceGenerator);
     }
 
     @Bean
-    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'local' && '${ai-supporter.context.environment}' == 'eventloop'")
+    @ConditionalOnExpression("'${ai-supporter.context.context}' == 'local' && '${ai-supporter.context.environment}' == 'reactive'")
     public ReactivePromptContextHolder reactiveLocalMemoryPromptContextHolder() {
         return new ReactiveLocalMemoryPromptContextHolder();
     }
