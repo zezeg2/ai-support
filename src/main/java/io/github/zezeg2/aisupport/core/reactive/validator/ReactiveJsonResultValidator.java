@@ -14,12 +14,12 @@ import reactor.core.publisher.Mono;
  * validation for JSON-based AI model results in a reactive chat-based AI system.
  * <p>
  * This class is marked as a component and will be automatically detected and registered in the application context.
- * It is conditionally enabled based on the property "ai-supporter.context.environment" with the value "eventloop".
+ * It is conditionally enabled based on the property "ai-supporter.context.environment" with the value "reactive".
  * Additionally, it is annotated with @ValidateTarget(global = true) to indicate that this validator is applicable globally
  * for validation.
  */
 @Component
-@ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
+@ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "reactive")
 @ValidateTarget(global = true)
 public class ReactiveJsonResultValidator extends ReactiveResultValidator {
 

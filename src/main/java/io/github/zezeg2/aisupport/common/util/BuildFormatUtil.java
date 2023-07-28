@@ -45,11 +45,11 @@ public class BuildFormatUtil {
      * /**
      * Creates the constraints string.
      *
-     * @param constraintList The list of constraints.
+     * @param constraints The list of constraints.
      * @return The constraints string.
      */
-    public static String createConstraintsString(List<Constraint> constraintList) {
-        return !constraintList.isEmpty() ? constraintList.stream()
+    public static String createConstraintsString(List<Constraint> constraints) {
+        return !constraints.isEmpty() ? constraints.stream()
                 .map(constraint -> !constraint.topic().isBlank() ? constraint.topic() + ": " + constraint.description() : constraint.description())
                 .collect(Collectors.joining("\n- ", "- ", "\n")) : "";
     }

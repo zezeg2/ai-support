@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * The abstract ReactiveResultValidator class provides a framework for validating AI model results in a chat-based AI system in a reactive manner.
  */
-@ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "eventloop")
+@ConditionalOnProperty(name = "ai-supporter.context.environment", havingValue = "reactive")
 public abstract class ReactiveResultValidator {
     /**
      * The role of Validator for optimizing validation prompts

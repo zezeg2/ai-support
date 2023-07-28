@@ -15,6 +15,7 @@ import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 import io.github.zezeg2.aisupport.core.validator.ResultValidatorChain;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 
 import java.util.LinkedHashMap;
@@ -29,8 +30,10 @@ import java.util.UUID;
  * @param <T> The type of the return value for the AI function.
  */
 @RequiredArgsConstructor
+@Builder
 public class AIFunction<T> {
     private final String functionName;
+    private final String role;
     private final String command;
     private final List<Constraint> constraints;
     private final Class<T> returnType;
@@ -62,7 +65,7 @@ public class AIFunction<T> {
 
         Prompt prompt = contextHolder.get(functionName);
         if (prompt == null) {
-            prompt = new Prompt(functionName, command, constraints, args, returnType, topP);
+            prompt = new Prompt(functionName, this.role == null ? "" : this.role, command, constraints, args, returnType, topP);
             contextHolder.savePrompt(functionName, prompt);
         }
 

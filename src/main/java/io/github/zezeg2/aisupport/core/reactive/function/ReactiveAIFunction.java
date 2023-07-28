@@ -33,6 +33,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReactiveAIFunction<T> {
     private final String functionName;
+    private final String role;
     private final String command;
     private final List<Constraint> constraints;
     private final Class<T> returnType;
@@ -63,7 +64,7 @@ public class ReactiveAIFunction<T> {
         T example = params.getExample();
         ReactivePromptContextHolder contextHolder = promptManager.getContextHolder();
         return contextHolder.get(functionName)
-                .switchIfEmpty(Mono.just(new Prompt(functionName, command, constraints, args, returnType, topP))
+                .switchIfEmpty(Mono.just(new Prompt(functionName, this.role == null ? "" : this.role, command, constraints, args, returnType, topP))
                         .flatMap(prompt -> contextHolder.savePrompt(functionName, prompt).thenReturn(prompt)))
                 .flatMap(prompt -> contextHolder.<PromptMessageContext>createMessageContext(ContextType.PROMPT, functionName, identifier)
                         .flatMap(promptMessageContext -> {

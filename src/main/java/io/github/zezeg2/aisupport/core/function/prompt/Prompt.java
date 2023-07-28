@@ -71,28 +71,6 @@ public class Prompt implements Serializable {
      * format strings for constraints, input arguments, return type, and feedback.
      *
      * @param functionName The name of the function associated with the prompt.
-     * @param command      The command of the prompt.
-     * @param constraints  The list of Constraint objects representing the constraints of the prompt.
-     * @param args         The list of Argument objects representing the input arguments.
-     * @param returnType   The Class object representing the return type.
-     * @param topP         The topP value associated with the prompt.
-     */
-    public Prompt(String functionName, String command, List<Constraint> constraints, List<Argument<?>> args, Class<?> returnType, double topP) {
-        this.functionName = functionName;
-        this.role = null;
-        this.command = command;
-        this.constraints = BuildFormatUtil.createConstraintsString(constraints);
-        this.inputFormat = BuildFormatUtil.getArgumentsFormatMapString(args);
-        this.resultFormat = BuildFormatUtil.getFormatString(returnType);
-        this.feedbackFormat = BuildFormatUtil.getFormatString(FeedbackResponse.class);
-        this.topP = topP;
-    }
-
-    /**
-     * Constructs a new Prompt instance with the specified properties and automatically generates
-     * format strings for constraints, input arguments, return type, and feedback.
-     *
-     * @param functionName The name of the function associated with the prompt.
      * @param role         The role of the function associated with the prompt.
      * @param command      The command of the prompt.
      * @param constraints  The list of Constraint objects representing the constraints of the prompt.

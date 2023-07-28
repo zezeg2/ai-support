@@ -8,13 +8,13 @@ import java.util.List;
  */
 public class ConstraintsFactory {
 
-    private final List<Constraint> constraintList;
+    private final List<Constraint> constraints;
 
     /**
      * Constructs a ConstraintsFactory to create and manage constraints.
      */
     private ConstraintsFactory() {
-        constraintList = new ArrayList<>();
+        constraints = new ArrayList<>();
     }
 
     /**
@@ -34,7 +34,7 @@ public class ConstraintsFactory {
      * @return The ConstraintsFactory instance with the new constraint added.
      */
     public ConstraintsFactory addConstraint(String topic, String description) {
-        constraintList.add(new Constraint(topic, description));
+        constraints.add(new Constraint(topic, description));
         return this;
     }
 
@@ -46,7 +46,7 @@ public class ConstraintsFactory {
      * @return The ConstraintsFactory instance with the new constraint added.
      */
     public ConstraintsFactory addConstraint(String description) {
-        constraintList.add(new Constraint(description));
+        constraints.add(new Constraint(description));
         return this;
     }
 
@@ -56,6 +56,6 @@ public class ConstraintsFactory {
      * @return The list of constraints.
      */
     public List<Constraint> build() {
-        return new ArrayList<>(constraintList);
+        return new ArrayList<>(constraints);
     }
 }

@@ -29,12 +29,42 @@ public class AISupport {
      * @param returnType     The return type of the AI function.
      * @param functionName   The name of the AI function.
      * @param command        The command associated with the AI function.
-     * @param constraintList The list of constraints applied to the AI function.
+     * @param constraints The list of constraints applied to the AI function.
      * @param <T>            The type of the return value of the AI function, extending BaseSupportType.
      * @return AIFunction instance representing the created AI function.
      */
-    public <T extends BaseSupportType> AIFunction<T> createFunction(Class<T> returnType, String functionName, String command, List<Constraint> constraintList) {
-        return new AIFunction<>(functionName, command, constraintList, returnType, mapper, promptManager, resultValidatorChain, openAIProperties, 1d);
+    public <T extends BaseSupportType> AIFunction<T> createFunction(Class<T> returnType, String functionName, String command, List<Constraint> constraints) {
+        return new AIFunction<>(functionName, null, command, constraints, returnType, mapper, promptManager, resultValidatorChain, openAIProperties, 1d);
+    }
+
+    /**
+     * Creates an AI function with the specified return type, function name, command, constraint list, and topP value.
+     *
+     * @param returnType   The return type of the AI function.
+     * @param functionName The name of the AI function.
+     * @param command      The command associated with the AI function.
+     * @param constraints  The list of constraints applied to the AI function.
+     * @param topP         The topP value used for AI model validation during execution.
+     * @param <T>          The type of the return value of the AI function, extending BaseSupportType.
+     * @return AIFunction instance representing the created AI function.
+     */
+    public <T extends BaseSupportType> AIFunction<T> createFunction(Class<T> returnType, String functionName, String command, List<Constraint> constraints, double topP) {
+        return new AIFunction<>(functionName, null, command, constraints, returnType, mapper, promptManager, resultValidatorChain, openAIProperties, topP);
+    }
+
+    /**
+     * Creates an AI function with the specified return type, function name, role, command, and constraint list.
+     *
+     * @param returnType     The return type of the AI function.
+     * @param functionName   The name of the AI function.
+     * @param role           The role associated with the AI function.
+     * @param command        The command associated with the AI function.
+     * @param constraints    The list of constraints applied to the AI function.
+     * @param <T>            The type of the return value of the AI function, extending BaseSupportType.
+     * @return AIFunction instance representing the created AI function.
+     */
+    public <T extends BaseSupportType> AIFunction<T> createFunction(Class<T> returnType, String functionName, String role, String command, List<Constraint> constraints) {
+        return new AIFunction<>(functionName, role, command, constraints, returnType, mapper, promptManager, resultValidatorChain, openAIProperties, 1d);
     }
 
     /**
@@ -43,12 +73,14 @@ public class AISupport {
      * @param returnType     The return type of the AI function.
      * @param functionName   The name of the AI function.
      * @param command        The command associated with the AI function.
-     * @param constraintList The list of constraints applied to the AI function.
+     * @param constraints The list of constraints applied to the AI function.
      * @param topP           The topP value used for AI model validation during execution.
      * @param <T>            The type of the return value of the AI function, extending BaseSupportType.
      * @return AIFunction instance representing the created AI function.
      */
-    public <T extends BaseSupportType> AIFunction<T> createFunction(Class<T> returnType, String functionName, String command, List<Constraint> constraintList, double topP) {
-        return new AIFunction<>(functionName, command, constraintList, returnType, mapper, promptManager, resultValidatorChain, openAIProperties, topP);
+    public <T extends BaseSupportType> AIFunction<T> createFunction(Class<T> returnType, String functionName, String role, String command, List<Constraint> constraints, double topP) {
+        return new AIFunction<>(functionName, role, command, constraints, returnType, mapper, promptManager, resultValidatorChain, openAIProperties, topP);
     }
+
+
 }
