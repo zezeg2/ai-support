@@ -9,7 +9,7 @@ public class TemplateConstants {
      * The prompt statement particle without a role context.
      */
     public static final String PROMPT_STATEMENT_PARTICLE = """
-            I want you to act as a function execution delegate. I will provide you with input data that follows the format "[Input Format]". Your task is to understand the provided input, execute the [Command] accordingly, and generate a result in the format of "[Result Format]".
+            I want you to act as a function execution delegate. I will provide you with input data that follows the format "[Input Format]". Your task is to execute the [Command], and generate a result in the format of "[Result Format]".
             Be sure to observe the following "[Constraints]" when executing commands.
             """;
 
@@ -17,7 +17,7 @@ public class TemplateConstants {
      * The prompt statement particle with a role context.
      */
     public static final String PROMPT_STATEMENT_WITH_ROLE_PARTICLE = """
-            I want you to act as a function execution delegate. Please imagine yourself as %s. I will provide you with input data that follows the format "[Input Format]". Your task is to understand the provided input, execute the "[Command]" accordingly, and generate a detailed, professional result in the format of "[Result Format]".
+            I want you to act as a function execution delegate. Please imagine yourself as %s. I will provide you with input data that follows the format "[Input Format]". Your task is to execute the "[Command]", and generate a detailed, professional result in the format of "[Result Format]".
             Be sure to observe the following "[Constraints]" when executing commands.
             """;
     /**
@@ -29,6 +29,7 @@ public class TemplateConstants {
             ```json
             %s
             ```
+                        
             """;
 
     /**
@@ -55,76 +56,12 @@ public class TemplateConstants {
             ```
                         
             %%s
-            If feedback is provided, adjust your previous results based on the content of the feedback.
+            If feedback in the format of [Feedback Format] is provided, adjust your previous results based on the content of the feedback.
             [Feedback Format]
             ```json
             %s
             ```
                         
-            """;
-
-    /**
-     * The template string for the prompt.
-     * It includes information about the command, class structure, constraints, input and result formats, and feedback format.
-     */
-    public static final String PROMPT_TEMPLATE = """
-            I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
-            Command: %s
-             
-            Be sure to observe the following constraints when executing commands.
-            Constraints:
-            %s- Do not include any other explanatory text in your response.
-             
-            [Input Format]
-            ```json
-            %s
-            ```
-             
-            [Result Format]
-            ```json
-            %s
-            ```
-             
-            If feedback is provided, adjust your previous results based on the content of the feedback.
-            [Feedback Format]
-            ```json
-            %s
-            ```
-            """;
-
-    /**
-     * The template string for the prompt with example.
-     * It includes information about the command, class structure, constraints, input and result formats, result example, and feedback format.
-     */
-    @Deprecated
-    public static final String PROMPT_TEMPLATE_WITH_EXAMPLE = """
-            I want you to act as a function execution delegate. I will provide you a input and you will execute following command.
-            Command: %s
-                        
-            Be sure to observe the following constraints when executing commands.
-            Constraints:
-            %s- Do not include any other explanatory text in your response.
-                        
-            [Input Format]
-            ```json
-            %s
-            ```
-                        
-            [Result Format]
-            ```json
-            %s
-            ```
-                        
-            [Result Example]
-            ```json
-            %s
-            ```
-                        
-            If feedback is provided, adjust your previous results based on the feedback content.
-            [Feedback Format]
-            ```json
-            %s
-            ```
             """;
 
     /**
@@ -132,11 +69,10 @@ public class TemplateConstants {
      * It includes the feedback format and the inspection items.
      */
     public static final String FEEDBACK_FRAME = """
-            Your task is to conduct a comprehensive review of the provided JSON data. Apply a high level of scrutiny to identify any issues, particularly in the context of the [Inspection Items], and propose solutions.
-            Please identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these problems.
-            Once you've completed your assessment, please provide a feedback result in the "[Result Format]".
+            Your task is to conduct a comprehensive examination of the provided JSON data and identify any issues.
+            Apply a high level of scrutiny to identify any problems or discrepancies, particularly in the context of the [Inspection Items], and propose solutions to rectify these issues.
+            Once you've completed your assessment, please provide a feedback result in the format of "[Result Format]".
                         
-            Validate these inspection Items
             [Inspection Items]
             %s
                         
@@ -159,11 +95,11 @@ public class TemplateConstants {
      * It includes the role of the reviewer, feedback format, and the inspection items.
      */
     public static final String FEEDBACK_FRAME_WITH_ROLE = """
-            As a(n) %s, your task is to apply your specialized knowledge and skills to meticulously review the provided JSON data, ensuring it aligns with the criteria specified in the [Inspection Items]. Identify any problems and propose solutions that adhere to best practices in your field.
-            Please identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these problems.
-            Once you've completed your assessment, please provide a feedback result in the "[Result Format]".
+            As a(n) %s, your task is to apply your specialized knowledge and skills to meticulously examine the provided JSON data and identify any issues.
+            Apply a high level of scrutiny to identify any problems or discrepancies, particularly in the context of the [Inspection Items], and propose solutions to rectify these issues.
+            Once you've completed your assessment, please provide a feedback result in the format of "[Result Format]".
                    
-            Follow these inspection criteria:
+            [Inspection Items]
             %s
                         
             [Input Format]
@@ -185,8 +121,8 @@ public class TemplateConstants {
      */
     public static final String JSON_VALIDATE_TEMPLATE = """
             Your task is to comprehensively review the provided JSON data.
-            Make sure to identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these issues.\s
-            Once you've completed your assessment, please provide a feedback result in the "[Result Format]".
+            Make sure to identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these issues.
+            Once you've completed your assessment, please provide a feedback result in the format of "[Result Format]".
              
             Follow these inspection criteria:
             1. Parse-ability: Ensure the provided JSON string is valid and can be parsed without errors. If there's an error, provide its details and location.
@@ -206,10 +142,7 @@ public class TemplateConstants {
                         
             [Result Format]
             ```json
-            {
-              "valid": "Boolean indicating if the JSON is perfectly valid (true) or has issues (false)",
-              "problems": [ "List of problems found in the JSON" ]
-            }
+            %s
             ```
             """;
 

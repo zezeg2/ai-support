@@ -2,8 +2,10 @@ package io.github.zezeg2.aisupport.core.reactive.validator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
+import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
+import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.core.validator.ValidateTarget;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -39,7 +41,7 @@ public class ReactiveJsonResultValidator extends ReactiveResultValidator {
         return promptManager.getContextHolder().get(functionName).flatMap(prompt -> {
             String requiredFormat = prompt.getResultFormat();
             String structureInfo = prompt.getClassStructureInfo();
-            return Mono.just(TemplateConstants.JSON_VALIDATE_TEMPLATE.formatted(requiredFormat, structureInfo));
+            return Mono.just(TemplateConstants.JSON_VALIDATE_TEMPLATE.formatted(requiredFormat, structureInfo, BuildFormatUtil.getFormatString(FeedbackResponse.class)));
         });
     }
 

@@ -12,8 +12,8 @@ import java.util.List;
 @Setter
 @EqualsAndHashCode(callSuper = true)
 public class FeedbackResponse extends BaseSupportType {
-    @FieldDesc("Boolean value indicating whether the given result is perfect (true) or not (false) here")
+    @FieldDesc("Boolean indicating if the JSON is perfectly valid (true) or has issues (false)")
     private boolean valid;
-    @FieldDesc("List of problems in the results here")
+    @FieldDesc("List of problems(issues) found in the JSON")
     private List<String> problems;
 }

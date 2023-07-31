@@ -105,7 +105,7 @@ public class Prompt implements Serializable {
      */
     @Deprecated
     public String generate() {
-        return String.format(PROMPT_TEMPLATE, this.command, this.constraints, this.inputFormat, this.resultFormat, this.feedbackFormat);
+        return generate("");
     }
 
     /**
