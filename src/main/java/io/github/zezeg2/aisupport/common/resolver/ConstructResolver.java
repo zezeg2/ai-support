@@ -72,9 +72,13 @@ public interface ConstructResolver {
                 continue;
             }
 
-            Map<String, List<String>> fieldsMap = new HashMap<>();
-            for (Field field : clazz.getDeclaredFields()) {
-                addFieldToMap(classMap, fieldsMap, field);
+            Map<String, List<String>> fieldsMap = classMap.getOrDefault(clazz.getSimpleName(), new HashMap<>());
+            Class<?> currentClass = clazz;
+            while (currentClass != null && !currentClass.equals(Object.class)) {
+                for (Field field : currentClass.getDeclaredFields()) {
+                    addFieldToMap(classMap, fieldsMap, field);
+                }
+                currentClass = currentClass.getSuperclass();
             }
             classMap.put(clazz.getSimpleName(), fieldsMap);
         }

@@ -116,7 +116,7 @@ public class Prompt implements Serializable {
      * @throws RuntimeException if there is an error during serialization.
      */
     public String generate(String example) {
-        String intermediateOutput = PROMPT_TEMPLATE_INTEGRATED.formatted(this.command, this.constraints, this.inputFormat, this.resultFormat, this.feedbackFormat);
+        String intermediateOutput = PROMPT_TEMPLATE_BODY.formatted(this.command, this.constraints, this.inputFormat, this.resultFormat, this.feedbackFormat);
         String statement = role.isEmpty() ? PROMPT_STATEMENT_PARTICLE : PROMPT_STATEMENT_WITH_ROLE_PARTICLE.formatted(role);
         return intermediateOutput.formatted(statement, example.isEmpty() ? "" : PROMPT_EXAMPLE_PARTICLE.formatted(example));
     }

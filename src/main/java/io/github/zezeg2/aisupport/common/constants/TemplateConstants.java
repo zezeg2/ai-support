@@ -36,7 +36,7 @@ public class TemplateConstants {
      * The integrated template string for the prompt.
      * It includes information about the statement,  command, class structure, constraints, input and result formats, and feedback format.
      */
-    public static final String PROMPT_TEMPLATE_INTEGRATED = """
+    public static final String PROMPT_TEMPLATE_BODY = """
             %%s
                         
             [Command]
@@ -69,11 +69,11 @@ public class TemplateConstants {
      * It includes the feedback format and the inspection items.
      */
     public static final String FEEDBACK_FRAME = """
-            Your task is to conduct a comprehensive examination of the provided JSON data and identify any issues.
-            Apply a high level of scrutiny to identify any problems or discrepancies, particularly in the context of the [Inspection Items], and propose solutions to rectify these issues.
+            Your task is to conduct a comprehensive examination of the provided JSON data and identify issues.
+            Executing scrutiny solely in the context of the [Inspection Criteria] to identify problems or discrepancies and proposing solutions to rectify these issues.
             Once you've completed your assessment, please provide a feedback result in the format of "[Result Format]".
                         
-            [Inspection Items]
+            [Inspection Criteria]
             %s
                         
             [Input Format]
@@ -95,11 +95,11 @@ public class TemplateConstants {
      * It includes the role of the reviewer, feedback format, and the inspection items.
      */
     public static final String FEEDBACK_FRAME_WITH_ROLE = """
-            As a(n) %s, your task is to apply your specialized knowledge and skills to meticulously examine the provided JSON data and identify any issues.
-            Apply a high level of scrutiny to identify any problems or discrepancies, particularly in the context of the [Inspection Items], and propose solutions to rectify these issues.
+            As a(n) %s, your task is to apply your specialized knowledge and skills to meticulously examine the provided JSON data and identify issues.
+            Executing scrutiny solely in the context of the [Inspection Criteria] to identify problems or discrepancies and proposing solutions to rectify these issues.
             Once you've completed your assessment, please provide a feedback result in the format of "[Result Format]".
                    
-            [Inspection Items]
+            [Inspection Criteria]
             %s
                         
             [Input Format]
@@ -121,7 +121,7 @@ public class TemplateConstants {
      */
     public static final String JSON_VALIDATE_TEMPLATE = """
             Your task is to comprehensively review the provided JSON data.
-            Make sure to identify any issues or errors, provide detailed feedback on them, and suggest solutions to rectify these issues.
+            Executing scrutiny solely in the context of json format validation to identify problems or discrepancies and proposing solutions to rectify these issues.
             Once you've completed your assessment, please provide a feedback result in the format of "[Result Format]".
              
             Follow these inspection criteria:
