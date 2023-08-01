@@ -9,16 +9,16 @@ public class TemplateConstants {
      * The prompt statement particle without a role context.
      */
     public static final String PROMPT_STATEMENT_PARTICLE = """
-            I want you to act as a function execution delegate. I will provide you with input data that follows the format "[Input Format]". Your task is to execute the [Command], and generate a result in the format of "[Result Format]".
-            Be sure to observe the following "[Constraints]" when executing commands.
+            Your task is to execute the "[Command]", and generate a result in the format of "[Result Format]" by taking the input from the "[Input Format]".
+            Please adhere to the "[Constraints]" given below.
             """;
 
     /**
      * The prompt statement particle with a role context.
      */
     public static final String PROMPT_STATEMENT_WITH_ROLE_PARTICLE = """
-            I want you to act as a function execution delegate. Please imagine yourself as %s. I will provide you with input data that follows the format "[Input Format]". Your task is to execute the "[Command]", and generate a detailed, professional result in the format of "[Result Format]".
-            Be sure to observe the following "[Constraints]" when executing commands.
+            Please consider yourself as a(n) %s. Your task is to execute the "[Command]", and generate a detailed, professional result in the format of "[Result Format]" by taking the input from the "[Input Format]".
+            Please adhere to the "[Constraints]" given below.
             """;
     /**
      * The prompt example particle.
@@ -56,7 +56,7 @@ public class TemplateConstants {
             ```
                         
             %%s
-            If feedback in the format of [Feedback Format] is provided, adjust your previous results based on the content of the feedback.
+            If feedback is provided in the "[Feedback Format]", adjust your previous results based on the content of the feedback.
             [Feedback Format]
             ```json
             %s
