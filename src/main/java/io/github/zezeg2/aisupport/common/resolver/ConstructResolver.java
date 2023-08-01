@@ -1,5 +1,6 @@
 package io.github.zezeg2.aisupport.common.resolver;
 
+import io.github.zezeg2.aisupport.common.type.BaseSupportType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -71,10 +72,9 @@ public interface ConstructResolver {
                     clazz.getSuperclass().equals(List.class)) {
                 continue;
             }
-
             Map<String, List<String>> fieldsMap = classMap.getOrDefault(clazz.getSimpleName(), new HashMap<>());
             Class<?> currentClass = clazz;
-            while (currentClass != null && !currentClass.equals(Object.class)) {
+            while (currentClass != null && !currentClass.equals(BaseSupportType.class)) {
                 for (Field field : currentClass.getDeclaredFields()) {
                     addFieldToMap(classMap, fieldsMap, field);
                 }
