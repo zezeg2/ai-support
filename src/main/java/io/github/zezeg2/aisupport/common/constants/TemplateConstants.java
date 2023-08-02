@@ -85,7 +85,7 @@ public class TemplateConstants {
             ```json
             %s
             ```
-
+                        
             - Each element within the "issueList" should be concise and clear.
             - Do not include any other explanatory text in your response without the result.
             """;
@@ -111,6 +111,7 @@ public class TemplateConstants {
             ```json
             %s
             ```
+                        
             - Each element within the "issueList" should be concise and clear.
             - Do not include any other explanatory text in your response without the result.
             """;

@@ -10,8 +10,8 @@ import lombok.Setter;
 @Setter
 @EqualsAndHashCode(callSuper = true)
 public class Issue extends BaseSupportType {
-    @FieldDesc("caught problem")
-    String problem;
-    @FieldDesc("Resolution of problem. this feedback will be utilize to improve next JSON result.")
+    @FieldDesc("detail of caught issue")
+    String issue;
+    @FieldDesc("Resolution of issue. this feedback will be utilize to improve next JSON result.")
     String solution;
 }
