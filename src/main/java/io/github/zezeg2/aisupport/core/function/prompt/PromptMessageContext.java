@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
@@ -24,10 +23,10 @@ import java.util.List;
 @Builder
 @Document
 public class PromptMessageContext implements Serializable, MessageContext {
+    private String id;
     /**
      * The current value of the sequence.
      */
-    @Id
     private Long seq;
 
     /**
@@ -53,10 +52,12 @@ public class PromptMessageContext implements Serializable, MessageContext {
      * @param messages     The list of chat messages to be stored in the PromptMessageContext.
      */
     @JsonCreator
-    public PromptMessageContext(@JsonProperty("seq") long seq,
+    public PromptMessageContext(@JsonProperty("id") String id,
+                                @JsonProperty("seq") long seq,
                                 @JsonProperty("identifier") String identifier,
                                 @JsonProperty("functionName") String functionName,
                                 @JsonProperty("messages") List<ChatMessage> messages) {
+        this.id = id;
         this.seq = seq;
         this.identifier = identifier;
         this.functionName = functionName;

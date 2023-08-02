@@ -10,6 +10,15 @@ import java.util.List;
  */
 public interface MessageContext {
 
+    String getId();
+
+    /**
+     * Get a sequence that identifies messageContexts with the same namespace and identifier
+     *
+     * @return sequence of messageContext
+     */
+    Long getSeq();
+
     /**
      * Get the function name associated with this message context.
      *
@@ -30,6 +39,13 @@ public interface MessageContext {
      * @return The list of chat messages.
      */
     List<ChatMessage> getMessages();
+
+    void setId(String id);
+
+    /**
+     * Set a sequence that identifies messageContexts with the same namespace and identifier
+     */
+    void setSeq(Long seq);
 
     /**
      * Set the function name for this message context.

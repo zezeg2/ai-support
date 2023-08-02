@@ -34,9 +34,10 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
     @Override
     public <T extends MessageContext> T createMessageContext(ContextType contextType, String namespace, String identifier) {
         Map<String, CopyOnWriteArrayList<MessageContext>> selectedRegistry = contextRegistry.get(contextType);
-        if (!selectedRegistry.containsKey(namespace)) selectedRegistry.put(namespace, new CopyOnWriteArrayList<>());
+        if (!selectedRegistry.containsKey(namespace + ":" + identifier))
+            selectedRegistry.put(namespace + ":" + identifier, new CopyOnWriteArrayList<>());
         String[] split = namespace.split(":");
-        CopyOnWriteArrayList<MessageContext> messageContextList = selectedRegistry.get(identifier);
+        CopyOnWriteArrayList<MessageContext> messageContextList = selectedRegistry.get(namespace + ":" + identifier);
         Long seq = (long) messageContextList.size();
         T messageContext = (T) (contextType == ContextType.PROMPT
                 ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).build()
@@ -47,8 +48,8 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
 
     @Override
     public void saveMessageContext(ContextType contextType, MessageContext messageContext) {
-        MessageContext origin = contextRegistry.get(contextType).get(messageContext.getNamespace()).stream()
-                .filter(ctx -> ctx.getIdentifier().equals(messageContext.getIdentifier()))
+        MessageContext origin = contextRegistry.get(contextType).get(messageContext.getNamespace() + ":" + messageContext.getIdentifier()).stream()
+                .filter(ctx -> ctx.getSeq().equals(messageContext.getSeq()))
                 .findFirst().orElseThrow();
         origin.setMessages(messageContext.getMessages());
     }

@@ -56,13 +56,13 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     public <T extends MessageContext> Mono<T> createMessageContext(ContextType contextType, String namespace, String identifier) {
         return Mono.just(namespace)
                 .map(n -> n.split(":"))
-                .zipWith(template.opsForValue().increment(identifier + ":seq"),
+                .zipWith(hashOperations.increment(namespace + ":" + identifier, "seq", 1L),
                         (split, seq) -> {
                             T messageContext = (T) (contextType == ContextType.PROMPT
                                     ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).build()
                                     : FeedbackMessageContext.builder().seq(seq).functionName(split[0]).validatorName(split[1]).identifier(identifier).messages(new ArrayList<>()).build());
                             try {
-                                hashOperations.put(namespace + ":" + seq, identifier, mapper.writeValueAsString(messageContext));
+                                hashOperations.put(namespace + ":" + identifier, String.valueOf(seq), mapper.writeValueAsString(messageContext));
                             } catch (JsonProcessingException e) {
                                 throw new RuntimeException("Error serializing the messages", e);
                             }
@@ -73,7 +73,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
     @Override
     public Mono<Void> saveMessageContext(ContextType contextType, MessageContext messageContext) {
         try {
-            return hashOperations.put(messageContext.getNamespace(), messageContext.getIdentifier(), mapper.writeValueAsString(messageContext)).then();
+            return hashOperations.put(messageContext.getNamespace() + ":" + messageContext.getIdentifier(), String.valueOf(messageContext.getSeq()), mapper.writeValueAsString(messageContext)).then();
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error serializing the context messages", e);
         }
@@ -86,7 +86,7 @@ public class ReactiveRedisPromptContextHolder implements ReactivePromptContextHo
             int removeIndex = Math.max(0, messageList.size() - n);
             messageList.subList(removeIndex, messageList.size()).clear();
             try {
-                return hashOperations.put(messageContext.getNamespace(), messageContext.getIdentifier(), mapper.writeValueAsString(messageContext)).then();
+                return hashOperations.put(messageContext.getNamespace() + ":" + messageContext.getIdentifier(), String.valueOf(messageContext.getSeq()), mapper.writeValueAsString(messageContext)).then();
             } catch (JsonProcessingException e) {
                 return Mono.error(new RuntimeException("Error serializing the messages after deletion", e));
             }

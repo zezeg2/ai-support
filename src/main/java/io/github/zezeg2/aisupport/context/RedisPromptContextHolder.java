@@ -52,13 +52,13 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     @Override
     public <T extends MessageContext> T createMessageContext(ContextType contextType, String namespace, String identifier) {
         String[] split = namespace.split(":");
-        Long seq = template.opsForValue().increment(identifier + ":seq");
+        Long seq = hashOperations.increment(namespace + ":" + identifier, "seq", 1L);
 
         T messageContext = (T) (contextType == ContextType.PROMPT
                 ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).build()
                 : FeedbackMessageContext.builder().seq(seq).functionName(split[0]).validatorName(split[1]).identifier(identifier).messages(new ArrayList<>()).build());
         try {
-            hashOperations.put(namespace + ":" + seq, identifier, mapper.writeValueAsString(messageContext));
+            hashOperations.put(namespace + ":" + identifier, String.valueOf(seq), mapper.writeValueAsString(messageContext));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error serializing the messages", e);
         }
@@ -68,7 +68,7 @@ public class RedisPromptContextHolder implements PromptContextHolder {
     @Override
     public void saveMessageContext(ContextType contextType, MessageContext messageContext) {
         try {
-            hashOperations.put(messageContext.getNamespace(), messageContext.getIdentifier(), mapper.writeValueAsString(messageContext));
+            hashOperations.put(messageContext.getNamespace() + ":" + messageContext.getIdentifier(), String.valueOf(messageContext.getSeq()), mapper.writeValueAsString(messageContext));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error serializing the context messages", e);
         }
@@ -82,7 +82,7 @@ public class RedisPromptContextHolder implements PromptContextHolder {
             content.subList(removeIndex, content.size()).clear();
         }
         try {
-            hashOperations.put(messageContext.getNamespace(), messageContext.getIdentifier(), mapper.writeValueAsString(messageContext));
+            hashOperations.put(messageContext.getNamespace() + ":" + messageContext.getIdentifier(), String.valueOf(messageContext.getSeq()), mapper.writeValueAsString(messageContext));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error serializing the context messages after deletion", e);
         }

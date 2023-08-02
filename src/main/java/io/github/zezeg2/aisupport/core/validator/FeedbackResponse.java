@@ -14,6 +14,6 @@ import java.util.List;
 public class FeedbackResponse extends BaseSupportType {
     @FieldDesc("Boolean indicating if the JSON is perfectly valid (true) or has issues (false)")
     private boolean valid;
-    @FieldDesc("List of problems(issues) found in the JSON. this feedback will be utilize to improve next JSON result.")
-    private List<String> problems;
+    @FieldDesc("List of issues found in the JSON. this feedback will be utilize to improve next JSON result.")
+    private List<Issue> issueList;
 }

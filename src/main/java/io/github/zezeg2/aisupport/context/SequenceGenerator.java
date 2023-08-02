@@ -34,7 +34,7 @@ public class SequenceGenerator {
     public long generateSequence(String seqName, String identifier) {
         MongoCollectionSeq counter = mongoOperations.findAndModify(
                 query(where("seqName").is(seqName).and("identifier").is(identifier)),
-                new Update().inc("_id", 1),
+                new Update().inc("seq", 1),
                 options().returnNew(true).upsert(true),
                 MongoCollectionSeq.class);
 
