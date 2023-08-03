@@ -9,7 +9,7 @@ public class TemplateConstants {
      * The prompt statement particle without a role context.
      */
     public static final String PROMPT_STATEMENT_PARTICLE = """
-            Your task is to execute the "[Command]", and generate a result in the format of "[Result Format]" by taking the input from the "[Input Format]".
+            Your task is to execute the [Command] and generate a result in the [Result Format], using the input in the [Input Format].
             Please adhere to the "[Constraints]" given below.
             """;
 
@@ -17,7 +17,7 @@ public class TemplateConstants {
      * The prompt statement particle with a role context.
      */
     public static final String PROMPT_STATEMENT_WITH_ROLE_PARTICLE = """
-            Please consider yourself as a(n) %s. Your task is to execute the "[Command]", and generate a detailed, professional result in the format of "[Result Format]" by taking the input from the "[Input Format]".
+            Please consider yourself as a(n) %s. Your task is to execute the [Command] and generate a detailed, professional result in the [Result Format], using the input in the [Input Format].
             Please adhere to the "[Constraints]" given below.
             """;
     /**
@@ -69,9 +69,9 @@ public class TemplateConstants {
      * It includes the feedback format and the inspection items.
      */
     public static final String FEEDBACK_FRAME = """
-            Your task is to conduct a comprehensive examination of the provided JSON data and identify issues.
-            Executing scrutiny solely in the context of the [Inspection Criteria] to identify issues or discrepancies and proposing solutions to rectify these issues.
-            Once you've completed your assessment, please provide a feedback result in the format of "[Result Format]".
+            Your task is to conduct a comprehensive inspection of the provided JSON data and identify issues.
+            Perform an inspection solely according to the [Inspection Criteria], identify issues, then propose solutions to rectify these issues.
+            After you've completed your assessment, please provide feedback using the [Result Format].
                         
             [Inspection Criteria]
             %s
@@ -95,9 +95,9 @@ public class TemplateConstants {
      * It includes the role of the reviewer, feedback format, and the inspection items.
      */
     public static final String FEEDBACK_FRAME_WITH_ROLE = """
-            As a(n) %s, your task is to apply your specialized knowledge and skills to meticulously examine the provided JSON data and identify issues.
-            Executing scrutiny solely in the context of the [Inspection Criteria] to identify issues or discrepancies and proposing solutions to rectify these issues.
-            Once you've completed your assessment, please provide a feedback result in the format of "[Result Format]".
+            As a(n) %s, your task is to apply your specialized knowledge and skills to meticulously inspect the provided JSON data and identify issues.
+            Perform an inspection solely according to the [Inspection Criteria], identify issues, then propose solutions to rectify these issues.
+            After you've completed your assessment, please provide feedback using the [Result Format].
                    
             [Inspection Criteria]
             %s
@@ -121,23 +121,22 @@ public class TemplateConstants {
      * It includes steps for validating the JSON string.
      */
     public static final String JSON_VALIDATE_TEMPLATE = """
-            Your task is to comprehensively review the provided JSON data.
-            Executing scrutiny solely in the context of json format validation to identify issues or discrepancies and proposing solutions to rectify these issues.
-            Once you've completed your assessment, please provide a feedback result in the format of "[Result Format]".
+            Your task is to conduct a comprehensive inspection of the provided JSON data and identify issues.
+            Conduct an inspection solely for JSON format validation, identify any issues, then propose solutions to rectify these issues.
+            After you've completed your assessment, please provide feedback using the [Result Format].
              
             Follow these inspection criteria:
-            1. Parse-ability: Ensure the provided JSON string is valid and can be parsed without errors. If there's an error, provide its details and location.
-            2. Schema Compliance: Refer to the provided [Class Info], confirm if the JSON string complies with the given schema [Required Format]. If it doesn't, specify the discrepancy.
-            3. Handling Incorrectly Escaped Characters: Identify any incorrectly escaped characters within the JSON string and provide a corrected version.
-            4. Replacement of None or NaN Values: Replace any 'None' or 'NaN' values in the JSON string with 'null' to facilitate correct parsing. If any such values are found, indicate their locations.
-                        
-            [Required Format]
-            ```json
-            %s
-            ```
+            - Parse-ability: Ensure the provided JSON string is valid and can be parsed without errors.
+            - Schema Compliance: Refer to the provided [Class Info], confirm if the JSON string complies with the given schema [Required Format].
+            - Incorrectly Escaped Characters: Identify any incorrectly escaped characters within the JSON string and provide a corrected version.
                         
             [Class Info]
             ```java
+            %s
+            ```
+                        
+            [Required Format]
+            ```json
             %s
             ```
                         
@@ -145,6 +144,9 @@ public class TemplateConstants {
             ```json
             %s
             ```
+                        
+            - Each element within the "issueList" should be concise and clear.
+            - Do not include any other explanatory text in your response without the result.
             """;
 
     /**

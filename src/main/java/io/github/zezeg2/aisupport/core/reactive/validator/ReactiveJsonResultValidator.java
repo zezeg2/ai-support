@@ -41,7 +41,7 @@ public class ReactiveJsonResultValidator extends ReactiveResultValidator {
         return promptManager.getContextHolder().get(functionName).flatMap(prompt -> {
             String requiredFormat = prompt.getResultFormat();
             String structureInfo = prompt.getClassStructureInfo();
-            return Mono.just(TemplateConstants.JSON_VALIDATE_TEMPLATE.formatted(requiredFormat, structureInfo, BuildFormatUtil.getFormatString(FeedbackResponse.class)));
+            return Mono.just(TemplateConstants.JSON_VALIDATE_TEMPLATE.formatted(structureInfo, requiredFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class)));
         });
     }
 

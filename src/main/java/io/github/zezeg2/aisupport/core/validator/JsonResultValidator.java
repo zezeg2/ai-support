@@ -47,7 +47,7 @@ public class JsonResultValidator extends ResultValidator {
         Prompt prompt = promptManager.getContextHolder().get(functionName);
         String requiredFormat = prompt.getResultFormat();
         String structureInfo = prompt.getClassStructureInfo();
-        return TemplateConstants.JSON_VALIDATE_TEMPLATE.formatted(requiredFormat, structureInfo, BuildFormatUtil.getFormatString(FeedbackResponse.class));
+        return TemplateConstants.JSON_VALIDATE_TEMPLATE.formatted(structureInfo, requiredFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class));
     }
 
     @Override

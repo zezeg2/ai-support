@@ -102,7 +102,7 @@ public abstract class ResultValidator {
         String lastResponseContent = getLastPromptResponseContent(promptMessageContext);
         MessageContext feedbackMessageContext = init(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier());
         for (int count = 1; count <= openAIProperties.getValidateRetry(); count++) {
-            System.out.println("Try Count : " + count + " ---------------------------------------------------------------------------\n" + lastResponseContent);
+            System.out.println(this.getClass().getSimpleName() + ": Try Count : " + count + " ---------------------------------------------------------------------------\n" + lastResponseContent);
             String lastFeedbackContent = exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, model);
             FeedbackResponse feedbackResult;
             try {

@@ -111,8 +111,8 @@ public abstract class ReactiveResultValidator {
     public Mono<String> validate(PromptMessageContext promptMessageContext, AIModel model) {
         return init(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier())
                 .flatMap(feedbackMessageContext ->
-                        getLastPromptResponseContent(promptMessageContext).log()
-                                .flatMap(lastResponseContent -> exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, model).log()
+                        getLastPromptResponseContent(promptMessageContext).log(this.getClass().getSimpleName())
+                                .flatMap(lastResponseContent -> exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, model).log(this.getClass().getSimpleName())
                                         .flatMap(lastFeedbackContent -> {
                                             FeedbackResponse feedbackResult;
                                             try {
