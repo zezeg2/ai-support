@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
 import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessageContext;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.core.validator.FeedbackResponse;
 import io.github.zezeg2.aisupport.core.validator.ValidateTarget;
@@ -37,7 +38,7 @@ public class ReactiveJsonResultValidator extends ReactiveResultValidator {
     }
 
     @Override
-    protected Mono<String> buildTemplate(String functionName) {
+    protected Mono<String> buildTemplate(String functionName, FeedbackMessageContext feedbackMessageContext) {
         return promptManager.getContextHolder().get(functionName).flatMap(prompt -> {
             String requiredFormat = prompt.getResultFormat();
             String structureInfo = prompt.getClassStructureInfo();
@@ -46,9 +47,7 @@ public class ReactiveJsonResultValidator extends ReactiveResultValidator {
     }
 
     @Override
-    protected Mono<String> addTemplateContents(String functionName) {
+    protected Mono<String> addTemplateContents(String functionName, FeedbackMessageContext feedbackMessageContext) {
         return null;
     }
-
-
 }

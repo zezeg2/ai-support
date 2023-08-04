@@ -3,6 +3,7 @@ package io.github.zezeg2.aisupport.core.reactive.validator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessageContext;
 import io.github.zezeg2.aisupport.core.reactive.function.prompt.ReactivePromptManager;
 import io.github.zezeg2.aisupport.core.validator.ValidateTarget;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,11 +38,12 @@ public class ReactiveConstraintsValidator extends ReactiveResultValidator {
     /**
      * Adds the necessary template contents for constraints validation feedback in a reactive manner.
      *
-     * @param functionName The name of the function.
+     * @param functionName           The name of the function.
+     * @param feedbackMessageContext Feedback context to refer
      * @return A Mono emitting the template contents for constraints validation feedback as a string.
      */
     @Override
-    protected Mono<String> addTemplateContents(String functionName) {
+    protected Mono<String> addTemplateContents(String functionName, FeedbackMessageContext feedbackMessageContext) {
         return getPrompt(functionName)
                 .flatMap(prompt -> Mono.just(prompt.getConstraints()))
                 .map(constraintsString -> (TemplateConstants.CONSTRAINT_VALIDATE_TEMPLATE.formatted(constraintsString)));

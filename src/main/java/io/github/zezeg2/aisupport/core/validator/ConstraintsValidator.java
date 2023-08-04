@@ -3,6 +3,7 @@ package io.github.zezeg2.aisupport.core.validator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessageContext;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -39,7 +40,7 @@ public class ConstraintsValidator extends ResultValidator {
      * @return The template contents for constraints validation feedback as a string.
      */
     @Override
-    protected String addTemplateContents(String functionName) {
+    protected String addTemplateContents(String functionName, FeedbackMessageContext feedbackMessageContext) {
         String constraints = getPrompt(functionName).getConstraints();
         return TemplateConstants.CONSTRAINT_VALIDATE_TEMPLATE.formatted(constraints);
     }

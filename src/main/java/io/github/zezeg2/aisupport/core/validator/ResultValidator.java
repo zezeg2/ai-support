@@ -56,25 +56,28 @@ public abstract class ResultValidator {
     /**
      * Initializes the feedback context with a system message containing the feedback template.
      *
-     * @param functionName The name of the function.
-     * @param identifier   The identifier of the caller.
+     * @param promptMessageContext prompt context to validate
+     * @param identifier           The identifier of the caller.
      * @return A FeedbackMessageContext representing the completion of the feedback message context initialization process.
      */
-    protected FeedbackMessageContext init(String functionName, String identifier) {
-        FeedbackMessageContext feedbackMessageContext = promptManager.getContextHolder().createMessageContext(ContextType.FEEDBACK, getNamespace(functionName), identifier);
-        promptManager.addMessageToContext(ContextType.FEEDBACK, feedbackMessageContext, Role.SYSTEM, buildTemplate(functionName));
+    protected FeedbackMessageContext init(PromptMessageContext promptMessageContext, String identifier) {
+        FeedbackMessageContext feedbackMessageContext = promptManager.getContextHolder().createMessageContext(ContextType.FEEDBACK, getNamespace(promptMessageContext.getFunctionName()), identifier);
+        feedbackMessageContext.setUserInput(promptMessageContext.getUserInput());
+        promptManager.addMessageToContext(ContextType.FEEDBACK, feedbackMessageContext, Role.SYSTEM, buildTemplate(promptMessageContext.getFunctionName(), feedbackMessageContext));
         return feedbackMessageContext;
     }
 
     /**
      * Builds the feedback template based on the function name and the validator's role (if provided).
      *
-     * @param functionName The name of the function.
+     * @param functionName           The name of the function.
+     * @param feedbackMessageContext Feedback context to register for system messages
      * @return The validate template as a string.
      */
-    protected String buildTemplate(String functionName) {
-        return this.role == null ? TemplateConstants.FEEDBACK_FRAME.formatted(addTemplateContents(functionName), getPrompt(functionName).getResultFormat(), BuildFormatUtil.getFormatString(FeedbackResponse.class)) :
-                TemplateConstants.FEEDBACK_FRAME_WITH_ROLE.formatted(this.role, addTemplateContents(functionName), getPrompt(functionName).getResultFormat(), BuildFormatUtil.getFormatString(FeedbackResponse.class));
+    protected String buildTemplate(String functionName, FeedbackMessageContext feedbackMessageContext) {
+        String templateContents = addTemplateContents(functionName, feedbackMessageContext);
+        return this.role == null ? TemplateConstants.FEEDBACK_FRAME.formatted(templateContents, getPrompt(functionName).getResultFormat(), BuildFormatUtil.getFormatString(FeedbackResponse.class)) :
+                TemplateConstants.FEEDBACK_FRAME_WITH_ROLE.formatted(this.role, templateContents, getPrompt(functionName).getResultFormat(), BuildFormatUtil.getFormatString(FeedbackResponse.class));
     }
 
     /**
@@ -100,7 +103,7 @@ public abstract class ResultValidator {
      */
     public String validate(PromptMessageContext promptMessageContext, AIModel model) {
         String lastResponseContent = getLastPromptResponseContent(promptMessageContext);
-        MessageContext feedbackMessageContext = init(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier());
+        MessageContext feedbackMessageContext = init(promptMessageContext, promptMessageContext.getIdentifier());
         for (int count = 1; count <= openAIProperties.getValidateRetry(); count++) {
             System.out.println(this.getClass().getSimpleName() + ": Try Count : " + count + " ---------------------------------------------------------------------------\n" + lastResponseContent);
             String lastFeedbackContent = exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, model);
@@ -155,10 +158,11 @@ public abstract class ResultValidator {
      * Adds the necessary template contents for feedback.
      * implement this abstract class to add validate(inspection) items
      *
-     * @param functionName The name of the function.
+     * @param functionName           The name of the function.
+     * @param feedbackMessageContext Feedback context to refer
      * @return The template contents for feedback as a string.
      */
-    protected abstract String addTemplateContents(String functionName);
+    protected abstract String addTemplateContents(String functionName, FeedbackMessageContext feedbackMessageContext);
 
     /**
      * Gets the prompt for the specified function.

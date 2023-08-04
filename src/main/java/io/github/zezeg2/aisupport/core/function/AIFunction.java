@@ -73,6 +73,7 @@ public class AIFunction<T> {
         }
 
         PromptMessageContext promptMessageContext = contextHolder.createMessageContext(ContextType.PROMPT, functionName, identifier);
+        promptMessageContext.setUserInput(createArgsMap(args));
         try {
             promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, Role.SYSTEM, prompt.generate(example == null ? "" : mapper.writerWithDefaultPrettyPrinter().writeValueAsString(example)));
         } catch (JsonProcessingException e) {

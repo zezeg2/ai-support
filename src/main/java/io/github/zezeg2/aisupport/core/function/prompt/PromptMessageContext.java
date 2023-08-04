@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The PromptMessageContext class represents a concrete implementation of the MessageContext interface.
@@ -38,6 +39,7 @@ public class PromptMessageContext implements Serializable, MessageContext {
      */
 
     private String functionName;
+    private Map<String, Object> userInput;
 
     /**
      * The list of chat messages stored in this PromptMessageContext.
@@ -56,11 +58,13 @@ public class PromptMessageContext implements Serializable, MessageContext {
                                 @JsonProperty("seq") long seq,
                                 @JsonProperty("identifier") String identifier,
                                 @JsonProperty("functionName") String functionName,
+                                @JsonProperty("userInput") Map<String, Object> userInput,
                                 @JsonProperty("messages") List<ChatMessage> messages) {
         this.id = id;
         this.seq = seq;
         this.identifier = identifier;
         this.functionName = functionName;
+        this.userInput = userInput;
         this.messages = messages;
     }
 

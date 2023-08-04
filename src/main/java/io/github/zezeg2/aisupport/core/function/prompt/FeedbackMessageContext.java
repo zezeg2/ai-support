@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The FeedbackMessageContext class represents a concrete implementation of the MessageContext interface
@@ -43,6 +44,7 @@ public class FeedbackMessageContext implements Serializable, MessageContext {
      * The validator name associated with this FeedbackMessageContext.
      */
     private String validatorName;
+    private Map<String, Object> userInput;
 
     /**
      * The list of chat messages stored in this FeedbackMessageContext.
@@ -63,6 +65,7 @@ public class FeedbackMessageContext implements Serializable, MessageContext {
                                   @JsonProperty("identifier") String identifier,
                                   @JsonProperty("functionName") String functionName,
                                   @JsonProperty("validatorName") String validatorName,
+                                  @JsonProperty("userInput") Map<String, Object> userInput,
                                   @JsonProperty("messages") List<ChatMessage> messages) {
 
         this.id = id;
@@ -70,6 +73,7 @@ public class FeedbackMessageContext implements Serializable, MessageContext {
         this.identifier = identifier;
         this.functionName = functionName;
         this.validatorName = validatorName;
+        this.userInput = userInput;
         this.messages = messages;
     }
 

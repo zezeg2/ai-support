@@ -70,6 +70,7 @@ public class ReactiveAIFunction<T> {
                         .flatMap(prompt -> contextHolder.savePrompt(functionName, prompt).thenReturn(prompt)))
                 .flatMap(prompt -> contextHolder.<PromptMessageContext>createMessageContext(ContextType.PROMPT, functionName, identifier)
                         .flatMap(promptMessageContext -> {
+                            promptMessageContext.setUserInput(createArgsMap(args));
                             try {
                                 promptManager.addMessageToContext(ContextType.PROMPT, promptMessageContext, Role.SYSTEM, prompt.generate(example == null ? "" : mapper.writerWithDefaultPrettyPrinter().writeValueAsString(example)));
                             } catch (JsonProcessingException e) {

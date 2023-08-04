@@ -61,27 +61,33 @@ public abstract class ReactiveResultValidator {
      * Initializes the feedback context with a system message containing the feedback template.
      * This method returns a {@code Mono<Void>} representing the asynchronous completion of the initialization process.
      *
-     * @param functionName The name of the function.
-     * @param identifier   The identifier of the caller.
+     * @param promptMessageContext prompt context to validate
+     * @param identifier           The identifier of the caller.
      * @return A {@code Mono<FeedbackMessageContext>} representing the completion of the feedback message context initialization process in a reactive manner.
      */
-    protected Mono<FeedbackMessageContext> init(String functionName, String identifier) {
-        return Mono.defer(() -> promptManager.getContextHolder().<FeedbackMessageContext>createMessageContext(ContextType.FEEDBACK, getNamespace(functionName), identifier)
-                .flatMap(feedbackMessageContext -> buildTemplate(functionName)
-                        .flatMap(template -> promptManager.addMessageToContext(ContextType.FEEDBACK, feedbackMessageContext, Role.SYSTEM, template))
-                        .thenReturn(feedbackMessageContext)));
+    protected Mono<FeedbackMessageContext> init(PromptMessageContext promptMessageContext, String identifier) {
+        return Mono.defer(() -> promptManager.getContextHolder().<FeedbackMessageContext>createMessageContext(ContextType.FEEDBACK, getNamespace(promptMessageContext.getFunctionName()), identifier)
+                .flatMap(feedbackMessageContext -> {
+                    feedbackMessageContext.setUserInput(promptMessageContext.getUserInput());
+                    return buildTemplate(promptMessageContext.getFunctionName(), feedbackMessageContext)
+                            .flatMap(template -> promptManager.addMessageToContext(ContextType.FEEDBACK, feedbackMessageContext, Role.SYSTEM, template))
+                            .thenReturn(feedbackMessageContext);
+                }));
     }
 
     /**
      * Builds the feedback template based on the function name and the validator's role (if provided).
      * This method returns a {@code Mono<String>} representing the asynchronous completion of the template building process.
      *
-     * @param functionName The name of the function.
+     * @param functionName           The name of the function.
+     * @param feedbackMessageContext Feedback context to register for system messages
      * @return A {@code Mono<String>} representing the validate template as a string.
      */
-    protected Mono<String> buildTemplate(String functionName) {
-        return addTemplateContents(functionName).flatMap(content -> getPrompt(functionName).map(Prompt::getResultFormat).flatMap(resultFormat -> Mono.just(this.role == null ? TemplateConstants.FEEDBACK_FRAME.formatted(content, resultFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class)) :
-                TemplateConstants.FEEDBACK_FRAME_WITH_ROLE.formatted(this.role, content, resultFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class)))));
+    protected Mono<String> buildTemplate(String functionName, FeedbackMessageContext feedbackMessageContext) {
+        return addTemplateContents(functionName, feedbackMessageContext)
+                .flatMap(content -> getPrompt(functionName).map(Prompt::getResultFormat)
+                        .flatMap(resultFormat -> Mono.just(this.role == null ? TemplateConstants.FEEDBACK_FRAME.formatted(content, resultFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class)) :
+                                TemplateConstants.FEEDBACK_FRAME_WITH_ROLE.formatted(this.role, content, resultFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class)))));
     }
 
     /**
@@ -109,7 +115,7 @@ public abstract class ReactiveResultValidator {
      * @return A {@code Mono<String>} representing the validated result as a string.
      */
     public Mono<String> validate(PromptMessageContext promptMessageContext, AIModel model) {
-        return init(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier())
+        return init(promptMessageContext, promptMessageContext.getIdentifier())
                 .flatMap(feedbackMessageContext ->
                         getLastPromptResponseContent(promptMessageContext).log(this.getClass().getSimpleName())
                                 .flatMap(lastResponseContent -> exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, model).log(this.getClass().getSimpleName())
@@ -172,10 +178,11 @@ public abstract class ReactiveResultValidator {
      * implement this abstract class to add validate(inspection) items
      * This method returns a {@code Mono<String>} representing the validate(inspection) items for feedback as a string.
      *
-     * @param functionName The name of the function.
+     * @param functionName           The name of the function.
+     * @param feedbackMessageContext Feedback context to refer
      * @return A {@code Mono<String>} representing the template contents for feedback as a string.
      */
-    protected abstract Mono<String> addTemplateContents(String functionName);
+    protected abstract Mono<String> addTemplateContents(String functionName, FeedbackMessageContext feedbackMessageContext);
 
     /**
      * Gets the prompt for the specified function.

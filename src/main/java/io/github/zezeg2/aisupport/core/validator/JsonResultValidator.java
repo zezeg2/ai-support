@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.zezeg2.aisupport.common.constants.TemplateConstants;
 import io.github.zezeg2.aisupport.common.util.BuildFormatUtil;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessageContext;
 import io.github.zezeg2.aisupport.core.function.prompt.Prompt;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptManager;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,13 +38,12 @@ public class JsonResultValidator extends ResultValidator {
     /**
      * Adds the necessary template contents for JSON validation feedback.
      *
-     * @param functionName The name of the function.
+     * @param functionName           The name of the function.
+     * @param feedbackMessageContext Feedback context to register for system messages
      * @return The template contents for JSON validation feedback as a string.
      */
-
-
     @Override
-    protected String buildTemplate(String functionName) {
+    protected String buildTemplate(String functionName, FeedbackMessageContext feedbackMessageContext) {
         Prompt prompt = promptManager.getContextHolder().get(functionName);
         String requiredFormat = prompt.getResultFormat();
         String structureInfo = prompt.getClassStructureInfo();
@@ -51,7 +51,7 @@ public class JsonResultValidator extends ResultValidator {
     }
 
     @Override
-    protected String addTemplateContents(String functionName) {
+    protected String addTemplateContents(String functionName, FeedbackMessageContext feedbackMessageContext) {
         return null;
     }
 }
