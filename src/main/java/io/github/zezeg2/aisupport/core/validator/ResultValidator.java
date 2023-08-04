@@ -62,7 +62,10 @@ public abstract class ResultValidator {
      */
     protected FeedbackMessageContext init(PromptMessageContext promptMessageContext, String identifier) {
         FeedbackMessageContext feedbackMessageContext = promptManager.getContextHolder().createMessageContext(ContextType.FEEDBACK, getNamespace(promptMessageContext.getFunctionName()), identifier);
+        Model annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
+        AIModel model = annotatedModel.equals(Model.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
         feedbackMessageContext.setUserInput(promptMessageContext.getUserInput());
+        feedbackMessageContext.setModel(model);
         promptManager.addMessageToContext(ContextType.FEEDBACK, feedbackMessageContext, Role.SYSTEM, buildTemplate(promptMessageContext.getFunctionName(), feedbackMessageContext));
         return feedbackMessageContext;
     }
@@ -80,33 +83,21 @@ public abstract class ResultValidator {
                 TemplateConstants.FEEDBACK_FRAME_WITH_ROLE.formatted(this.role, templateContents, getPrompt(functionName).getResultFormat(), BuildFormatUtil.getFormatString(FeedbackResponse.class));
     }
 
-    /**
-     * Validates the AI model results for the specified function and identifier.
-     *
-     * @param promptMessageContext Prompt message context for calling openai chat completion api
-     * @return The validated result as a string.
-     */
-    public String validate(PromptMessageContext promptMessageContext) {
-        Model annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
-        AIModel model = annotatedModel.equals(Model.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
-        if (!ignoreCondition(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier()))
-            return validate(promptMessageContext, model);
-        return getLastPromptResponseContent(promptMessageContext);
-    }
 
     /**
      * Validates the AI model results for the specified function, identifier, and AI model.
      *
      * @param promptMessageContext Prompt Message context for calling openai chat completion api
-     * @param model                The AI model to use for validation.
      * @return The validated result as a string.
      */
-    public String validate(PromptMessageContext promptMessageContext, AIModel model) {
+    public String validate(PromptMessageContext promptMessageContext) {
+        if (ignoreCondition(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier()))
+            getLastPromptResponseContent(promptMessageContext);
         String lastResponseContent = getLastPromptResponseContent(promptMessageContext);
         MessageContext feedbackMessageContext = init(promptMessageContext, promptMessageContext.getIdentifier());
         for (int count = 1; count <= openAIProperties.getValidateRetry(); count++) {
             System.out.println(this.getClass().getSimpleName() + ": Try Count : " + count + " ---------------------------------------------------------------------------\n" + lastResponseContent);
-            String lastFeedbackContent = exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, model);
+            String lastFeedbackContent = exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, feedbackMessageContext.getModel());
             FeedbackResponse feedbackResult;
             try {
                 feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
@@ -119,7 +110,7 @@ public abstract class ResultValidator {
                 return lastResponseContent;
             }
             System.out.println("Feedback on results exists\n" + lastFeedbackContent);
-            lastResponseContent = exchangeMessages(promptMessageContext, lastFeedbackContent, ContextType.PROMPT, model);
+            lastResponseContent = exchangeMessages(promptMessageContext, lastFeedbackContent, ContextType.PROMPT, promptMessageContext.getModel());
         }
 
         throw new RuntimeException("Maximum Validate count over");

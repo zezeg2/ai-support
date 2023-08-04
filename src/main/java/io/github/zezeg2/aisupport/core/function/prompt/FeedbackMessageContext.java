@@ -3,6 +3,7 @@ package io.github.zezeg2.aisupport.core.function.prompt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -44,12 +45,17 @@ public class FeedbackMessageContext implements Serializable, MessageContext {
      * The validator name associated with this FeedbackMessageContext.
      */
     private String validatorName;
+
+    /**
+     * The first input by the user to execute the function
+     */
     private Map<String, Object> userInput;
 
     /**
      * The list of chat messages stored in this FeedbackMessageContext.
      */
     private List<ChatMessage> messages;
+    private AIModel model;
 
     /**
      * Constructs a new FeedbackMessageContext instance with the specified properties.
@@ -66,7 +72,8 @@ public class FeedbackMessageContext implements Serializable, MessageContext {
                                   @JsonProperty("functionName") String functionName,
                                   @JsonProperty("validatorName") String validatorName,
                                   @JsonProperty("userInput") Map<String, Object> userInput,
-                                  @JsonProperty("messages") List<ChatMessage> messages) {
+                                  @JsonProperty("messages") List<ChatMessage> messages,
+                                  @JsonProperty("model") AIModel model) {
 
         this.id = id;
         this.seq = seq;
@@ -75,6 +82,7 @@ public class FeedbackMessageContext implements Serializable, MessageContext {
         this.validatorName = validatorName;
         this.userInput = userInput;
         this.messages = messages;
+        this.model = model;
     }
 
     @Override

@@ -1,8 +1,10 @@
 package io.github.zezeg2.aisupport.core.function.prompt;
 
 import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * The MessageContext interface represents a context for storing chat messages in a chat-based AI system.
@@ -27,6 +29,13 @@ public interface MessageContext {
     String getFunctionName();
 
     /**
+     * Get the first input by the user to execute the function
+     *
+     * @return The user input
+     */
+    Map<String, Object> getUserInput();
+
+    /**
      * Get the identifier of this message context.
      *
      * @return The identifier.
@@ -39,6 +48,13 @@ public interface MessageContext {
      * @return The list of chat messages.
      */
     List<ChatMessage> getMessages();
+
+    /**
+     * Get the Model to be used in this context.
+     *
+     * @return The list of chat messages.
+     */
+    AIModel getModel();
 
     void setId(String id);
 
@@ -55,6 +71,13 @@ public interface MessageContext {
     void setFunctionName(String functionName);
 
     /**
+     * Set the first input by the user to execute the function.
+     *
+     * @param userInput first input by the user to execute the function
+     */
+    void setUserInput(Map<String, Object> userInput);
+
+    /**
      * Set the identifier for this message context.
      *
      * @param identifier The identifier to set.
@@ -67,6 +90,13 @@ public interface MessageContext {
      * @param messages The list of chat messages to set.
      */
     void setMessages(List<ChatMessage> messages);
+
+    /**
+     * Set the Model to be used in this context.
+     *
+     * @param model model to be used in this context.
+     */
+    void setModel(AIModel model);
 
     String getNamespace();
 

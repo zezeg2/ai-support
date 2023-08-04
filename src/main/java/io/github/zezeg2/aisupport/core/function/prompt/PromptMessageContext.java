@@ -3,6 +3,7 @@ package io.github.zezeg2.aisupport.core.function.prompt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.theokanning.openai.completion.chat.ChatMessage;
+import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -39,12 +40,17 @@ public class PromptMessageContext implements Serializable, MessageContext {
      */
 
     private String functionName;
+
+    /**
+     * The first input by the user to execute the function
+     */
     private Map<String, Object> userInput;
 
     /**
      * The list of chat messages stored in this PromptMessageContext.
      */
     private List<ChatMessage> messages;
+    private AIModel model;
 
     /**
      * Constructs a new PromptMessageContext instance with the specified properties.
@@ -59,13 +65,15 @@ public class PromptMessageContext implements Serializable, MessageContext {
                                 @JsonProperty("identifier") String identifier,
                                 @JsonProperty("functionName") String functionName,
                                 @JsonProperty("userInput") Map<String, Object> userInput,
-                                @JsonProperty("messages") List<ChatMessage> messages) {
+                                @JsonProperty("messages") List<ChatMessage> messages,
+                                @JsonProperty("model") AIModel model) {
         this.id = id;
         this.seq = seq;
         this.identifier = identifier;
         this.functionName = functionName;
         this.userInput = userInput;
         this.messages = messages;
+        this.model = model;
     }
 
     @Override

@@ -68,7 +68,10 @@ public abstract class ReactiveResultValidator {
     protected Mono<FeedbackMessageContext> init(PromptMessageContext promptMessageContext, String identifier) {
         return Mono.defer(() -> promptManager.getContextHolder().<FeedbackMessageContext>createMessageContext(ContextType.FEEDBACK, getNamespace(promptMessageContext.getFunctionName()), identifier)
                 .flatMap(feedbackMessageContext -> {
+                    Model annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
+                    AIModel model = annotatedModel.equals(Model.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
                     feedbackMessageContext.setUserInput(promptMessageContext.getUserInput());
+                    feedbackMessageContext.setModel(model);
                     return buildTemplate(promptMessageContext.getFunctionName(), feedbackMessageContext)
                             .flatMap(template -> promptManager.addMessageToContext(ContextType.FEEDBACK, feedbackMessageContext, Role.SYSTEM, template))
                             .thenReturn(feedbackMessageContext);
@@ -90,49 +93,36 @@ public abstract class ReactiveResultValidator {
                                 TemplateConstants.FEEDBACK_FRAME_WITH_ROLE.formatted(this.role, content, resultFormat, BuildFormatUtil.getFormatString(FeedbackResponse.class)))));
     }
 
-    /**
-     * Validates the AI model results for the specified function and identifier.
-     * This method returns a {@code Mono<String>} representing the validated result as a string.
-     *
-     * @param promptMessageContext Prompt message context for calling openai chat completion api.
-     * @return A {@code Mono<String>} representing the validated result as a string.
-     */
-    public Mono<String> validate(PromptMessageContext promptMessageContext) {
-        Model annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
-        AIModel model = annotatedModel.equals(Model.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
-        return ignoreCondition(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier()).flatMap(ignore -> {
-            if (!ignore) return validate(promptMessageContext, model);
-            return getLastPromptResponseContent(promptMessageContext);
-        });
-    }
 
     /**
      * Validates the AI model results for the specified function, identifier, and AI model.
      * This method returns a {@code Mono<String>} representing the validated result as a string.
      *
      * @param promptMessageContext Prompt Message context for calling openai chat completion api.
-     * @param model                The AI model to use for validation.
      * @return A {@code Mono<String>} representing the validated result as a string.
      */
-    public Mono<String> validate(PromptMessageContext promptMessageContext, AIModel model) {
-        return init(promptMessageContext, promptMessageContext.getIdentifier())
-                .flatMap(feedbackMessageContext ->
-                        getLastPromptResponseContent(promptMessageContext).log(this.getClass().getSimpleName())
-                                .flatMap(lastResponseContent -> exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, model).log(this.getClass().getSimpleName())
-                                        .flatMap(lastFeedbackContent -> {
-                                            FeedbackResponse feedbackResult;
-                                            try {
-                                                feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
-                                            } catch (JsonProcessingException e) {
-                                                return promptManager.getContextHolder().deleteMessagesFromLast(ContextType.FEEDBACK, feedbackMessageContext, 2).then(Mono.error(e));
-                                            }
-                                            if (feedbackResult.isValid()) return Mono.empty();
-                                            else
-                                                return Mono.defer(() -> exchangeMessages(promptMessageContext, lastFeedbackContent, ContextType.PROMPT, model)
-                                                        .flatMap(r -> Mono.<String>error(new RuntimeException("Feedback on results exists\n" + lastFeedbackContent))));
-                                        }))
-                                .retry(openAIProperties.getValidateRetry() - 1)
-                ).switchIfEmpty(Mono.defer(() -> getLastPromptResponseContent(promptMessageContext)));
+    public Mono<String> validate(PromptMessageContext promptMessageContext) {
+        return ignoreCondition(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier()).flatMap(ignore -> {
+            if (ignore) return getLastPromptResponseContent(promptMessageContext);
+            return init(promptMessageContext, promptMessageContext.getIdentifier())
+                    .flatMap(feedbackMessageContext ->
+                            getLastPromptResponseContent(promptMessageContext).log(this.getClass().getSimpleName())
+                                    .flatMap(lastResponseContent -> exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, feedbackMessageContext.getModel()).log(this.getClass().getSimpleName())
+                                            .flatMap(lastFeedbackContent -> {
+                                                FeedbackResponse feedbackResult;
+                                                try {
+                                                    feedbackResult = mapper.readValue(lastFeedbackContent, FeedbackResponse.class);
+                                                } catch (JsonProcessingException e) {
+                                                    return promptManager.getContextHolder().deleteMessagesFromLast(ContextType.FEEDBACK, feedbackMessageContext, 2).then(Mono.error(e));
+                                                }
+                                                if (feedbackResult.isValid()) return Mono.empty();
+                                                else
+                                                    return Mono.defer(() -> exchangeMessages(promptMessageContext, lastFeedbackContent, ContextType.PROMPT, promptMessageContext.getModel())
+                                                            .flatMap(r -> Mono.<String>error(new RuntimeException("Feedback on results exists\n" + lastFeedbackContent))));
+                                            }))
+                                    .retry(openAIProperties.getValidateRetry() - 1)
+                    ).switchIfEmpty(Mono.defer(() -> getLastPromptResponseContent(promptMessageContext)));
+        });
     }
 
     /**
@@ -145,7 +135,6 @@ public abstract class ReactiveResultValidator {
      * @param model          The AI model to use for the chat completion.
      * @return A {@code Mono<String>} representing the content of the AI model's response as a string.
      */
-
     protected Mono<String> exchangeMessages(MessageContext messageContext, String message, ContextType contextType, AIModel model) {
         return promptManager.addMessageToContext(contextType, messageContext, Role.USER, message)
                 .then(Mono.defer(() -> {
