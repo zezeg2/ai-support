@@ -4,9 +4,12 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaAdmin;
+import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
+import reactor.kafka.sender.SenderOptions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,5 +31,12 @@ public class KafkaConfig {
     @Bean
     public AdminClient adminClient() {
         return AdminClient.create(kafkaAdmin().getConfigurationProperties());
+    }
+
+    @Bean
+    public ReactiveKafkaProducerTemplate<String, Object> reactiveKafkaProducerTemplate(
+            KafkaProperties properties) {
+        Map<String, Object> props = properties.buildProducerProperties();
+        return new ReactiveKafkaProducerTemplate<>(SenderOptions.create(props));
     }
 }
