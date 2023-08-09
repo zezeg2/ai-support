@@ -6,6 +6,7 @@ import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
 import io.github.zezeg2.aisupport.common.resolver.JavaConstructResolver;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
+import io.github.zezeg2.aisupport.config.properties.KafkaPublishProperties;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.context.*;
 import io.github.zezeg2.aisupport.context.reactive.*;
@@ -34,7 +35,7 @@ import java.util.List;
 
 @Configuration
 @Conditional(ConflictingPropertiesCondition.class)
-@EnableConfigurationProperties({ContextProperties.class, OpenAIProperties.class})
+@EnableConfigurationProperties({ContextProperties.class, OpenAIProperties.class, KafkaPublishProperties.class})
 @ComponentScan("io.github.zezeg2.aisupport")
 public class AISupportAutoConfiguration {
     private final OpenAIProperties openAIProperties;
