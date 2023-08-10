@@ -11,6 +11,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -76,26 +77,33 @@ public class KafkaPublisherAspect {
      */
     @AfterReturning(pointcut = "@annotation(pubToKafkaAnnotation)", returning = "result")
     public void publishToKafkaSynchronous(JoinPoint joinPoint, PubToKafka pubToKafkaAnnotation, Object result) {
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        String[] parameterNames = signature.getParameterNames();
+        Object[] args = joinPoint.getArgs();
+        String identifier = null;
+        if (parameterNames.length > 0 && "identifier".equals(parameterNames[0]) && args[0] instanceof String) {
+            identifier = (String) args[0];
+        }
         ensureTopicExists(pubToKafkaAnnotation.topic());
-        convertAndSend(pubToKafkaAnnotation, result);
+        convertAndSend(pubToKafkaAnnotation, identifier, result);
     }
 
     /**
      * Converts the provided result object to JSON and sends it to the Kafka topic.
      *
      * @param pubToKafkaAnnotation The {@link PubToKafka} annotation on the method.
+     * @param identifier           use identifier if method parameters provide it.
      * @param result               The result returned by the annotated method.
      */
-    private void convertAndSend(PubToKafka pubToKafkaAnnotation, Object result) {
+    private void convertAndSend(PubToKafka pubToKafkaAnnotation, String identifier, Object result) {
         try {
             String jsonString = mapper.writeValueAsString(result);
-            if (!pubToKafkaAnnotation.key().isEmpty())
+            if (identifier != null) kafkaTemplate.send(pubToKafkaAnnotation.topic(), identifier, jsonString);
+            else if (!pubToKafkaAnnotation.key().isEmpty())
                 kafkaTemplate.send(pubToKafkaAnnotation.topic(), pubToKafkaAnnotation.key(), jsonString);
             else if (identifierProvider != null)
                 kafkaTemplate.send(pubToKafkaAnnotation.topic(), identifierProvider.get(), jsonString);
-            else
-                kafkaTemplate.send(pubToKafkaAnnotation.topic(), jsonString);
-
+            else kafkaTemplate.send(pubToKafkaAnnotation.topic(), jsonString);
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize object to JSON for Kafka publishing.", e);
         }

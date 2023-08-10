@@ -11,6 +11,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
@@ -79,13 +80,19 @@ public class ReactiveKafkaPublisherAspect {
      */
     @Around("@annotation(pubToKafkaAnnotation)")
     public Object publishToKafkaReactive(ProceedingJoinPoint joinPoint, PubToKafka pubToKafkaAnnotation) throws Throwable {
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        String[] parameterNames = signature.getParameterNames();
+        Object[] args = joinPoint.getArgs();
+        String identifier;
+        if (parameterNames.length > 0 && "identifier".equals(parameterNames[0]) && args[0] instanceof String)
+            identifier = (String) args[0];
+        else identifier = null;
         ensureTopicExists(pubToKafkaAnnotation.topic());
-
         Object result = joinPoint.proceed();
         if (result instanceof Flux<?>) {
-            return ((Flux<?>) result).flatMap(element -> convertAndSend(pubToKafkaAnnotation, element).thenReturn(element));
+            return ((Flux<?>) result).flatMap(element -> convertAndSend(pubToKafkaAnnotation, identifier, element).thenReturn(element));
         } else if (result instanceof Mono<?>) {
-            return ((Mono<?>) result).flatMap(element -> convertAndSend(pubToKafkaAnnotation, element).thenReturn(element));
+            return ((Mono<?>) result).flatMap(element -> convertAndSend(pubToKafkaAnnotation, identifier, element).thenReturn(element));
         }
         return result;
     }
@@ -94,20 +101,21 @@ public class ReactiveKafkaPublisherAspect {
      * Converts the provided result object to JSON and sends it to the Kafka topic reactively.
      *
      * @param pubToKafkaAnnotation The {@link PubToKafka} annotation on the method.
+     * @param identifier           use identifier if method parameters provide it.
      * @param result               The result returned by the annotated method.
      * @return A Mono representing the asynchronous operation.
      */
-    private Mono<Void> convertAndSend(PubToKafka pubToKafkaAnnotation, Object result) {
+    private Mono<Void> convertAndSend(PubToKafka pubToKafkaAnnotation, String identifier, Object result) {
         return Mono.defer(() -> {
             try {
                 String jsonString = mapper.writeValueAsString(result);
-                if (!pubToKafkaAnnotation.key().isEmpty()) {
+                if (identifier != null)
+                    return kafkaTemplate.send(pubToKafkaAnnotation.topic(), identifier, jsonString).then();
+                else if (!pubToKafkaAnnotation.key().isEmpty())
                     return kafkaTemplate.send(pubToKafkaAnnotation.topic(), pubToKafkaAnnotation.key(), jsonString).then();
-                } else if (identifierProvider != null) {
-                    return identifierProvider.get().flatMap(identifier -> kafkaTemplate.send(pubToKafkaAnnotation.topic(), identifier, jsonString).then());
-                } else {
-                    return kafkaTemplate.send(pubToKafkaAnnotation.topic(), jsonString).then();
-                }
+                else if (identifierProvider != null)
+                    return identifierProvider.get().flatMap(id -> kafkaTemplate.send(pubToKafkaAnnotation.topic(), id, jsonString).then());
+                else return kafkaTemplate.send(pubToKafkaAnnotation.topic(), jsonString).then();
             } catch (JsonProcessingException e) {
                 log.error("Failed to serialize object to JSON for Kafka publishing.", e);
                 return Mono.error(e);
