@@ -26,17 +26,20 @@ Repository: [Maven Central: io.github.zezeg2:ai-support:2.1.3](https://central.s
 
 1. 스프링 컨텍스트로 부터 `(Reactive)AISupport` 인스턴스를 가져오고, 해당 인스턴스로부터 `(Reactive)AIFunction` 생성합니다.
 
-![image-20230817004707648](/Users/bagjonghyeon/IdeaProjects/java/ai-support/assets/image-20230817004707648.png)
+![image](https://github.com/zezeg2/ai-support/assets/71999370/0f42f4b4-d015-440f-8fa4-2636e135a81c)
+
 
 2. 생성된 `Reactive)AIFunction`  의 execute() 실행 시 동작
 
 - ExecuteParameters는 AIFunction의 execute() 실행 파라미터로써 컨텍스트 식별자, 인풋 데이터, 실행 모델, 결과 예시 객체 필드를 가집니다.
 
-![image-20230817004737292](/Users/bagjonghyeon/IdeaProjects/java/ai-support/assets/image-20230817004737292.png)
+![image](https://github.com/zezeg2/ai-support/assets/71999370/8d90c976-8f42-45df-9bdc-402d6d217ec5)
+
 
 3. 함수 실행 내부 결과 검증 프로세스
 
-![image-20230817004815971](/Users/bagjonghyeon/IdeaProjects/java/ai-support/assets/image-20230817004815971.png)
+![image](https://github.com/zezeg2/ai-support/assets/71999370/a3c78ec3-d221-4c6e-a861-8359afb0c2bb)
+
 
 ## Getting Started
 
@@ -269,7 +272,7 @@ public class TestApplication {
 
 System Console(Synchronous case Only)
 
-```json
+```
 RecipeDetailValidator: Try Count: 1 ---------------------------------------------------------------------------
 {
 "ingredients": [
