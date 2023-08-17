@@ -2,6 +2,7 @@ package io.github.zezeg2.aisupport.core.function.prompt;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.theokanning.openai.Usage;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import lombok.Builder;
@@ -56,6 +57,7 @@ public class FeedbackMessageContext implements Serializable, MessageContext {
      */
     private List<ChatMessage> messages;
     private AIModel model;
+    private Usage usage;
 
     /**
      * Constructs a new FeedbackMessageContext instance with the specified properties.
@@ -73,7 +75,8 @@ public class FeedbackMessageContext implements Serializable, MessageContext {
                                   @JsonProperty("validatorName") String validatorName,
                                   @JsonProperty("userInput") Map<String, Object> userInput,
                                   @JsonProperty("messages") List<ChatMessage> messages,
-                                  @JsonProperty("model") AIModel model) {
+                                  @JsonProperty("model") AIModel model,
+                                  @JsonProperty("usage") Usage usage) {
 
         this.id = id;
         this.seq = seq;
@@ -83,6 +86,7 @@ public class FeedbackMessageContext implements Serializable, MessageContext {
         this.userInput = userInput;
         this.messages = messages;
         this.model = model;
+        this.usage = usage;
     }
 
     @Override

@@ -136,7 +136,9 @@ public class AIFunction<T> {
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
         PromptMessageContext promptMessageContext = init(params);
         PromptMessageContext response = promptManager.exchangeMessages(ContextType.PROMPT, promptMessageContext, params.getModel(), topP, true);
-        return parseResponseWithValidate(response);
+        T result = parseResponseWithValidate(response);
+        System.out.println(promptManager.getTotalTokenUsage(promptMessageContext));
+        return result;
     }
 }
 

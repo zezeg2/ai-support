@@ -62,6 +62,7 @@ public abstract class ResultValidator {
      */
     protected FeedbackMessageContext init(PromptMessageContext promptMessageContext, String identifier) {
         FeedbackMessageContext feedbackMessageContext = promptManager.getContextHolder().createMessageContext(ContextType.FEEDBACK, getNamespace(promptMessageContext.getFunctionName()), identifier);
+        promptMessageContext.getFeedbackMessageContexts().add(feedbackMessageContext);
         Model annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
         AIModel model = annotatedModel.equals(Model.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
         feedbackMessageContext.setUserInput(promptMessageContext.getUserInput());
@@ -107,6 +108,7 @@ public abstract class ResultValidator {
             }
 
             if (feedbackResult.isValid()) {
+                promptManager.getContextHolder().saveMessageContext(ContextType.PROMPT, promptMessageContext);
                 return lastResponseContent;
             }
             System.out.println("Feedback on results exists\n" + lastFeedbackContent);

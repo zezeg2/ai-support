@@ -1,5 +1,6 @@
 package io.github.zezeg2.aisupport.core.function.prompt;
 
+import com.theokanning.openai.Usage;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 
@@ -56,6 +57,8 @@ public interface MessageContext {
      */
     AIModel getModel();
 
+    Usage getUsage();
+
     void setId(String id);
 
     /**
@@ -97,6 +100,8 @@ public interface MessageContext {
      * @param model model to be used in this context.
      */
     void setModel(AIModel model);
+
+    void setUsage(Usage usage);
 
     String getNamespace();
 

@@ -2,10 +2,12 @@ package io.github.zezeg2.aisupport.core.function.prompt;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.theokanning.openai.Usage;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
@@ -51,6 +53,8 @@ public class PromptMessageContext implements Serializable, MessageContext {
      */
     private List<ChatMessage> messages;
     private AIModel model;
+    private Usage usage;
+    private List<FeedbackMessageContext> feedbackMessageContexts;
 
     /**
      * Constructs a new PromptMessageContext instance with the specified properties.
@@ -66,7 +70,9 @@ public class PromptMessageContext implements Serializable, MessageContext {
                                 @JsonProperty("functionName") String functionName,
                                 @JsonProperty("userInput") Map<String, Object> userInput,
                                 @JsonProperty("messages") List<ChatMessage> messages,
-                                @JsonProperty("model") AIModel model) {
+                                @JsonProperty("model") AIModel model,
+                                @JsonProperty("usage") Usage usage,
+                                @JsonProperty("feedbackMessageContexts") List<FeedbackMessageContext> feedbackMessageContexts) {
         this.id = id;
         this.seq = seq;
         this.identifier = identifier;
@@ -74,6 +80,8 @@ public class PromptMessageContext implements Serializable, MessageContext {
         this.userInput = userInput;
         this.messages = messages;
         this.model = model;
+        this.usage = usage;
+        this.feedbackMessageContexts = feedbackMessageContexts;
     }
 
     @Override
