@@ -28,15 +28,17 @@ Repository: [Maven Central: io.github.zezeg2:ai-support:2.1.3](https://central.s
 
 ![image](https://github.com/zezeg2/ai-support/assets/71999370/0f42f4b4-d015-440f-8fa4-2636e135a81c)
 
+2. `(Reactive)AIFunction`에 적용할 Validator들을 구현하고 컴포넌트로 등록합니다.
+<img width="1048" alt="image" src="https://github.com/zezeg2/ai-support/assets/71999370/7d291dd5-506c-4c16-9606-b855b4692afc">
 
-2. 생성된 `Reactive)AIFunction`  의 execute() 실행 시 동작
+3. 생성된 `Reactive)AIFunction`  의 execute() 실행 시 동작
 
 - ExecuteParameters는 AIFunction의 execute() 실행 파라미터로써 컨텍스트 식별자, 인풋 데이터, 실행 모델, 결과 예시 객체 필드를 가집니다.
 
 ![image](https://github.com/zezeg2/ai-support/assets/71999370/8d90c976-8f42-45df-9bdc-402d6d217ec5)
 
 
-3. 함수 실행 내부 결과 검증 프로세스
+4. 함수 실행 내부 결과 검증 프로세스
 
 ![image](https://github.com/zezeg2/ai-support/assets/71999370/a3c78ec3-d221-4c6e-a861-8359afb0c2bb)
 
@@ -275,30 +277,30 @@ System Console(Synchronous case Only)
 ```
 RecipeDetailValidator: Try Count: 1 ---------------------------------------------------------------------------
 {
-"ingredients": [
-...
-],
-"cookStep": {
-"1": "Cook the spaghetti according to the package instructions.",
-"2": "In a large pan, heat the olive oil over medium heat.",
-"3": "Add the bacon and sauté until crispy.",
-"4": "Add the onion, green pepper, red pepper, and garlic. Sauté until the vegetables are tender.",
-"5": "Add the ketchup and Worcestershire sauce. Stir until well combined.",
-"6": "Season with salt and black pepper.",
-"7": "Add the cooked spaghetti to the pan and mix well.",
-"8": "Add the butter and stir until melted.",
-"9": "Serve the spaghetti Napolitan with grated Parmesan cheese and chopped parsley on top."
-}
+  "ingredients" : [
+    ...
+  ],
+  "cookStep" : {
+    "1" : "Cook the spaghetti according to the package instructions.",
+    "2" : "In a large pan, heat the olive oil over medium heat.",
+    "3" : "Add the bacon and sauté until crispy.",
+    "4" : "Add the onion, green pepper, red pepper, and garlic. Sauté until the vegetables are tender.",
+    "5" : "Add the ketchup and Worcestershire sauce. Stir until well combined.",
+    "6" : "Season with salt and black pepper.",
+    "7" : "Add the cooked spaghetti to the pan and mix well.",
+    "8" : "Add the butter and stir until melted.",
+    "9" : "Serve the spaghetti Napolitan with grated Parmesan cheese and chopped parsley on top."
+  }
 }
 Feedback on results exists
 {
-"valid": false,
-"issueList": [
-{
-"issue": "Cooking time information is missing from the cookStep",
-"solution": "Include cooking time information for each step of the cooking process in the cookStep"
-}
-]
+  "valid": false,
+  "issueList": [
+    {
+      "issue": "Cooking time information is missing from the cookStep",
+      "solution": "Include cooking time information for each step of the cooking process in the cookStep"
+    }
+  ]
 }
 RecipeDetailValidator: Try Count: 2 ---------------------------------------------------------------------------
 ...
@@ -309,62 +311,60 @@ JsonResultValidator: Try Count: 1 ----------------------------------------------
 ConstraintsValidator: Try Count: 1 ---------------------------------------------------------------------------
 ...
 {
-"ingredients": [
-{
-"name": "spaghetti",
-"amount": "200 grams"
-}, {
-"name": "bacon",
-"amount": "100 grams"
-}, {
-"name": "onion",
-"amount": "1"
-}, {
-"name": "green pepper",
-"amount": "1"
-}, {
-"name": "red pepper",
-"amount": "1"
-}, {
-"name": "garlic",
-"amount": "2 cloves"
-}, {
-"name": "ketchup",
-"amount": "3 tablespoons"
-}, {
-"name": "Worcestershire sauce",
-"amount": "3 tablespoons"
-}, {
-"name": "olive oil",
-"amount": "2 tablespoons"
-}, {
-"name": "salt",
-"amount": "1/2 teaspoon"
-}, {
-"name": "black pepper",
-"amount": "1/4 teaspoon"
-}, {
-"name": "butter",
-"amount": "1 tablespoon"
-}, {
-"name": "grated Parmesan cheese",
-"amount": "Parmesan cheese"
-}, {
-"name": "chopped parsley",
-"amount": "Parsley"
-}
-],
-"cookStep": {
-"1": "Cook the spaghetti according to the package instructions. (Cooking time: 10 minutes)",
-"2": "In a large pan, heat the olive oil over medium heat.",
-"3": "Add the bacon and sauté until crispy. (Cooking time: 5 minutes)",
-"4": "Add the onion, green pepper, red pepper, and garlic. Sauté until the vegetables are tender. (Cooking time: 8 minutes)",
-"5": "Add the ketchup and Worcestershire sauce. Stir until well combined.",
-"6": "Season with salt and black pepper.",
-"7": "Add the cooked spaghetti to the pan and mix well.",
-"8": "Add the butter and stir until melted.",
-"9": "Serve the spaghetti Napolitan with grated Parmesan cheese and chopped parsley on top."
-}
+  "ingredients" : [ {
+    "name" : "spaghetti",
+    "amount" : "200 grams"
+  }, {
+    "name" : "bacon",
+    "amount" : "100 grams"
+  }, {
+    "name" : "onion",
+    "amount" : "1"
+  }, {
+    "name" : "green pepper",
+    "amount" : "1"
+  }, {
+    "name" : "red pepper",
+    "amount" : "1"
+  }, {
+    "name" : "garlic",
+    "amount" : "2 cloves"
+  }, {
+    "name" : "ketchup",
+    "amount" : "3 tablespoons"
+  }, {
+    "name" : "Worcestershire sauce",
+    "amount" : "3 tablespoons"
+  }, {
+    "name" : "olive oil",
+    "amount" : "2 tablespoons"
+  }, {
+    "name" : "salt",
+    "amount" : "1/2 teaspoon"
+  }, {
+    "name" : "black pepper",
+    "amount" : "1/4 teaspoon"
+  }, {
+    "name" : "butter",
+    "amount" : "1 tablespoon"
+  }, {
+    "name" : "grated Parmesan cheese",
+    "amount" : "Parmesan cheese"
+  }, {
+    "name" : "chopped parsley",
+    "amount" : "Parsley"
+  } ],
+  "cookStep" : {
+    "1" : "Cook the spaghetti according to the package instructions. (Cooking time: 10 minutes)",
+    "2" : "In a large pan, heat the olive oil over medium heat.",
+    "3" : "Add the bacon and sauté until crispy. (Cooking time: 5 minutes)",
+    "4" : "Add the onion, green pepper, red pepper, and garlic. Sauté until the vegetables are tender. (Cooking time: 8 minutes)",
+    "5" : "Add the ketchup and Worcestershire sauce. Stir until well combined.",
+    "6" : "Season with salt and black pepper.",
+    "7" : "Add the cooked spaghetti to the pan and mix well.",
+    "8" : "Add the butter and stir until melted.",
+    "9" : "Serve the spaghetti Napolitan with grated Parmesan cheese and chopped parsley on top."
+  }
 }
 ```
 
