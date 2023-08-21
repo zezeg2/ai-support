@@ -40,7 +40,7 @@ public class LocalMemoryPromptContextHolder implements PromptContextHolder {
         CopyOnWriteArrayList<MessageContext> messageContextList = selectedRegistry.get(namespace + ":" + identifier);
         Long seq = (long) messageContextList.size();
         T messageContext = (T) (contextType == ContextType.PROMPT
-                ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).feedbackMessageContexts(new ArrayList<>()).build()
+                ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).build()
                 : FeedbackMessageContext.builder().seq(seq).functionName(split[0]).validatorName(split[1]).identifier(identifier).messages(new ArrayList<>()).build());
         messageContextList.add(messageContext);
         return messageContext;

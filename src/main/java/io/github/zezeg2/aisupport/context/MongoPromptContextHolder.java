@@ -40,7 +40,7 @@ public class MongoPromptContextHolder implements PromptContextHolder {
         String[] split = namespace.split(":");
         long seq = sequenceGenerator.generateSequence(MessageContext.getSequenceName(contextType == ContextType.PROMPT ? namespace : namespace.replace(":", "_"), identifier), identifier);
         T messageContext = (T) (contextType == ContextType.PROMPT
-                ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).feedbackMessageContexts(new ArrayList<>()).build()
+                ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).build()
                 : FeedbackMessageContext.builder().seq(seq).functionName(split[0]).validatorName(split[1]).identifier(identifier).messages(new ArrayList<>()).build());
 
         mongoTemplate.save(messageContext, namespace);

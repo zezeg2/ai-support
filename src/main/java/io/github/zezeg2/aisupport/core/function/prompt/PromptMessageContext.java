@@ -7,12 +7,12 @@ import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The PromptMessageContext class represents a concrete implementation of the MessageContext interface.
@@ -54,7 +54,8 @@ public class PromptMessageContext implements Serializable, MessageContext {
     private List<ChatMessage> messages;
     private AIModel model;
     private Usage usage;
-    private List<FeedbackMessageContext> feedbackMessageContexts;
+    @Builder.Default
+    private List<FeedbackMessageContext> feedbackMessageContexts = new CopyOnWriteArrayList<>();
 
     /**
      * Constructs a new PromptMessageContext instance with the specified properties.

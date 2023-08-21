@@ -62,7 +62,6 @@ public abstract class ResultValidator {
      */
     protected FeedbackMessageContext init(PromptMessageContext promptMessageContext, String identifier) {
         FeedbackMessageContext feedbackMessageContext = promptManager.getContextHolder().createMessageContext(ContextType.FEEDBACK, getNamespace(promptMessageContext.getFunctionName()), identifier);
-        promptMessageContext.getFeedbackMessageContexts().add(feedbackMessageContext);
         Model annotatedModel = this.getClass().getAnnotation(ValidateTarget.class).model();
         AIModel model = annotatedModel.equals(Model.NONE) ? ModelMapper.map(openAIProperties.getModel()) : ModelMapper.map(annotatedModel);
         feedbackMessageContext.setUserInput(promptMessageContext.getUserInput());
@@ -95,7 +94,7 @@ public abstract class ResultValidator {
         if (ignoreCondition(promptMessageContext.getFunctionName(), promptMessageContext.getIdentifier()))
             getLastPromptResponseContent(promptMessageContext);
         String lastResponseContent = getLastPromptResponseContent(promptMessageContext);
-        MessageContext feedbackMessageContext = init(promptMessageContext, promptMessageContext.getIdentifier());
+        FeedbackMessageContext feedbackMessageContext = init(promptMessageContext, promptMessageContext.getIdentifier());
         for (int count = 1; count <= openAIProperties.getValidateRetry(); count++) {
             System.out.println(this.getClass().getSimpleName() + ": Try Count : " + count + " ---------------------------------------------------------------------------\n" + lastResponseContent);
             String lastFeedbackContent = exchangeMessages(feedbackMessageContext, lastResponseContent, ContextType.FEEDBACK, feedbackMessageContext.getModel());
@@ -108,6 +107,7 @@ public abstract class ResultValidator {
             }
 
             if (feedbackResult.isValid()) {
+                promptMessageContext.getFeedbackMessageContexts().add(feedbackMessageContext);
                 promptManager.getContextHolder().saveMessageContext(ContextType.PROMPT, promptMessageContext);
                 return lastResponseContent;
             }

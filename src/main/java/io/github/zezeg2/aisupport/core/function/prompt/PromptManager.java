@@ -8,6 +8,7 @@ import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.enums.Role;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.util.JsonUtil;
+import io.github.zezeg2.aisupport.common.util.TokenUsageUtil;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.context.PromptContextHolder;
 import lombok.Getter;
@@ -52,17 +53,9 @@ public class PromptManager {
 
     public <T extends MessageContext> T exchangeMessages(ContextType contextType, MessageContext messageContext, AIModel model, double topP, boolean save) {
         ChatCompletionResult response = createChatCompletion(model, messageContext.getMessages(), topP);
-        Usage usage = messageContext.getUsage();
-        Usage responseUsage = response.getUsage();
-        if (usage == null) {
-            messageContext.setUsage(responseUsage);
-        } else {
-            usage.setPromptTokens(responseUsage.getPromptTokens());
-            usage.setCompletionTokens(responseUsage.getCompletionTokens());
-            usage.setTotalTokens(responseUsage.getTotalTokens());
-        }
         ChatMessage responseMessage = response.getChoices().get(0).getMessage();
         responseMessage.setContent(JsonUtil.extractJsonFromMessage(responseMessage.getContent()));
+        messageContext.setUsage(response.getUsage());
         messageContext.getMessages().add(responseMessage);
         if (save) contextHolder.saveMessageContext(contextType, messageContext);
         return (T) messageContext;
@@ -85,18 +78,12 @@ public class PromptManager {
     }
 
     public Usage getTotalTokenUsage(PromptMessageContext messageContext) {
-        Usage usage = new Usage();
-        long promptToken = 0, completionTokens = 0, totalTokens = 0;
+        TokenUsageUtil.Accumulator accumulator = TokenUsageUtil.initAccumulator();
         for (FeedbackMessageContext feedbackMessageContext : messageContext.getFeedbackMessageContexts()) {
-            promptToken += feedbackMessageContext.getUsage().getPromptTokens();
-            completionTokens += feedbackMessageContext.getUsage().getCompletionTokens();
-            totalTokens += feedbackMessageContext.getUsage().getTotalTokens();
+            accumulator.add(feedbackMessageContext.getUsage());
         }
-        usage.setPromptTokens(messageContext.getUsage().getPromptTokens() + promptToken);
-        usage.setCompletionTokens(messageContext.getUsage().getCompletionTokens() + completionTokens);
-        usage.setTotalTokens(messageContext.getUsage().getTotalTokens() + totalTokens);
-
-        return usage;
+        accumulator.add(messageContext.getUsage());
+        return accumulator.toUsage();
     }
 }
 

@@ -9,6 +9,7 @@ import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
 import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
+import io.github.zezeg2.aisupport.common.type.SimpleResult;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.ExecuteParameters;
@@ -140,6 +141,19 @@ public class ReactiveAIFunction<T> {
         return init(params)
                 .flatMap(promptMessageContext -> promptManager.exchangeMessages(ContextType.PROMPT, promptMessageContext, params.getModel(), topP, true)
                         .flatMap(chatCompletionResult -> parseResponseWithValidate(promptMessageContext)));
+    }
+
+    public Mono<SimpleResult<T>> executeWithTotalUsage(ExecuteParameters<T> params) {
+        if (params.getModel() == null) params.setModel(getDefaultModel());
+        if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
+        return init(params)
+                .flatMap(promptMessageContext -> promptManager.exchangeMessages(ContextType.PROMPT, promptMessageContext, params.getModel(), topP, true).ofType(PromptMessageContext.class)
+                        .flatMap(response -> parseResponseWithValidate(response)
+                                .flatMap(result -> promptManager.getTotalTokenUsage(response)
+                                        .flatMap(usage -> Mono.just(SimpleResult.<T>builder().result(result).totalUsage(usage).build()))
+                                )
+                        )
+                );
     }
 }
 

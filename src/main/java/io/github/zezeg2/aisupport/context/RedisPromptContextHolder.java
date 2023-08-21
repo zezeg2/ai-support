@@ -55,7 +55,7 @@ public class RedisPromptContextHolder implements PromptContextHolder {
         Long seq = hashOperations.increment(namespace + ":" + identifier, "seq", 1L);
 
         T messageContext = (T) (contextType == ContextType.PROMPT
-                ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).feedbackMessageContexts(new ArrayList<>()).build()
+                ? PromptMessageContext.builder().seq(seq).functionName(namespace).identifier(identifier).messages(new ArrayList<>()).build()
                 : FeedbackMessageContext.builder().seq(seq).functionName(split[0]).validatorName(split[1]).identifier(identifier).messages(new ArrayList<>()).build());
         try {
             hashOperations.put(namespace + ":" + identifier, String.valueOf(seq), mapper.writeValueAsString(messageContext));

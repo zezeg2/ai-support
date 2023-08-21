@@ -1,5 +1,6 @@
 package io.github.zezeg2.aisupport.core.reactive.function.prompt;
 
+import com.theokanning.openai.Usage;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
@@ -7,12 +8,15 @@ import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.enums.Role;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.util.JsonUtil;
+import io.github.zezeg2.aisupport.common.util.TokenUsageUtil;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
 import io.github.zezeg2.aisupport.core.function.prompt.MessageContext;
+import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -59,9 +63,9 @@ public class ReactivePromptManager {
                     ChatMessage responseMessage = response.getChoices().get(0).getMessage();
                     responseMessage.setContent(JsonUtil.extractJsonFromMessage(responseMessage.getContent()));
                     messageContext.getMessages().add(responseMessage);
-                    if (save) {
+                    messageContext.setUsage(response.getUsage());
+                    if (save)
                         return contextHolder.saveMessageContext(contextType, messageContext).then(Mono.just((T) messageContext));
-                    }
                     return Mono.just((T) messageContext);
                 });
     }
@@ -81,5 +85,13 @@ public class ReactivePromptManager {
                 .messages(messages)
                 .topP(topP)
                 .build()));
+    }
+
+    public Mono<Usage> getTotalTokenUsage(PromptMessageContext messageContext) {
+        TokenUsageUtil.Accumulator accumulator = TokenUsageUtil.initAccumulator();
+        return Flux.fromIterable(messageContext.getFeedbackMessageContexts())
+                .doOnNext(feedbackMessageContext -> accumulator.add(feedbackMessageContext.getUsage()))
+                .then(Mono.fromRunnable(() -> accumulator.add(messageContext.getUsage())))
+                .then(Mono.defer(() -> Mono.just(accumulator.toUsage())));
     }
 }

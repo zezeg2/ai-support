@@ -9,6 +9,7 @@ import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.enums.model.gpt.ModelMapper;
 import io.github.zezeg2.aisupport.common.exceptions.CustomJsonException;
 import io.github.zezeg2.aisupport.common.resolver.ConstructResolver;
+import io.github.zezeg2.aisupport.common.type.SimpleResult;
 import io.github.zezeg2.aisupport.config.properties.OpenAIProperties;
 import io.github.zezeg2.aisupport.context.PromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
@@ -136,9 +137,16 @@ public class AIFunction<T> {
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
         PromptMessageContext promptMessageContext = init(params);
         PromptMessageContext response = promptManager.exchangeMessages(ContextType.PROMPT, promptMessageContext, params.getModel(), topP, true);
+        return parseResponseWithValidate(response);
+    }
+
+    public SimpleResult<T> executeWithTotalUsage(ExecuteParameters<T> params) {
+        if (params.getModel() == null) params.setModel(getDefaultModel());
+        if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
+        PromptMessageContext promptMessageContext = init(params);
+        PromptMessageContext response = promptManager.exchangeMessages(ContextType.PROMPT, promptMessageContext, params.getModel(), topP, true);
         T result = parseResponseWithValidate(response);
-        System.out.println(promptManager.getTotalTokenUsage(promptMessageContext));
-        return result;
+        return SimpleResult.<T>builder().result(result).totalUsage(promptManager.getTotalTokenUsage(promptMessageContext)).build();
     }
 }
 

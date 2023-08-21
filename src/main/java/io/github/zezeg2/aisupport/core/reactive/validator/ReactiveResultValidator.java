@@ -57,14 +57,7 @@ public abstract class ReactiveResultValidator {
         return String.join(":", List.of(functionName, this.getClass().getSimpleName()));
     }
 
-    /**
-     * Initializes the feedback context with a system message containing the feedback template.
-     * This method returns a {@code Mono<Void>} representing the asynchronous completion of the initialization process.
-     *
-     * @param promptMessageContext prompt context to validate
-     * @param identifier           The identifier of the caller.
-     * @return A {@code Mono<FeedbackMessageContext>} representing the completion of the feedback message context initialization process in a reactive manner.
-     */
+
     protected Mono<FeedbackMessageContext> init(PromptMessageContext promptMessageContext, String identifier) {
         return Mono.defer(() -> promptManager.getContextHolder().<FeedbackMessageContext>createMessageContext(ContextType.FEEDBACK, getNamespace(promptMessageContext.getFunctionName()), identifier)
                 .flatMap(feedbackMessageContext -> {
@@ -115,10 +108,13 @@ public abstract class ReactiveResultValidator {
                                                 } catch (JsonProcessingException e) {
                                                     return promptManager.getContextHolder().deleteMessagesFromLast(ContextType.FEEDBACK, feedbackMessageContext, 2).then(Mono.error(e));
                                                 }
-                                                if (feedbackResult.isValid()) return Mono.empty();
+                                                if (feedbackResult.isValid()) {
+                                                    promptMessageContext.getFeedbackMessageContexts().add(feedbackMessageContext);
+                                                    return promptManager.getContextHolder().saveMessageContext(ContextType.PROMPT, promptMessageContext).ofType(String.class);
+                                                }
                                                 else
                                                     return Mono.defer(() -> exchangeMessages(promptMessageContext, lastFeedbackContent, ContextType.PROMPT, promptMessageContext.getModel())
-                                                            .flatMap(r -> Mono.<String>error(new RuntimeException("Feedback on results exists\n" + lastFeedbackContent))));
+                                                            .flatMap(r -> Mono.error(new RuntimeException("Feedback on results exists\n" + lastFeedbackContent))));
                                             }))
                                     .retry(openAIProperties.getValidateRetry() - 1)
                     ).switchIfEmpty(Mono.defer(() -> getLastPromptResponseContent(promptMessageContext)));
