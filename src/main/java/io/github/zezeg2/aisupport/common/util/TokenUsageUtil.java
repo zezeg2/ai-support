@@ -29,16 +29,18 @@ public class TokenUsageUtil {
         }
     }
 
-    public static void mergeUsage(MessageContext messageContext, Usage operand) {
+    public static Usage mergeUsage(MessageContext messageContext, Usage operand) {
         Usage usage = messageContext.getUsage();
         usage.setPromptTokens(usage.getPromptTokens() + operand.getPromptTokens());
         usage.setCompletionTokens(usage.getCompletionTokens() + operand.getCompletionTokens());
         usage.setTotalTokens(usage.getTotalTokens() + operand.getTotalTokens());
+        return usage;
     }
 
-    public static void mergeUsage(Usage origin, Usage operand) {
+    public static Usage mergeUsage(Usage origin, Usage operand) {
         origin.setPromptTokens(origin.getPromptTokens() + operand.getPromptTokens());
         origin.setCompletionTokens(origin.getCompletionTokens() + operand.getCompletionTokens());
         origin.setTotalTokens(origin.getTotalTokens() + operand.getTotalTokens());
+        return origin;
     }
 }
