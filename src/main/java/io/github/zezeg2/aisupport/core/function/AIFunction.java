@@ -140,13 +140,13 @@ public class AIFunction<T> {
         return parseResponseWithValidate(response);
     }
 
-    public SimpleResult<T> executeWithTotalUsage(ExecuteParameters<T> params) {
+    public SimpleResult<T> executeAndCountBill(ExecuteParameters<T> params) {
         if (params.getModel() == null) params.setModel(getDefaultModel());
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
         PromptMessageContext promptMessageContext = init(params);
         PromptMessageContext response = promptManager.exchangeMessages(ContextType.PROMPT, promptMessageContext, params.getModel(), topP, true);
         T result = parseResponseWithValidate(response);
-        return SimpleResult.<T>builder().result(result).totalUsage(promptManager.getTotalTokenUsage(promptMessageContext)).build();
+        return SimpleResult.<T>builder().result(result).bill(promptManager.getExecutionBill(promptMessageContext)).build();
     }
 }
 

@@ -18,10 +18,7 @@ public class ModelMapper {
         modelMapping.put(Model.GPT_3_5_TURBO_16_K_0613, GPT3Model.GPT_3_5_TURBO_16_K_0613);
         modelMapping.put(Model.GPT_4, GPT4Model.GPT_4);
         modelMapping.put(Model.GPT_4_0314, GPT4Model.GPT_4_0314);
-        modelMapping.put(Model.GPT_4_32_K, GPT4Model.GPT_4_32_K);
-        modelMapping.put(Model.GPT_4_32_K_0314, GPT4Model.GPT_4_32_K_0314);
         modelMapping.put(Model.GPT_4_0613, GPT4Model.GPT_4_0613);
-        modelMapping.put(Model.GPT_4_32_K_0613, GPT4Model.GPT_4_32_K_0613);
     }
 
     public static GPTModel map(Model model) {

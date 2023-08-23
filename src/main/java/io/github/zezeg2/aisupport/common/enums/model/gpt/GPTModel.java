@@ -10,5 +10,4 @@ import io.github.zezeg2.aisupport.common.enums.model.ModelDeserializer;
  */
 @JsonDeserialize(using = ModelDeserializer.class)
 public interface GPTModel extends AIModel {
-    double getPrice();
 }

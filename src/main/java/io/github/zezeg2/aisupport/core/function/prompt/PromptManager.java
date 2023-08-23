@@ -1,14 +1,13 @@
 package io.github.zezeg2.aisupport.core.function.prompt;
 
-import com.theokanning.openai.Usage;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.enums.Role;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
+import io.github.zezeg2.aisupport.common.type.Bill;
 import io.github.zezeg2.aisupport.common.util.JsonUtil;
-import io.github.zezeg2.aisupport.common.util.TokenUsageUtil;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.context.PromptContextHolder;
 import lombok.Getter;
@@ -77,13 +76,13 @@ public class PromptManager {
                 .build());
     }
 
-    public Usage getTotalTokenUsage(PromptMessageContext messageContext) {
-        TokenUsageUtil.Accumulator accumulator = TokenUsageUtil.initAccumulator();
+    public Bill getExecutionBill(PromptMessageContext messageContext) {
+        Bill bill = new Bill();
         for (FeedbackMessageContext feedbackMessageContext : messageContext.getFeedbackMessageContexts()) {
-            accumulator.add(feedbackMessageContext.getUsage());
+            bill.addUsage(feedbackMessageContext.getModel(), feedbackMessageContext.getUsage());
         }
-        accumulator.add(messageContext.getUsage());
-        return accumulator.toUsage();
+        bill.addUsage(messageContext.getModel(), messageContext.getUsage());
+        return bill;
     }
 }
 

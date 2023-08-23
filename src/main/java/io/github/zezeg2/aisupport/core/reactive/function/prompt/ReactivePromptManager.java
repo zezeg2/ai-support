@@ -1,14 +1,13 @@
 package io.github.zezeg2.aisupport.core.reactive.function.prompt;
 
-import com.theokanning.openai.Usage;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.enums.Role;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
+import io.github.zezeg2.aisupport.common.type.Bill;
 import io.github.zezeg2.aisupport.common.util.JsonUtil;
-import io.github.zezeg2.aisupport.common.util.TokenUsageUtil;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
@@ -87,11 +86,12 @@ public class ReactivePromptManager {
                 .build()));
     }
 
-    public Mono<Usage> getTotalTokenUsage(PromptMessageContext messageContext) {
-        TokenUsageUtil.Accumulator accumulator = TokenUsageUtil.initAccumulator();
+    public Mono<Bill> getExecutionBill(PromptMessageContext messageContext) {
+        Bill bill = new Bill();
+
         return Flux.fromIterable(messageContext.getFeedbackMessageContexts())
-                .doOnNext(feedbackMessageContext -> accumulator.add(feedbackMessageContext.getUsage()))
-                .then(Mono.fromRunnable(() -> accumulator.add(messageContext.getUsage())))
-                .then(Mono.defer(() -> Mono.just(accumulator.toUsage())));
+                .doOnNext(feedbackMessageContext -> bill.addUsage(messageContext.getModel(), feedbackMessageContext.getUsage()))
+                .then(Mono.fromRunnable(() -> bill.addUsage(messageContext.getModel(), messageContext.getUsage())))
+                .then(Mono.defer(() -> Mono.just(bill)));
     }
 }

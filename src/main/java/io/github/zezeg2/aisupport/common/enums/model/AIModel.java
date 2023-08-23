@@ -10,4 +10,8 @@ public interface AIModel {
      * @return The value of the model.
      */
     String getValue();
+
+    double getRequestPrice();
+
+    double getResponsePrice();
 }

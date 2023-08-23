@@ -5,11 +5,11 @@ import io.github.zezeg2.aisupport.core.function.prompt.MessageContext;
 
 public class TokenUsageUtil {
 
-    public static Accumulator initAccumulator() {
-        return new Accumulator();
+    public static UsageAccumulator initAccumulator() {
+        return new UsageAccumulator();
     }
 
-    public static class Accumulator {
+    public static class UsageAccumulator {
         private long promptToken = 0;
         private long completionTokens = 0;
         private long totalTokens = 0;

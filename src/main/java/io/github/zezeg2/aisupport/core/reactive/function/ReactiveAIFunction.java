@@ -143,14 +143,14 @@ public class ReactiveAIFunction<T> {
                         .flatMap(chatCompletionResult -> parseResponseWithValidate(promptMessageContext)));
     }
 
-    public Mono<SimpleResult<T>> executeWithTotalUsage(ExecuteParameters<T> params) {
+    public Mono<SimpleResult<T>> executeAndCountBill(ExecuteParameters<T> params) {
         if (params.getModel() == null) params.setModel(getDefaultModel());
         if (params.getIdentifier() == null) params.setIdentifier("temp-identifier-" + UUID.randomUUID());
         return init(params)
                 .flatMap(promptMessageContext -> promptManager.exchangeMessages(ContextType.PROMPT, promptMessageContext, params.getModel(), topP, true).ofType(PromptMessageContext.class)
                         .flatMap(response -> parseResponseWithValidate(response)
-                                .flatMap(result -> promptManager.getTotalTokenUsage(response)
-                                        .flatMap(usage -> Mono.just(SimpleResult.<T>builder().result(result).totalUsage(usage).build()))
+                                .flatMap(result -> promptManager.getExecutionBill(response)
+                                        .flatMap(bill -> Mono.just(SimpleResult.<T>builder().result(result).bill(bill).build()))
                                 )
                         )
                 );
