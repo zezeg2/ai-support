@@ -61,20 +61,20 @@ public interface Supportable {
         String description = fieldDesc != null ? fieldDesc.value() : field.getName();
         Object fieldValue = getFieldValue(field);
 
-        if (fieldValue instanceof Supportable) {
-            Map<String, Object> nestedMap = ((Supportable) fieldValue).getFormatMap();
+        if (fieldValue instanceof Supportable supportable) {
+            Map<String, Object> nestedMap = supportable.getFormatMap();
             fieldDescriptions.put(field.getName(), nestedMap);
-        } else if (fieldValue instanceof List<?>) {
+        } else if (fieldValue instanceof List<?> listValue) {
             @SuppressWarnings("unchecked")
-            List<Object> listDescriptions = getListDescription((List<Object>) fieldValue, description);
+            List<Object> listDescriptions = getListDescription((List<Object>) listValue, description);
             fieldDescriptions.put(field.getName(), listDescriptions);
-        } else if (fieldValue instanceof Map<?, ?>) {
+        } else if (fieldValue instanceof Map<?, ?> mapValue) {
             Type[] actualTypeArguments = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
             KeyValueDesc keyValueDesc = field.getAnnotation(KeyValueDesc.class);
-            String mapKeyDescription = keyValueDesc == null || keyValueDesc.key().equals("") ? getSimpleTypeName(actualTypeArguments[0]) + " Key" : keyValueDesc.key();
-            String mapValueDescription = keyValueDesc == null || keyValueDesc.value().equals("") ? getSimpleTypeName(actualTypeArguments[1]) + " Value" : keyValueDesc.value();
+            String mapKeyDescription = keyValueDesc == null || keyValueDesc.key().isEmpty() ? getSimpleTypeName(actualTypeArguments[0]) + " Key" : keyValueDesc.key();
+            String mapValueDescription = keyValueDesc == null || keyValueDesc.value().isEmpty() ? getSimpleTypeName(actualTypeArguments[1]) + " Value" : keyValueDesc.value();
             @SuppressWarnings("unchecked")
-            Map<String, Object> mapDescription = getMapDescription(field.getName(), (Map<String, Object>) fieldValue, mapKeyDescription, mapValueDescription);
+            Map<String, Object> mapDescription = getMapDescription(field.getName(), (Map<String, Object>) mapValue, mapKeyDescription, mapValueDescription);
             fieldDescriptions.put(field.getName(), mapDescription.get(field.getName()));
         } else {
             fieldDescriptions.put(field.getName(), description);

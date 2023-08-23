@@ -21,7 +21,7 @@ public interface ConstructResolver {
      * @param classMap The class map to convert.
      * @return The string representation of the class map.
      */
-    String toString(Map<String, Map<String, List<String>>> classMap);
+    String toString(Map<Class<?>, Map<String, List<String>>> classMap);
 
     /**
      * Resolves the given class and returns its string representation.
@@ -50,9 +50,9 @@ public interface ConstructResolver {
      * @param classMap The existing class map to populate (optional).
      * @return The generated class map.
      */
-    default Map<String, Map<String, List<String>>> generateClassMap(Set<Class<?>> classSet, Map<String, Map<String, List<String>>> classMap) {
+    default Map<Class<?>, Map<String, List<String>>> generateClassMap(Set<Class<?>> classSet, Map<Class<?>, Map<String, List<String>>> classMap) {
         if (classMap == null) {
-            classMap = new HashMap<>();
+            classMap = new LinkedHashMap<>();
         }
 
         for (Class<?> clazz : classSet) {
@@ -72,15 +72,44 @@ public interface ConstructResolver {
                     clazz.getSuperclass().equals(List.class)) {
                 continue;
             }
-            Map<String, List<String>> fieldsMap = classMap.getOrDefault(clazz.getSimpleName(), new HashMap<>());
+            Map<String, List<String>> fieldsMap = classMap.getOrDefault(clazz, new LinkedHashMap<>());
+
+            if (clazz.isEnum()) {
+                for (Object enumConst : clazz.getEnumConstants()) {
+                    Enum<?> e = (Enum<?>) enumConst;
+
+                    List<String> fieldsList = new ArrayList<>();
+//                    fieldsList.add(String.valueOf(e.ordinal())); // Add ordinal first
+
+                    for (Field enumField : clazz.getDeclaredFields()) {
+                        if (!enumField.isEnumConstant() && !enumField.isSynthetic()) {
+                            try {
+                                enumField.setAccessible(true);
+                                Object fieldValue = enumField.get(enumConst);
+                                if (fieldValue instanceof String) {
+                                    fieldsList.add("\"%s\"".formatted(fieldValue));
+                                } else {
+                                    fieldsList.add(String.valueOf(fieldValue));
+                                }
+
+                            } catch (IllegalAccessException ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                    }
+
+                    fieldsMap.put(e.name(), fieldsList);
+                }
+                classMap.put(clazz, fieldsMap);
+                continue;
+            }
+
             Class<?> currentClass = clazz;
             while (currentClass != null && !currentClass.equals(BaseSupportType.class)) {
-                for (Field field : currentClass.getDeclaredFields()) {
-                    addFieldToMap(classMap, fieldsMap, field);
-                }
+                for (Field field : currentClass.getDeclaredFields()) addFieldToMap(classMap, fieldsMap, field);
                 currentClass = currentClass.getSuperclass();
             }
-            classMap.put(clazz.getSimpleName(), fieldsMap);
+            classMap.put(clazz, fieldsMap);
         }
 
         return classMap;
@@ -93,7 +122,7 @@ public interface ConstructResolver {
      * @param fieldsMap The map of fields.
      * @param field     The field to add.
      */
-    default void addFieldToMap(Map<String, Map<String, List<String>>> classMap, Map<String, List<String>> fieldsMap, Field field) {
+    default void addFieldToMap(Map<Class<?>, Map<String, List<String>>> classMap, Map<String, List<String>> fieldsMap, Field field) {
         Class<?> type = field.getType();
         Type genericType = field.getGenericType();
         List<String> fieldInfo = new ArrayList<>();
@@ -148,7 +177,7 @@ public interface ConstructResolver {
      * @param classMap The class map to populate.
      * @param classes  The list of classes to analyze.
      */
-    default void analyzeNonPrimitiveClasses(Map<String, Map<String, List<String>>> classMap, List<Class<?>> classes) {
+    default void analyzeNonPrimitiveClasses(Map<Class<?>, Map<String, List<String>>> classMap, List<Class<?>> classes) {
         classes.stream()
                 .filter(t -> !t.isPrimitive() && !String.class.equals(t) && !Number.class.isAssignableFrom(t) && !Object.class.equals(t))
                 .forEach(t -> generateClassMap(Collections.singleton(t), classMap));
