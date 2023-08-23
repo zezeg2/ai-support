@@ -5,6 +5,8 @@ import io.github.zezeg2.aisupport.common.enums.model.AIModel;
 import io.github.zezeg2.aisupport.common.util.TokenUsageUtil;
 import lombok.Data;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,10 +33,10 @@ public class Bill {
             AIModel model = entry.getKey();
             Usage usage = entry.getValue();
 
-            double promptCost = model.getRequestPrice() * usage.getPromptTokens();
-            double completionCost = model.getResponsePrice() * usage.getCompletionTokens();
+            double promptCost = roundTo7DecimalPlaces(model.getRequestPrice() * usage.getPromptTokens());
+            double completionCost = roundTo7DecimalPlaces(model.getResponsePrice() * usage.getCompletionTokens());
 
-            double totalCost = promptCost + completionCost;
+            double totalCost = roundTo7DecimalPlaces(promptCost + completionCost);
 
             prices.put(model, totalCost);
         }
@@ -45,6 +47,31 @@ public class Bill {
         for (Double cost : prices.values()) {
             totalPrice += cost;
         }
+        totalPrice = roundTo7DecimalPlaces(totalPrice);
+    }
+
+    public Bill merge(Bill operand) {
+        for (Map.Entry<AIModel, Usage> entry : operand.usages.entrySet()) {
+            AIModel model = entry.getKey();
+            Usage operandUsage = entry.getValue();
+
+            if (this.usages.containsKey(model)) {
+                Usage mergedUsage = TokenUsageUtil.mergeUsage(this.usages.get(model), operandUsage);
+                this.usages.put(model, mergedUsage);
+            } else {
+                this.usages.put(model, operandUsage);
+            }
+        }
+
+        countBillByModel();
+        countTotalBill();
+
+        return this;
+    }
+
+    private double roundTo7DecimalPlaces(double value) {
+        BigDecimal bd = new BigDecimal(Double.toString(value));
+        bd = bd.setScale(7, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 }
-
