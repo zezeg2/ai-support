@@ -1,4 +1,4 @@
-package io.github.zezeg2.aisupport.common.type;
+package io.github.zezeg2.aisupport.common.bill;
 
 import com.theokanning.openai.Usage;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;

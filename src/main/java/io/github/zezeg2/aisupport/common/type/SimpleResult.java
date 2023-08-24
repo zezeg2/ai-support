@@ -1,5 +1,6 @@
 package io.github.zezeg2.aisupport.common.type;
 
+import io.github.zezeg2.aisupport.common.bill.Bill;
 import lombok.*;
 
 @Data

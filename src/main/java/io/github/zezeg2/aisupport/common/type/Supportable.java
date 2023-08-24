@@ -58,7 +58,13 @@ public interface Supportable {
      */
     default void handleField(Field field, Map<String, Object> fieldDescriptions) {
         FieldDesc fieldDesc = field.getAnnotation(FieldDesc.class);
-        String description = fieldDesc != null ? fieldDesc.value() : field.getName();
+        String description;
+        if (field.getType().isEnum()) {
+            String enumDesc = Arrays.stream(field.getType().getEnumConstants()).map(ec -> ((Enum<?>) ec).name()).reduce("%s | %s "::formatted).get();
+            fieldDescriptions.put(field.getName(), fieldDesc == null ? enumDesc : fieldDesc.value());
+            return;
+        }
+        description = fieldDesc != null ? fieldDesc.value() : field.getName();
         Object fieldValue = getFieldValue(field);
 
         if (fieldValue instanceof Supportable supportable) {
@@ -110,8 +116,9 @@ public interface Supportable {
         Class<?> actualType;
         if (fieldValue == null) {
             Class<?> fieldType = field.getType();
-            if (Supportable.class.isAssignableFrom(fieldType)) fieldValue = instantiateSupportable(fieldType);
-            else if (List.class.isAssignableFrom(fieldType)) {
+            if (Supportable.class.isAssignableFrom(fieldType)) {
+                fieldValue = instantiateSupportable(fieldType);
+            } else if (List.class.isAssignableFrom(fieldType)) {
                 fieldValue = new ArrayList<>();
                 actualType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
                 if (Supportable.class.isAssignableFrom(actualType))

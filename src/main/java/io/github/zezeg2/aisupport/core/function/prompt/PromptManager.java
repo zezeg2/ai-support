@@ -6,7 +6,7 @@ import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.zezeg2.aisupport.common.enums.Role;
 import io.github.zezeg2.aisupport.common.enums.model.AIModel;
-import io.github.zezeg2.aisupport.common.type.Bill;
+import io.github.zezeg2.aisupport.common.bill.Bill;
 import io.github.zezeg2.aisupport.common.util.JsonUtil;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.context.PromptContextHolder;
