@@ -64,7 +64,7 @@ public class BuildFormatUtil {
      */
     private static void addArgumentFormat(Map<String, Object> inputDescMap, Argument<?> argument) {
         Class<?> argWrapping = argument.getWrapping();
-        Map<String, Object> descMap = generateDescMap(argument, argument.getType());
+        Map<String, Object> descMap = generateDescMap(argument);
 
         if (argWrapping == null) {
             if (!descMap.isEmpty()) {
@@ -111,12 +111,11 @@ public class BuildFormatUtil {
      * Otherwise, the description from the argument is used.
      *
      * @param argument The argument.
-     * @param type     The type of the argument.
      * @return The format map for the argument.
      */
-    private static Map<String, Object> generateDescMap(Argument<?> argument, Class<?> type) {
-        if (isBaseSupportType(type)) {
-            Supportable supportable = getTempInstance(type);
+    private static Map<String, Object> generateDescMap(Argument<?> argument) {
+        if (isBaseSupportType(argument.getType())) {
+            Supportable supportable = getTempInstance(argument.getType());
             return Map.of(argument.getFieldName(), supportable.getFormatMap());
         } else if (argument.getDesc() == null) {
             return Map.of(argument.getFieldName(), argument.getFieldName());

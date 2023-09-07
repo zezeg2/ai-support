@@ -4,7 +4,9 @@ import com.theokanning.openai.completion.chat.ChatMessage;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * The ResultValidatorChain class represents a chain of ResultValidator instances that are used to validate AI model results in a chat-based AI system.
@@ -23,7 +25,9 @@ public class ResultValidatorChain {
      * @param validators The list of ResultValidator instances to be used in the chain.
      */
     public ResultValidatorChain(List<ResultValidator> validators) {
-        this.validators = validators;
+        this.validators = validators.stream()
+                .sorted(Comparator.comparingInt(v -> v.getClass().getAnnotation(ValidateTarget.class).order()))
+                .collect(Collectors.toList());
     }
 
     /**
