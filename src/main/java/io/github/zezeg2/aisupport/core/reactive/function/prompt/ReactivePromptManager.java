@@ -11,6 +11,7 @@ import io.github.zezeg2.aisupport.common.util.JsonUtil;
 import io.github.zezeg2.aisupport.config.properties.ContextProperties;
 import io.github.zezeg2.aisupport.context.reactive.ReactivePromptContextHolder;
 import io.github.zezeg2.aisupport.core.function.prompt.ContextType;
+import io.github.zezeg2.aisupport.core.function.prompt.FeedbackMessageContext;
 import io.github.zezeg2.aisupport.core.function.prompt.MessageContext;
 import io.github.zezeg2.aisupport.core.function.prompt.PromptMessageContext;
 import lombok.Getter;
@@ -88,10 +89,15 @@ public class ReactivePromptManager {
 
     public Mono<Bill> getExecutionBill(PromptMessageContext messageContext) {
         Bill bill = new Bill();
+        bill.addUsage(messageContext.getModel(), messageContext.getUsage());
 
-        return Flux.fromIterable(messageContext.getFeedbackMessageContexts())
-                .doOnNext(feedbackMessageContext -> bill.addUsage(messageContext.getModel(), feedbackMessageContext.getUsage()))
-                .then(Mono.fromRunnable(() -> bill.addUsage(messageContext.getModel(), messageContext.getUsage())))
-                .then(Mono.defer(() -> Mono.just(bill)));
+        Flux<FeedbackMessageContext> feedbackFlux = Flux.fromIterable(messageContext.getFeedbackMessageContexts());
+
+        return feedbackFlux
+                .flatMap(feedbackMessageContext -> {
+                    bill.addUsage(feedbackMessageContext.getModel(), feedbackMessageContext.getUsage());
+                    return Mono.empty();
+                })
+                .then(Mono.just(bill));
     }
 }

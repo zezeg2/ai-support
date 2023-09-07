@@ -4,7 +4,7 @@
 
 ## **Maven Central Repository**
 
-📌 [Maven Central: io.github.zezeg2:ai-support:2.1.3](https://central.sonatype.com/artifact/io.github.zezeg2/ai-support)
+📌 [Maven Central: io.github.zezeg2:ai-support:2.1.4](https://central.sonatype.com/artifact/io.github.zezeg2/ai-support)
 
 ## **Overview**
 

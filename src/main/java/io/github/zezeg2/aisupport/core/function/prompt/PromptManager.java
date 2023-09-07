@@ -78,10 +78,10 @@ public class PromptManager {
 
     public Bill getExecutionBill(PromptMessageContext messageContext) {
         Bill bill = new Bill();
+        bill.addUsage(messageContext.getModel(), messageContext.getUsage());
         for (FeedbackMessageContext feedbackMessageContext : messageContext.getFeedbackMessageContexts()) {
             bill.addUsage(feedbackMessageContext.getModel(), feedbackMessageContext.getUsage());
         }
-        bill.addUsage(messageContext.getModel(), messageContext.getUsage());
         return bill;
     }
 }
